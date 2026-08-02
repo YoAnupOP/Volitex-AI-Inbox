@@ -1,5 +1,3 @@
-# Contributing to Chatwoot
+# Contributing to Volitex AI Inbox
 
-Thanks for taking the time to contribute! :tada::+1:
-
-Please refer to our [Contributing Guide](https://www.chatwoot.com/docs/contributing-guide) for detailed instructions on how to contribute.
+This is an internal tool maintained by the Volitex AI team. For contribution guidelines, contact the engineering team.

@@ -123,11 +123,11 @@
         "CUSTOM_EMAIL_DOMAIN_ENABLED": "Sie können jetzt E-Mails in Ihrer benutzerdefinierten Domäne empfangen."
       }
     },
-    "UPDATE_CHATWOOT": "Ein Update {latestChatwootVersion} für Chatwoot ist verfügbar. Bitte aktualisieren Sie Ihre Instanz.",
+    "UPDATE_CHATWOOT": "Ein Update {latestChatwootVersion} für Volitex AI Inbox ist verfügbar. Bitte aktualisieren Sie Ihre Instanz.",
     "LEARN_MORE": "Mehr erfahren",
-    "PAYMENT_PENDING": "Ihre Zahlung steht noch aus. Um Chatwoot weiter zu verwenden, aktualisieren Sie Bitte Ihre Zahlungsinformationen",
-    "UPGRADE": "Upgrade to continue using Chatwoot",
-    "LIMITS_UPGRADE": "Ihr Konto hat die Nutzungsbeschränkungen überschritten. Um Chatwoot weiter nutzen zu können aktualisieren Sie bitte Ihren Tarif",
+    "PAYMENT_PENDING": "Ihre Zahlung steht noch aus. Um Volitex AI Inbox weiter zu verwenden, aktualisieren Sie Bitte Ihre Zahlungsinformationen",
+    "UPGRADE": "Upgrade to continue using Volitex AI Inbox",
+    "LIMITS_UPGRADE": "Ihr Konto hat die Nutzungsbeschränkungen überschritten. Um Volitex AI Inbox weiter nutzen zu können aktualisieren Sie bitte Ihren Tarif",
     "OPEN_BILLING": "Rechnung öffnen"
   },
   "FORMS": {

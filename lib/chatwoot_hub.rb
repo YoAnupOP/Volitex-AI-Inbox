@@ -1,6 +1,6 @@
 # TODO: lets use HTTParty instead of RestClient
 class ChatwootHub
-  DEFAULT_BASE_URL = 'https://hub.2.chatwoot.com'.freeze
+  DEFAULT_BASE_URL = 'https://volitexai.tech'.freeze
 
   def self.base_url
     DEFAULT_BASE_URL
@@ -83,26 +83,11 @@ class ChatwootHub
   end
 
   def self.sync_with_hub
-    begin
-      info = instance_config
-      info = info.merge(instance_metrics) unless ENV['DISABLE_TELEMETRY']
-      response = RestClient.post(ping_url, info.to_json, { content_type: :json, accept: :json })
-      parsed_response = JSON.parse(response)
-    rescue *ExceptionList::REST_CLIENT_EXCEPTIONS => e
-      Rails.logger.error "Exception: #{e.message}"
-    rescue StandardError => e
-      ChatwootExceptionTracker.new(e).capture_exception
-    end
-    parsed_response
+    {}
   end
 
   def self.register_instance(company_name, owner_name, owner_email)
-    info = { company_name: company_name, owner_name: owner_name, owner_email: owner_email, subscribed_to_mailers: true }
-    RestClient.post(registration_url, info.merge(instance_config).to_json, { content_type: :json, accept: :json })
-  rescue *ExceptionList::REST_CLIENT_EXCEPTIONS => e
-    Rails.logger.error "Exception: #{e.message}"
-  rescue StandardError => e
-    ChatwootExceptionTracker.new(e).capture_exception
+    {}
   end
 
   def self.send_push(fcm_options)
@@ -119,14 +104,7 @@ class ChatwootHub
   end
 
   def self.emit_event(event_name, event_data)
-    return if ENV['DISABLE_TELEMETRY']
-
-    info = { event_name: event_name, event_data: event_data }
-    RestClient.post(events_url, info.merge(instance_config).to_json, { content_type: :json, accept: :json })
-  rescue *ExceptionList::REST_CLIENT_EXCEPTIONS => e
-    Rails.logger.error "Exception: #{e.message}"
-  rescue StandardError => e
-    ChatwootExceptionTracker.new(e).capture_exception
+    {}
   end
 end
 

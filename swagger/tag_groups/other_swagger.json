@@ -1,12 +1,12 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Chatwoot",
-    "description": "This is the API documentation for Chatwoot server.",
+    "title": "Volitex AI Inbox",
+    "description": "This is the API documentation for Volitex AI Inbox server.",
     "version": "1.1.0",
-    "termsOfService": "https://www.chatwoot.com/terms-of-service/",
+    "termsOfService": "https://www.volitexai.tech/terms-of-service/",
     "contact": {
-      "email": "hello@chatwoot.com"
+      "email": "hello@volitexai.tech"
     },
     "license": {
       "name": "MIT License",
@@ -15,7 +15,7 @@
   },
   "servers": [
     {
-      "url": "https://app.chatwoot.com/"
+      "url": "https://app.volitexai.tech/"
     }
   ],
   "paths": {
@@ -1533,7 +1533,7 @@
           "secret": {
             "type": "string",
             "nullable": true,
-            "description": "Secret used to sign webhook requests. Signed webhook deliveries include `X-Chatwoot-Timestamp` and `X-Chatwoot-Signature`; the signature is `sha256=` followed by the HMAC-SHA256 of `{timestamp}.{raw_request_body}` using this secret. Deliveries also include `X-Chatwoot-Delivery` when a delivery id is available."
+            "description": "Secret used to sign webhook requests. Signed webhook deliveries include `X-Volitex AI Inbox-Timestamp` and `X-Volitex AI Inbox-Signature`; the signature is `sha256=` followed by the HMAC-SHA256 of `{timestamp}.{raw_request_body}` using this secret. Deliveries also include `X-Volitex AI Inbox-Delivery` when a delivery id is available."
           },
           "account_id": {
             "type": "number",
@@ -1699,7 +1699,7 @@
                   "string",
                   "null"
                 ],
-                "description": "Latest version of Chatwoot available",
+                "description": "Latest version of Volitex AI Inbox available",
                 "example": "3.0.0"
               },
               "subscribed_features": {
@@ -1987,7 +1987,7 @@
           },
           "pubsub_token": {
             "type": "string",
-            "description": "The token to be used to connect to chatwoot websocket"
+            "description": "The token to be used to connect to Volitex AI Inbox websocket"
           }
         }
       },
@@ -3073,7 +3073,7 @@
                     "type": "object",
                     "description": "The processed param values for template variables in template",
                     "example": {
-                      "1": "Chatwoot"
+                      "1": "Volitex AI Inbox"
                     }
                   }
                 }
@@ -4571,7 +4571,7 @@
           "custom_domain": {
             "type": "string",
             "description": "Custom domain to display help center.",
-            "example": "chatwoot.help"
+            "example": "help.volitexai.tech"
           },
           "header_text": {
             "type": "string",
@@ -4581,7 +4581,7 @@
           "homepage_link": {
             "type": "string",
             "description": "link to main dashboard",
-            "example": "https://www.chatwoot.com/"
+            "example": "https://www.volitexai.tech/"
           },
           "name": {
             "type": "string",
@@ -6655,7 +6655,7 @@
         "schema": {
           "type": "string"
         },
-        "description": "Id of the session for which the conversation is created.\n\n\n\n Source Ids can be obtained through contactable inboxes API or via generated.<br/><br/>Website: Chatwoot generated string which can be obtained from webhook events. <br/> Phone Channels(Twilio): Phone number in e164 format <br/> Email Channels: Contact Email address <br/> API Channel: Any Random String"
+        "description": "Id of the session for which the conversation is created.\n\n\n\n Source Ids can be obtained through contactable inboxes API or via generated.<br/><br/>Website: Volitex AI Inbox generated string which can be obtained from webhook events. <br/> Phone Channels(Twilio): Phone number in e164 format <br/> Email Channels: Contact Email address <br/> API Channel: Any Random String"
       },
       "contact_sort_param": {
         "in": "query",

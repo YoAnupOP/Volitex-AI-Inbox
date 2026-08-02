@@ -41,21 +41,21 @@ $header-height: 5.6rem;
 $woot-logo-padding: $space-large $space-two;
 
 // Colors
-$color-woot: #1f93ff;
-$color-gray: #6e6f73;
-$color-light-gray: #747677;
-$color-border: #e0e6ed;
-$color-border-light: #f0f4f5;
-$color-background: #f4f6fb;
-$color-border-dark: #cad0d4;
-$color-background-light: #f9fafc;
+$color-woot: #000;
+$color-gray: #666;
+$color-light-gray: #777;
+$color-border: #e8e8e8;
+$color-border-light: #f4f4f4;
+$color-background: #f4f4f4;
+$color-border-dark: #c6c6c6;
+$color-background-light: #fff;
 $color-white: #fff;
-$color-body: #3c4858;
-$color-heading: #1f2d3d;
-$color-extra-light-blue: #f5f7f9;
+$color-body: #111;
+$color-heading: #000;
+$color-extra-light-blue: #f4f4f4;
 
 $primary-color: $color-woot;
-$secondary-color: #5d7592;
+$secondary-color: #3d3d3d;
 $success-color: #44ce4b;
 $warning-color: #ffc532;
 $alert-color: #ff382d;
@@ -64,8 +64,8 @@ $masked-bg: rgba(0, 0, 0, .4);
 
 // Color-palettes
 
-$color-primary-light: #c7e3ff;
-$color-primary-dark: darken($color-woot, 20%);
+$color-primary-light: #f4f4f4;
+$color-primary-dark: #111;
 
 // Thumbnail
 $thumbnail-radius: 4rem;

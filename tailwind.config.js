@@ -8,6 +8,7 @@ const {
 } = require('@egoist/tailwindcss-icons');
 
 const defaultSansFonts = [
+  '"Space Grotesk"',
   '-apple-system',
   'system-ui',
   'BlinkMacSystemFont',
@@ -40,8 +41,8 @@ const tailwindConfig = {
     extend: {
       fontFamily: {
         sans: defaultSansFonts,
-        inter: ['Inter', ...defaultSansFonts],
-        interDisplay: ['InterDisplay', ...defaultSansFonts],
+        inter: ['"Space Grotesk"', ...defaultSansFonts],
+        interDisplay: ['"Space Grotesk"', ...defaultSansFonts],
       },
       fontWeight: {
         420: '420',

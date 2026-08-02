@@ -1,7 +1,33 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>SuperAdmin | Chatwoot</title>
+    <title>Super Admin | Volitex AI Inbox</title>
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('color_scheme');
+          if (!theme || theme === 'auto') {
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            theme = prefersDark ? 'dark' : 'light';
+          }
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.body.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.body.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" sizes="96x96">
+    <link class="favicon" rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png?v=2">
+    <link class="favicon" rel="icon" type="image/svg+xml" sizes="any" href="/icon.svg?v=2">
+    <link rel="shortcut icon" href="/favicon.ico?v=2">
+    <link class="favicon" rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'superadmin' %>
   </head>
@@ -9,10 +35,10 @@
     <div class="h-full w-full antialiased">
       <main class="flex flex-col bg-woot-25 min-h-screen w-full py-20 sm:px-6 lg:px-8 dark:bg-slate-900">
         <section class="max-w-5xl mx-auto">
-          <img src="/brand-assets/logo.svg" alt="Chatwoot" class="mx-auto h-8 w-auto block dark:hidden">
-          <img src="/brand-assets/logo_dark.svg" alt="Chatwoot" class="mx-auto h-8 w-auto hidden dark:block">
+          <img src="/brand-assets/logo.svg?v=2" alt="Volitex AI Inbox" class="mx-auto h-8 w-auto block dark:hidden">
+          <img src="/brand-assets/logo_dark.svg?v=2" alt="Volitex AI Inbox" class="mx-auto h-8 w-auto hidden dark:block">
           <h2 class="mt-6 text-center text-3xl font-medium text-slate-900 dark:text-woot-50">
-            Howdy, Welcome to Chatwoot 👋
+            Welcome to Volitex AI Inbox 👋
           </h2>
         </section>
         <section class="bg-white shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-slate-800 p-11 sm:shadow-lg sm:rounded-lg mb-8 mt-15">

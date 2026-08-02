@@ -20,13 +20,17 @@ as defined by the routes in the `admin/` namespace
   }
 %>
 
-<div class="border-slate-100 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col" role="navigation">
+<div class="border-slate-100 dark:border-slate-800 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col bg-white dark:bg-slate-900" role="navigation">
   <div>
-    <div class="flex mx-4 mb-4 border-slate-100 border-b py-6">
-      <%= link_to image_tag('/brand-assets/logo_thumbnail.svg', alt: 'Chatwoot Admin Dashboard', class: 'h-10'), super_admin_root_url %>
-      <div class="flex flex-col ml-3">
-        <div class="text-sm">Chatwoot <%= Chatwoot.config[:version] %></div>
-        <div class="text-xs text-slate-700 mt-0.5">Super Admin Console</div>
+    <div class="flex mx-4 mb-4 border-slate-100 dark:border-slate-800 border-b py-6 items-center">
+      <%= link_to super_admin_root_url, class: "flex-shrink-0 mr-[12px]" do %>
+        <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="text-black dark:text-white transition-colors duration-200">
+          <path fill-rule="evenodd" d="M10 10H90L50 90ZM27 10H73L50 77Z" fill="currentColor" />
+        </svg>
+      <% end %>
+      <div class="flex flex-col">
+        <div class="text-sm text-slate-800 dark:text-slate-200">Volitex AI Inbox <%= Chatwoot.config[:version] %></div>
+        <div class="text-xs text-slate-700 dark:text-slate-400 mt-0.5">Super Admin Console</div>
       </div>
     </div>
 
@@ -52,7 +56,64 @@ as defined by the routes in the `admin/` namespace
       <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Instance Health' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-mail-send-fill', url: super_admin_push_diagnostics_url, label: 'Push Diagnostics' } %>
       <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Agent Dashboard' } %>
+      
+      <li class="px-4 mb-1">
+        <button id="theme-toggle-btn" class="-ml-1 focus:outline-none cursor-pointer flex items-center w-full px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer hover:text-woot-500 dark:hover:text-woot-400 hover:bg-slate-25 dark:hover:bg-slate-800 rounded-lg">
+          <svg id="theme-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+          </svg>
+          <span id="theme-toggle-label" class="ml-2 text-sm">Theme Mode</span>
+        </button>
+      </li>
+
       <%= render partial: "nav_item", locals: { icon: 'icon-logout-circle-r-line', url: super_admin_logout_url, label: 'Logout' } %>
     </ul>
   </div>
 </div>
+
+<script>
+  (function() {
+    var sunSvg = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+    var moonSvg = '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>';
+
+    function getTheme() {
+      var theme = localStorage.getItem('color_scheme');
+      if (!theme || theme === 'auto') {
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        theme = prefersDark ? 'dark' : 'light';
+      }
+      return theme;
+    }
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        if (document.body) document.body.classList.add('dark');
+        var iconEl = document.getElementById('theme-toggle-icon');
+        var labelEl = document.getElementById('theme-toggle-label');
+        if (iconEl) iconEl.innerHTML = sunSvg;
+        if (labelEl) labelEl.textContent = 'Light Mode';
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (document.body) document.body.classList.remove('dark');
+        var iconEl = document.getElementById('theme-toggle-icon');
+        var labelEl = document.getElementById('theme-toggle-label');
+        if (iconEl) iconEl.innerHTML = moonSvg;
+        if (labelEl) labelEl.textContent = 'Dark Mode';
+      }
+    }
+
+    // Initial setup
+    var currentTheme = getTheme();
+    applyTheme(currentTheme);
+
+    // Click handler
+    var toggleBtn = document.getElementById('theme-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        var nextTheme = getTheme() === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('color_scheme', nextTheme);
+        applyTheme(nextTheme);
+      });
+    }
+  })();
+</script>

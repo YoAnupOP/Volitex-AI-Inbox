@@ -8,31 +8,14 @@ export default {
   },
   mounted() {
     this.setColorTheme();
-    this.listenToThemeChanges();
     this.setLocale(window.chatwootConfig.selectedLocale);
   },
   methods: {
     setColorTheme() {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        this.theme = 'dark';
-        document.documentElement.classList.add('dark');
-      } else {
-        this.theme = 'light';
-        document.documentElement.classList.remove('dark');
-      }
-    },
-    listenToThemeChanges() {
-      const mql = window.matchMedia('(prefers-color-scheme: dark)');
-
-      mql.onchange = e => {
-        if (e.matches) {
-          this.theme = 'dark';
-          document.documentElement.classList.add('dark');
-        } else {
-          this.theme = 'light';
-          document.documentElement.classList.remove('dark');
-        }
-      };
+      this.theme = 'light';
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.style.setProperty('color-scheme', 'light');
     },
     setLocale(locale) {
       if (locale) {
@@ -59,8 +42,8 @@ export default {
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, Oxygen-Sans, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
   @apply h-full w-full;
 
   input,
@@ -70,7 +53,7 @@ body {
 }
 
 .text-link {
-  @apply text-n-brand font-medium hover:text-n-blue-10;
+  @apply text-n-brand font-medium hover:text-n-slate-12;
 }
 
 .v-popper--theme-tooltip .v-popper__inner {

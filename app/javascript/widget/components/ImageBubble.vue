@@ -38,7 +38,7 @@ export default {
     max-width: 100%;
 
     &::before {
-      background-image: linear-gradient(-180deg, transparent 3%, #1f2d3d 130%);
+      background-image: linear-gradient(-180deg, transparent 3%, #111111 130%);
       bottom: 0;
       content: '';
       height: 20%;

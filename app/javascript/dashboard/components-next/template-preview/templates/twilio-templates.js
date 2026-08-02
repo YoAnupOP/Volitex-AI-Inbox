@@ -129,18 +129,18 @@ export const twilioTemplates = [
     template_type: 'quick_reply',
   },
   {
-    body: 'What type of Chatwoot installation are you using? Select "Chatwoot Cloud" if you are using app.chatwoot.com, otherwise select "Self-hosted Chatwoot".',
+    body: 'What type of Volitex AI Inbox installation are you using? Select "Volitex AI Inbox" if you are using volitexai.tech.',
     types: {
       'twilio/quick-reply': {
-        body: 'What type of Chatwoot installation are you using? Select "Chatwoot Cloud" if you are using app.chatwoot.com, otherwise select "Self-hosted Chatwoot".',
+        body: 'What type of Volitex AI Inbox installation are you using? Select "Volitex AI Inbox" if you are using volitexai.tech.',
         actions: [
           {
-            id: 'Chatwoot Cloud_payload',
-            title: 'Chatwoot Cloud',
+            id: 'volitex_ai_inbox_payload',
+            title: 'Volitex AI Inbox',
           },
           {
-            id: 'Self-hosted Chatwoot_payload',
-            title: 'Self-hosted Chatwoot',
+            id: 'self_hosted_volitex_ai_inbox_payload',
+            title: 'Self-hosted Volitex AI Inbox',
           },
         ],
       },

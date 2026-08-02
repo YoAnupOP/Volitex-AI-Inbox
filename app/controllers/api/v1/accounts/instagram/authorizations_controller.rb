@@ -8,8 +8,8 @@ class Api::V1::Accounts::Instagram::AuthorizationsController < Api::V1::Accounts
       {
         redirect_uri: "#{base_url}/instagram/callback",
         scope: REQUIRED_SCOPES.join(','),
-        enable_fb_login: '0',
-        force_authentication: '1',
+        enable_fb_login: 'false',
+        force_reauth: 'true',
         response_type: 'code',
         state: generate_instagram_token(Current.account.id, params[:return_to])
       }

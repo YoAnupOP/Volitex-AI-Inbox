@@ -1,5 +1,7 @@
 {
-  "name": "@chatwoot/chatwoot",
+  "name": "@volitex-ai/inbox",
+  "description": "Internal inbox for Volitex AI automation operations.",
+  "author": "Volitex AI",
   "version": "4.16.2",
   "license": "MIT",
   "scripts": {

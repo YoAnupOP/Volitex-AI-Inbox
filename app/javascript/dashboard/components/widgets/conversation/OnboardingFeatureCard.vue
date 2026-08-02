@@ -46,7 +46,7 @@ defineProps({
       <router-link
         v-if="to"
         :to="{ name: to }"
-        class="no-underline text-n-brand text-sm font-medium"
+        class="no-underline text-n-brand dark:text-n-slate-12 text-sm font-medium hover:dark:text-white"
       >
         <span>{{ linkText }}</span>
         <span class="ml-2">{{ `→` }}</span>
