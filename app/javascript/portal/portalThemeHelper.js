@@ -1,21 +1,11 @@
 import { adjustColorForContrast } from '../shared/helpers/colorHelper.js';
 
-const getResolvedTheme = theme => {
-  // Helper to get resolved theme (handles 'system' -> 'dark'/'light')
-  if (theme === 'system') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
-  }
-  return theme;
-};
+const getResolvedTheme = () => 'light';
 
-export const setPortalHoverColor = theme => {
+export const setPortalHoverColor = () => {
   // This function is to set the hover color for the portal
-  const resolvedTheme = getResolvedTheme(theme);
   const portalColor = window.portalConfig.portalColor;
-  const bgColor = resolvedTheme === 'dark' ? '#151718' : 'white';
-  const hoverColor = adjustColorForContrast(portalColor, bgColor);
+  const hoverColor = adjustColorForContrast(portalColor, 'white');
 
   // Set hover color for border and text dynamically
   document.documentElement.style.setProperty(
@@ -52,24 +42,18 @@ export const updateThemeInHeader = theme => {
   });
 };
 
-export const switchTheme = theme => {
-  // Update localStorage
-  if (theme === 'system') {
-    localStorage.removeItem('theme');
-  } else {
-    localStorage.theme = theme;
-  }
-
-  const resolvedTheme = getResolvedTheme(theme);
+export const switchTheme = () => {
+  localStorage.theme = 'light';
+  const resolvedTheme = getResolvedTheme();
   document.documentElement.classList.remove('dark', 'light');
   document.documentElement.classList.add(resolvedTheme);
 
-  setPortalHoverColor(theme);
-  updateThemeInHeader(theme);
+  setPortalHoverColor();
+  updateThemeInHeader(resolvedTheme);
   removeQueryParamsFromUrl();
   // Update both dropdown data attributes
   document.querySelectorAll('.appearance-menu').forEach(menu => {
-    menu.dataset.currentTheme = theme;
+    menu.dataset.currentTheme = resolvedTheme;
   });
 };
 
@@ -117,21 +101,13 @@ export const initializeThemeHandlers = () => {
   });
 };
 
-export const initializeMediaQueryListener = () => {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-  mediaQuery.addEventListener('change', () => {
-    if (['light', 'dark'].includes(localStorage.theme)) return;
-
-    switchTheme('system');
-  });
-};
+export const initializeMediaQueryListener = () => {};
 
 export const initializeTheme = () => {
   if (window.portalConfig.isPlainLayoutEnabled === 'true') return;
   // start with updating the theme in the header, this will set the current theme on the button
   // and set the hover color at the start of init, this is set again when the theme is switched
-  switchTheme(localStorage.theme || 'system');
+  switchTheme();
 
   window.updateThemeInHeader = updateThemeInHeader;
 

@@ -27,7 +27,7 @@ export const ICON_COLORS = [
   { name: 'PINK', value: '#EC4899' },
 ];
 
-export const DEFAULT_ICON_COLOR = '#3B82F6';
+export const DEFAULT_ICON_COLOR = '#000000';
 
 export const PICKER_MODE = {
   BOTH: 'both',

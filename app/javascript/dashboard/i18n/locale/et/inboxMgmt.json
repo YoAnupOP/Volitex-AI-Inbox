@@ -16,7 +16,7 @@
     "CREATE_FLOW": {
       "CHANNEL": {
         "TITLE": "Vali kanal",
-        "BODY": "Valige teenusepakkuja, mille soovite Chatwootiga siduda."
+        "BODY": "Valige teenusepakkuja, mille soovite Volitex AI Inboxiga siduda."
       },
       "INBOX": {
         "TITLE": "Loo postkast",
@@ -42,7 +42,7 @@
         "PLACEHOLDER": "Sisesta oma veebisaidi nimi (nt Acme Inc)"
       },
       "FB": {
-        "HELP": "PS: Sisselogimisel pääseme ligi ainult teie lehe sõnumitele. Teie privaatseid sõnumeid Chatwoot ei pääse kunagi ligi.",
+        "HELP": "PS: Sisselogimisel pääseme ligi ainult teie lehe sõnumitele. Teie privaatseid sõnumeid Volitex AI Inbox ei pääse kunagi ligi.",
         "CHOOSE_PAGE": "Vali leht",
         "CHOOSE_PLACEHOLDER": "Valige nimekirjast leht",
         "INBOX_NAME": "Postkasti nimi",
@@ -454,7 +454,7 @@
       },
       "AUTH": {
         "TITLE": "Vali kanal",
-        "DESC": "Chatwoot toetab vestlusvidinaid, Facebook Messengeri, WhatsAppi, e-kirju jms kanalitena. Kui soovid luua kohandatud kanali, saad selle luua API kanali abil. Alustamiseks vali allolevatest kanalitest üks.",
+        "DESC": "Volitex AI Inbox toetab vestlusvidinaid, Facebook Messengeri, WhatsAppi, e-kirju jms kanalitena. Kui soovid luua kohandatud kanali, saad selle luua API kanali abil. Alustamiseks vali allolevatest kanalitest üks.",
         "TITLE_NEXT": "Complete the setup",
         "TITLE_FINISH": "Voilà!",
         "CHANNEL": {
@@ -516,11 +516,11 @@
       },
       "DETAILS": {
         "TITLE": "Postkasti üksikasjad",
-        "DESC": "Valige allolevast rippmenüüst Facebooki leht, mida soovite Chatwootiga ühendada. Võite ka anda postkastile kohandatud nime parema äratundmise jaoks."
+        "DESC": "Valige allolevast rippmenüüst Facebooki leht, mida soovite Volitex AI Inboxiga ühendada. Võite ka anda postkastile kohandatud nime parema äratundmise jaoks."
       },
       "FINISH": {
         "TITLE": "Valmis!",
-        "DESC": "Olete edukalt ühendanud oma Facebooki lehe Chatwootiga. Järgmine kord, kui klient teie lehele sõnumi saadab, kuvatakse vestlus automaatselt teie postkastis.<br>Samuti anname teile vidina skripti, mille saate hõlpsasti oma veebisaidile lisada. Kui see on teie veebisaidil aktiivne, saavad kliendid teile otse veebisaidilt sõnumeid saata ilma väliste tööriistadeta ning vestlus kuvatakse siin, Chatwootis.<br>Lahe, eks? Me püüame kindlasti :)"
+        "DESC": "Olete edukalt ühendanud oma Facebooki lehe Volitex AI Inboxiga. Järgmine kord, kui klient teie lehele sõnumi saadab, kuvatakse vestlus automaatselt teie postkastis.<br>Samuti anname teile vidina skripti, mille saate hõlpsasti oma veebisaidile lisada. Kui see on teie veebisaidil aktiivne, saavad kliendid teile otse veebisaidilt sõnumeid saata ilma väliste tööriistadeta ning vestlus kuvatakse siin, Volitex AI Inboxis.<br>Lahe, eks? Me püüame kindlasti :)"
       },
       "EMAIL_PROVIDER": {
         "TITLE": "Valige oma e-posti teenusepakkuja",
@@ -881,7 +881,7 @@
           "INBOX": "Inbox",
           "PHONE_NUMBER": "Telefoninumber",
           "NOT_ENTERED": "Not entered",
-          "VERIFY_NOTICE": "Chatwoot will verify these credentials with Meta before applying any changes. If verification fails, the current configuration is left untouched.",
+          "VERIFY_NOTICE": "Volitex AI Inbox will verify these credentials with Meta before applying any changes. If verification fails, the current configuration is left untouched.",
           "BACK": "Back",
           "CANCEL": "Cancel",
           "CONTINUE": "Jätka",
@@ -903,7 +903,7 @@
           },
           "REVIEW_MIGRATION": {
             "TITLE": "Review migration",
-            "DESCRIPTION": "Confirm the connection details before reconnecting this inbox. Chatwoot will verify the token, WABA, and phone number with Meta before applying changes."
+            "DESCRIPTION": "Confirm the connection details before reconnecting this inbox. Volitex AI Inbox will verify the token, WABA, and phone number with Meta before applying changes."
           }
         }
       },
@@ -1246,7 +1246,7 @@
         "USER_MESSAGE": "Tere",
         "AGENT_MESSAGE": "Tere"
       },
-      "BRANDING_TEXT": "Toetab Chatwoot’i",
+      "BRANDING_TEXT": "Toetab Volitex AI Inbox’i",
       "SCRIPT_SETTINGS": "\n      window.chatwootSettings = {options};"
     },
     "EMAIL_PROVIDERS": {
