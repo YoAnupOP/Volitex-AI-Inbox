@@ -54,9 +54,9 @@ const globalConfig = computed(() => store.getters['globalConfig/get']);
 
 const termsLink = computed(() =>
   t('REGISTER.TERMS_ACCEPT')
-    .replace('https://www.chatwoot.com/terms', globalConfig.value.termsURL)
+    .replace('https://www.volitexai.tech/terms', globalConfig.value.termsURL)
     .replace(
-      'https://www.chatwoot.com/privacy-policy',
+      'https://www.volitexai.tech/privacy-policy',
       globalConfig.value.privacyURL
     )
 );
@@ -185,7 +185,7 @@ const onCaptchaError = () => {
       {{ $t('REGISTER.OAUTH.GOOGLE_SIGNUP') }}
     </GoogleOAuthButton>
     <p
-      class="text-sm mt-5 mb-0 text-n-slate-11 [&>a]:text-n-blue-10 [&>a]:font-medium [&>a]:hover:text-n-blue-11"
+      class="text-sm mt-5 mb-0 text-n-slate-11 [&>a]:text-n-brand [&>a]:font-medium [&>a]:hover:text-n-slate-12"
       v-html="termsLink"
     />
   </div>

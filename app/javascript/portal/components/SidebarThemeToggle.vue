@@ -2,9 +2,7 @@
 import { directive as onClickaway } from 'vue3-click-away';
 
 const OPTION_DEFS = [
-  { value: 'system', icon: 'i-lucide-monitor', fallback: 'System' },
   { value: 'light', icon: 'i-lucide-sun', fallback: 'Light' },
-  { value: 'dark', icon: 'i-lucide-moon', fallback: 'Dark' },
 ];
 
 const readLabels = () => {
@@ -27,8 +25,7 @@ export default {
   data() {
     const labels = readLabels();
     return {
-      mode: 'system',
-      systemPrefersDark: false,
+      mode: 'light',
       open: false,
       options: labels.options,
       triggerLabel: labels.trigger,
@@ -39,48 +36,20 @@ export default {
       const opt = this.options.find(o => o.value === this.mode);
       return opt ? opt.icon : 'i-lucide-monitor';
     },
-    isDarkActive() {
-      if (this.mode === 'dark') return true;
-      if (this.mode === 'light') return false;
-      return this.systemPrefersDark;
-    },
   },
   mounted() {
-    try {
-      const stored = localStorage.theme;
-      this.mode = stored === 'dark' || stored === 'light' ? stored : 'system';
-    } catch (e) {
-      this.mode = 'system';
-    }
-    if (window.matchMedia) {
-      this.media = window.matchMedia('(prefers-color-scheme: dark)');
-      this.systemPrefersDark = this.media.matches;
-      this.media.addEventListener('change', this.onSystemChange);
-    }
+    localStorage.theme = 'light';
     this.applyTheme();
   },
-  unmounted() {
-    if (this.media)
-      this.media.removeEventListener('change', this.onSystemChange);
-  },
   methods: {
-    onSystemChange(e) {
-      this.systemPrefersDark = e.matches;
-      if (this.mode === 'system') this.applyTheme();
-    },
     applyTheme() {
-      const dark = this.isDarkActive;
       document.documentElement.classList.remove('dark', 'light');
-      document.documentElement.classList.add(dark ? 'dark' : 'light');
+      document.documentElement.classList.add('light');
+      document.documentElement.style.setProperty('color-scheme', 'light');
     },
-    select(value) {
-      this.mode = value;
-      try {
-        if (value === 'system') localStorage.removeItem('theme');
-        else localStorage.theme = value;
-      } catch (e) {
-        /* no-op */
-      }
+    select() {
+      this.mode = 'light';
+      localStorage.theme = 'light';
       this.applyTheme();
       this.open = false;
     },

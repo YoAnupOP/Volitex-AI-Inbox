@@ -81,7 +81,7 @@
 <use xlink:href="#image0_461_32" transform="scale(0.00147275)"/>
 </pattern>
 <radialGradient id="paint0_radial_461_32" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1037.25 1417.13) scale(61.5752 60.1475)">
-<stop stop-color="#0099FF"/>
+<stop stop-color="#111111"/>
 <stop offset="0.6" stop-color="#A033FF"/>
 <stop offset="0.9" stop-color="#FF5280"/>
 <stop offset="1" stop-color="#FF7061"/>

@@ -6,7 +6,8 @@ class ConversationReplyMailer < ApplicationMailer
   include ConversationReplyMailerHelper
   include ReferencesHeaderBuilder
   include EmailAddressParseable
-  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Chatwoot <accounts@chatwoot.com>')
+  # TODO: confirm the production sender address before deployment.
+  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Volitex AI Inbox <TODO-confirm-sender@volitexai.tech>')
   layout :choose_layout
 
   def reply_with_summary(conversation, last_queued_id)

@@ -27,9 +27,9 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Describe whether you are using Chatwoot Cloud (app.chatwoot.com) or a self-hosted installation of Chatwoot. If you are using a self-hosted installation of Chatwoot, describe the type of deployment (Docker/Linux VM installation/Heroku/Kubernetes/Other).
+      description: Describe the deployment type (Docker/Linux VM installation/Kubernetes/Other).
       options:
-        - app.chatwoot.com
+        - Hosted instance
         - Linux VM
         - Docker
         - Kubernetes

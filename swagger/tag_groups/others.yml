@@ -1,16 +1,16 @@
 openapi: '3.1.0'
 info:
-  title: Chatwoot - Other APIs
-  description: Other API endpoints for Chatwoot
+  title: Volitex AI Inbox - Other APIs
+  description: Other API endpoints for Volitex AI Inbox
   version: 1.1.0
-  termsOfService: https://www.chatwoot.com/terms-of-service/
+  termsOfService: https://www.volitexai.tech/terms-of-service/
   contact:
-    email: hello@chatwoot.com
+    email: hello@volitexai.tech
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
 servers:
-  - url: https://app.chatwoot.com/
+  - url: https://app.volitexai.tech/
 tags:
   - name: CSAT Survey Page
     description: APIs for CSAT survey functionality

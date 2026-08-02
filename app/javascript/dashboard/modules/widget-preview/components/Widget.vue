@@ -243,7 +243,7 @@ const handleToggleWidget = () => {
           :script="widgetScript"
           lang="html"
           class="!text-start"
-          :codepen-title="`${websiteName} - Chatwoot Widget Test`"
+          :codepen-title="`${websiteName} - Volitex AI Inbox Widget Test`"
           enable-code-pen
         />
       </div>
@@ -269,7 +269,7 @@ const handleToggleWidget = () => {
   --slate-12: 28 32 36;
 
   --background-color: 253 253 253;
-  --text-blue: 8 109 224;
+  --text-blue: 0 0 0;
   --border-container: 236 236 236;
   --border-strong: 235 235 235;
   --border-weak: 234 234 234;
@@ -278,7 +278,7 @@ const handleToggleWidget = () => {
   --solid-3: 255 255 255;
   --solid-active: 255 255 255;
   --solid-amber: 252 232 193;
-  --solid-blue: 218 236 255;
+  --solid-blue: 244 244 244;
   --solid-iris: 230 231 255;
 
   --alpha-1: 67, 67, 67, 0.06;
@@ -286,7 +286,7 @@ const handleToggleWidget = () => {
   --alpha-3: 255, 255, 255, 0.96;
   --black-alpha-1: 0, 0, 0, 0.12;
   --black-alpha-2: 0, 0, 0, 0.04;
-  --border-blue: 39, 129, 246, 0.5;
+  --border-blue: 0, 0, 0, 0.5;
   --white-alpha: 255, 255, 255, 0.8;
 }
 
@@ -313,16 +313,16 @@ const handleToggleWidget = () => {
   --solid-3: 44 45 54;
   --solid-active: 53 57 66;
   --solid-amber: 42 37 30;
-  --solid-blue: 16 49 91;
+  --solid-blue: 25 25 25;
   --solid-iris: 38 42 101;
-  --text-blue: 126 182 255;
+  --text-blue: 238 238 238;
 
   --alpha-1: 36, 36, 36, 0.8;
   --alpha-2: 139, 147, 182, 0.15;
   --alpha-3: 36, 38, 45, 0.9;
   --black-alpha-1: 0, 0, 0, 0.3;
   --black-alpha-2: 0, 0, 0, 0.2;
-  --border-blue: 39, 129, 246, 0.5;
+  --border-blue: 255, 255, 255, 0.5;
   --border-container: 236, 236, 236, 0;
   --white-alpha: 255, 255, 255, 0.1;
 }
