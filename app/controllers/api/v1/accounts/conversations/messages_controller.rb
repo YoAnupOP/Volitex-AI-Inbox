@@ -6,6 +6,12 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def create
+    # Block human replies when AI mode is enabled for this conversation
+    if ai_mode_enabled? && human_reply?
+      render json: { error: 'AI mode is active. Disable AI mode to send human replies.' }, status: :unprocessable_entity
+      return
+    end
+
     user = Current.user || @resource
     mb = Messages::MessageBuilder.new(user, @conversation, params)
     @message = mb.perform
@@ -19,6 +25,8 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def destroy
+    delete_instagram_comment if instagram_comment?
+
     ActiveRecord::Base.transaction do
       message.update!(content: I18n.t('conversations.messages.deleted'), content_type: :text, content_attributes: { deleted: true })
       message.attachments.destroy_all
@@ -58,6 +66,33 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   private
+
+  def ai_mode_enabled?
+    @conversation.custom_attributes&.dig('ai_mode') == true
+  end
+
+  def human_reply?
+    # AgentBot messages are allowed (they come from automation)
+    # Human agent messages are blocked when AI mode is on
+    Current.user.present? && !Current.user.is_a?(AgentBot)
+  end
+
+  def instagram_comment?
+    message.content_attributes&.dig('instagram_comment').present?
+  end
+
+  def delete_instagram_comment
+    comment_id = message.content_attributes['comment_id']
+    channel = @conversation.inbox.channel
+    return unless channel.is_a?(Channel::Instagram)
+
+    HTTParty.delete(
+      "https://graph.instagram.com/v22.0/#{comment_id}",
+      query: { access_token: channel.access_token }
+    )
+  rescue StandardError => e
+    Rails.logger.error("Failed to delete Instagram comment #{comment_id}: #{e.message}")
+  end
 
   def message
     @message ||= @conversation.messages.find(permitted_params[:id])
