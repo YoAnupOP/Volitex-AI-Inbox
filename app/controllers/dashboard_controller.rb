@@ -70,7 +70,8 @@ class DashboardController < ActionController::Base
   end
 
   def app_config
-    {
+    Rails.logger.info 'APP_CONFIG: Starting'
+    result = {
       APP_VERSION: Chatwoot.config[:version],
       VAPID_PUBLIC_KEY: VapidService.public_key,
       ENABLE_ACCOUNT_SIGNUP: GlobalConfigService.load('ENABLE_ACCOUNT_SIGNUP', 'false'),
@@ -86,6 +87,8 @@ class DashboardController < ActionController::Base
       ALLOWED_LOGIN_METHODS: allowed_login_methods,
       ACTIVE_PLATFORM_BANNERS: active_platform_banners
     }
+    Rails.logger.info 'APP_CONFIG: Completed'
+    result
   end
 
   def active_platform_banners
