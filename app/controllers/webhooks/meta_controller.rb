@@ -1,5 +1,4 @@
-class Webhooks::MetaController < ApplicationController
-  skip_before_action :verify_authenticity_token
+class Webhooks::MetaController < ActionController::Base
   before_action :verify_signed_request
 
   def deauthorize
