@@ -45,7 +45,24 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
       return
     end
 
+    process_comments(entry)
     process_messages(entry)
+  end
+
+  # Comment events arrive in the `changes` array with field == 'comments'.
+  # https://developers.facebook.com/docs/instagram-platform/webhooks#comments
+  def process_comments(entry)
+    Array(entry[:changes]).each do |change|
+      next unless change[:field] == 'comments'
+
+      value = change[:value]
+      next if value.blank?
+
+      channel = find_channel(entry[:id])
+      next if channel.blank?
+
+      ::Instagram::CommentsService.new(value.with_indifferent_access, channel).perform
+    end
   end
 
   def process_messages(entry)
@@ -67,8 +84,11 @@ class Webhooks::InstagramEventsJob < MutexApplicationJob
     messaging[:message].present? && messaging[:message][:is_echo].present?
   end
 
+  # Test events from the Meta dashboard arrive with entry id "0" and a `changes`
+  # array containing a messaging-style value. Real comment events also use the
+  # `changes` array but with field == 'comments', so we must not treat those as test events.
   def test_event?(entry)
-    entry[:changes].present?
+    entry[:changes].present? && entry[:id].to_s == '0'
   end
 
   def process_test_event(entry)

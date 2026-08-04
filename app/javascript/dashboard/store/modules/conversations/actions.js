@@ -290,6 +290,18 @@ const actions = {
     }
   },
 
+  toggleAiMode: async ({ commit }, { conversationId, aiMode }) => {
+    try {
+      await ConversationApi.toggleAiMode({ conversationId, aiMode });
+      commit(types.UPDATE_CONVERSATION_CUSTOM_ATTRIBUTES, {
+        conversationId,
+        customAttributes: { ai_mode: aiMode },
+      });
+    } catch (error) {
+      throw new Error('Failed to toggle AI mode');
+    }
+  },
+
   createPendingMessageAndSend: async ({ dispatch }, data) => {
     const pendingMessage = createPendingMessage(data);
     dispatch('sendMessageWithData', pendingMessage);

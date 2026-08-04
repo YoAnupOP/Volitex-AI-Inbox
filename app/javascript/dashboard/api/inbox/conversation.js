@@ -120,6 +120,12 @@ class ConversationApi extends ApiClient {
     });
   }
 
+  toggleAiMode({ conversationId, aiMode }) {
+    return axios.post(`${this.url}/${conversationId}/toggle_ai_mode`, {
+      ai_mode: aiMode,
+    });
+  }
+
   fetchParticipants(conversationId) {
     return axios.get(`${this.url}/${conversationId}/participants`);
   }

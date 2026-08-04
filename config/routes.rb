@@ -173,6 +173,7 @@ Rails.application.routes.draw do
               post :update_last_seen
               post :unread
               post :custom_attributes
+              post :toggle_ai_mode
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
@@ -653,6 +654,8 @@ Rails.application.routes.draw do
   post 'webhooks/instagram', to: 'webhooks/instagram#events'
   post 'webhooks/tiktok', to: 'webhooks/tiktok#events'
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
+  post 'webhooks/meta/deauthorize', to: 'webhooks/meta#deauthorize'
+  post 'webhooks/meta/data_deletion', to: 'webhooks/meta#data_deletion'
 
   namespace :twitter do
     resource :callback, only: [:show]

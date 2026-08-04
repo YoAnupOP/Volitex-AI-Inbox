@@ -134,6 +134,17 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     @conversation.save!
   end
 
+  # Toggle AI mode for this conversation.
+  # When ai_mode is true, n8n AI automation handles replies and human agents should not reply.
+  # When ai_mode is false, human agents handle replies and n8n AI should skip.
+  def toggle_ai_mode
+    ai_mode = params[:ai_mode].to_s == 'true'
+    @conversation.custom_attributes['ai_mode'] = ai_mode
+    @conversation.save!
+
+    render json: { ai_mode: ai_mode, conversation_id: @conversation.id }
+  end
+
   def destroy
     authorize @conversation, :destroy?
     ::Conversations::DeleteService.new(conversation: @conversation, user: Current.user, ip: request.ip).perform
