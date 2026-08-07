@@ -19,18 +19,6 @@
 
 ---
 
-## FUTURE PERMISSIONS (Phase 2 — after current App Review approved)
-
-| Permission | Purpose | Status |
-|---|---|---|
-| business_management | WhatsApp Embedded Signup v4 for client onboarding | ⏸️ NOT YET REQUESTED |
-| pages_read_engagement | Dependency of business_management | ⏸️ NOT YET REQUESTED |
-| pages_show_list | Dependency of business_management | ⏸️ NOT YET REQUESTED |
-
-> **Note:** `business_management` is required for WhatsApp Embedded Signup v4 (client self-onboarding flow). This will be submitted as a separate App Review after the current 5 permissions are approved. The screencast for this will demonstrate the Embedded Signup flow where clients connect their own WhatsApp Business Account.
-
----
-
 ## PRE-RECORDING CHECKLIST (do NOT skip)
 
 - [ ] Heroku app loads over HTTPS with no browser warnings
