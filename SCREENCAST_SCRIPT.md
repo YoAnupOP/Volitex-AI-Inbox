@@ -15,19 +15,7 @@
 | instagram_business_basic | Video 3 |
 | instagram_business_manage_messages | Video 4 |
 | instagram_business_manage_comments | Video 5 |
-| Human Agent | Video 6 — ⏸️ PENDING (record after Videos 1-5 approved) |
-
----
-
-## FUTURE PERMISSIONS (Phase 2 — after current App Review approved)
-
-| Permission | Purpose | Status |
-|---|---|---|
-| business_management | WhatsApp Embedded Signup v4 for client onboarding | ⏸️ NOT YET REQUESTED |
-| pages_read_engagement | Dependency of business_management | ⏸️ NOT YET REQUESTED |
-| pages_show_list | Dependency of business_management | ⏸️ NOT YET REQUESTED |
-
-> **Note:** `business_management` is required for WhatsApp Embedded Signup v4 (client self-onboarding flow). This will be submitted as a separate App Review after the current 5 permissions are approved. The screencast for this will demonstrate the Embedded Signup flow where clients connect their own WhatsApp Business Account.
+| Human Agent | Video 6 |
 
 ---
 
@@ -190,8 +178,6 @@
 ---
 
 ## VIDEO 6 — HUMAN AGENT (~60 sec) ⚠️ MOST IMPORTANT
-
-> **⏸️ STATUS: PENDING** — Record this video ONLY after Videos 1-5 are approved by Meta. Do not record now.
 
 **Goal:** Prove a HUMAN takes over and replies within the window. This is the #1 rejection reason — be explicit.
 
