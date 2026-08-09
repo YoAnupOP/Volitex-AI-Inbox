@@ -13,11 +13,26 @@ class ActionCableBroadcastJob < ApplicationJob
   def perform(members, event_name, data)
     return if members.blank?
 
+    log_broadcast_success('action_cable.broadcast.attempt', members, event_name, data)
     broadcast_data = prepare_broadcast_data(event_name, data)
     broadcast_to_members(members, event_name, broadcast_data)
+    log_broadcast_success('action_cable.broadcast.completed', members, event_name, data)
+  rescue StandardError => e
+    Rails.logger.error(
+      { event: 'action_cable.broadcast.failed', event_name: event_name, error_class: e.class.name, account_id: data[:account_id] }.to_json
+    )
+    raise
   end
 
   private
+
+  def log_broadcast_success(event, members, event_name, data)
+    return unless ENV['ACTION_CABLE_DIAGNOSTICS'] == 'true'
+
+    Rails.logger.info(
+      { event: event, event_name: event_name, member_count: members.size, account_id: data[:account_id] }.to_json
+    )
+  end
 
   # Ensures that only the latest available data is sent to prevent UI issues
   # caused by out-of-order events during high-traffic periods. This prevents

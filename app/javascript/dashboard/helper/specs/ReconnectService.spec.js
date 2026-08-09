@@ -292,9 +292,22 @@ describe('ReconnectService', () => {
 
     it('should fetch notifications if current route is an inbox view route', async () => {
       isAInboxViewRoute.mockReturnValue(true);
-      const spy = vi.spyOn(reconnectService, 'fetchNotificationsOnReconnect');
+      const conversationSpy = vi.spyOn(
+        reconnectService,
+        'fetchConversationsOnReconnect'
+      );
+      const messageSpy = vi.spyOn(
+        reconnectService,
+        'fetchConversationMessagesOnReconnect'
+      );
+      const notificationSpy = vi.spyOn(
+        reconnectService,
+        'fetchNotificationsOnReconnect'
+      );
       await reconnectService.handleRouteSpecificFetch();
-      expect(spy).toHaveBeenCalled();
+      expect(conversationSpy).toHaveBeenCalled();
+      expect(messageSpy).toHaveBeenCalled();
+      expect(notificationSpy).toHaveBeenCalled();
     });
 
     it('should fetch notifications if current route is a notification route', async () => {
@@ -344,6 +357,24 @@ describe('ReconnectService', () => {
       expect(emitter.emit).toHaveBeenCalledWith(
         BUS_EVENTS.WEBSOCKET_RECONNECT_COMPLETED
       );
+    });
+
+    it('does not run concurrent reconciliations', async () => {
+      let finishReconciliation;
+      reconnectService.handleRouteSpecificFetch = vi.fn(
+        () =>
+          new Promise(resolve => {
+            finishReconciliation = resolve;
+          })
+      );
+      reconnectService.revalidateCaches = vi.fn();
+
+      const firstReconnect = reconnectService.onReconnect();
+      const secondReconnect = reconnectService.onReconnect();
+
+      expect(reconnectService.handleRouteSpecificFetch).toHaveBeenCalledOnce();
+      finishReconciliation();
+      await Promise.all([firstReconnect, secondReconnect]);
     });
   });
 });
