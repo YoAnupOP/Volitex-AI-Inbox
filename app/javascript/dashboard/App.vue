@@ -88,6 +88,7 @@ export default {
     if (this.reconnectService) {
       this.reconnectService.disconnect();
     }
+    vueActionCable.disconnect();
   },
   methods: {
     initializeColorTheme() {
@@ -99,6 +100,7 @@ export default {
       }
     },
     async initializeAccount() {
+      this.reconnectService?.disconnect();
       await this.$store.dispatch('accounts/get');
       this.$store.dispatch('setActiveAccount', {
         accountId: this.currentAccountId,

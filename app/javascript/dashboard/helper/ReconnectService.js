@@ -19,6 +19,7 @@ class ReconnectService {
     this.store = store;
     this.router = router;
     this.disconnectTime = null;
+    this.reconciliationInProgress = false;
 
     this.setupEventListeners();
   }
@@ -111,10 +112,15 @@ class ReconnectService {
 
   handleRouteSpecificFetch = async () => {
     const currentRoute = this.router.currentRoute.value.name;
-    if (isAConversationRoute(currentRoute, true)) {
+    if (
+      isAConversationRoute(currentRoute, true) ||
+      isAInboxViewRoute(currentRoute, true)
+    ) {
       await this.fetchConversationsOnReconnect();
       await this.fetchConversationMessagesOnReconnect();
-    } else if (isAInboxViewRoute(currentRoute, true)) {
+    }
+
+    if (isAInboxViewRoute(currentRoute, true)) {
       await this.fetchNotificationsOnReconnect(
         this.store.getters['notifications/getNotificationFilters']
       );
@@ -139,9 +145,16 @@ class ReconnectService {
   };
 
   onReconnect = async () => {
-    await this.handleRouteSpecificFetch();
-    await this.revalidateCaches();
-    emitter.emit(BUS_EVENTS.WEBSOCKET_RECONNECT_COMPLETED);
+    if (this.reconciliationInProgress) return;
+
+    this.reconciliationInProgress = true;
+    try {
+      await this.handleRouteSpecificFetch();
+      await this.revalidateCaches();
+      emitter.emit(BUS_EVENTS.WEBSOCKET_RECONNECT_COMPLETED);
+    } finally {
+      this.reconciliationInProgress = false;
+    }
   };
 }
 

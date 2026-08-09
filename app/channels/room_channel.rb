@@ -1,5 +1,8 @@
 class RoomChannel < ApplicationCable::Channel
   def subscribed
+    Rails.logger.info(
+      { event: 'action_cable.subscription.started', connection_id: connection.connection_identifier }.to_json
+    )
     # TODO: should we only do ensure stream  if current account is present?
     # for now going ahead with guard clauses in update_subscription and broadcast_presence
     current_user
@@ -7,6 +10,20 @@ class RoomChannel < ApplicationCable::Channel
     ensure_stream
     update_subscription
     broadcast_presence
+    Rails.logger.info(
+      { event: 'action_cable.subscription.confirmed', connection_id: connection.connection_identifier, account_id: @current_account&.id }.to_json
+    )
+  rescue StandardError => e
+    Rails.logger.warn(
+      { event: 'action_cable.subscription.failed', connection_id: connection.connection_identifier, error_class: e.class.name }.to_json
+    )
+    raise
+  end
+
+  def unsubscribed
+    Rails.logger.info(
+      { event: 'action_cable.subscription.stopped', connection_id: connection.connection_identifier, account_id: @current_account&.id }.to_json
+    )
   end
 
   def update_presence
