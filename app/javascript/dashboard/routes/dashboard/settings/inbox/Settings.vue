@@ -29,6 +29,7 @@ import BotConfiguration from './components/BotConfiguration.vue';
 import AccountHealth from './components/AccountHealth.vue';
 import WhatsappManualMigrationDialog from './components/WhatsappManualMigrationDialog.vue';
 import WhatsappManualMigrationBanner from './components/WhatsappManualMigrationBanner.vue';
+import InstagramCommentsManager from './settingsPage/InstagramCommentsManager.vue';
 import { FEATURE_FLAGS } from '../../../../featureFlags';
 import SenderNameExamplePreview from './components/SenderNameExamplePreview.vue';
 import LockToSingleConversationPreview from './components/LockToSingleConversationPreview.vue';
@@ -78,6 +79,7 @@ export default {
     AccountHealth,
     WhatsappManualMigrationDialog,
     WhatsappManualMigrationBanner,
+    InstagramCommentsManager,
     Widget,
     AccessToken,
   },
@@ -196,6 +198,16 @@ export default {
           {
             key: 'pre-chat-form',
             name: this.$t('INBOX_MGMT.TABS.PRE_CHAT_FORM'),
+          },
+        ];
+      }
+
+      if (this.isAnInstagramChannel) {
+        visibleToAllChannelTabs = [
+          ...visibleToAllChannelTabs,
+          {
+            key: 'comments-manager',
+            name: this.$t('INBOX_MGMT.INSTAGRAM_COMMENTS.TAB'),
           },
         ];
       }
@@ -1400,6 +1412,10 @@ export default {
             @go-to-configuration="goToWhatsAppConfiguration"
           />
         </div>
+        <InstagramCommentsManager
+          v-if="selectedTabKey === 'comments-manager'"
+          :inbox="inbox"
+        />
         <WhatsappManualMigrationDialog
           v-if="showWhatsAppManualMigration"
           ref="whatsappManualMigrationDialog"
