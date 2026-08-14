@@ -1333,6 +1333,66 @@
         "DESCRIPTION": "Connect with Other Providers"
       }
     },
+    "INSTAGRAM_COMMENTS": {
+      "TAB": "Comments Manager",
+      "EYEBROW": "Instagram moderation",
+      "TITLE": "Comments Manager",
+      "DESCRIPTION": "Create, reply to, hide, unhide, and permanently delete comments on your Instagram posts and reels.",
+      "YOU": "You",
+      "UNKNOWN_USER": "Instagram user",
+      "MEDIA": {
+        "TITLE": "Select media",
+        "DESCRIPTION": "Choose a post or reel to moderate its comments.",
+        "SELECT_LABEL": "Post or reel",
+        "PLACEHOLDER": "Select Instagram media",
+        "PREVIEW_ALT": "Instagram media preview",
+        "UNTITLED": "Untitled Instagram media",
+        "LOAD_MORE": "Load more media",
+        "EMPTY": "No Instagram media is available for this inbox."
+      },
+      "CREATE": {
+        "TITLE": "Create a new comment",
+        "DESCRIPTION": "Post a top-level comment as this Instagram business account.",
+        "META_REVIEW_LABEL": "Create",
+        "PLACEHOLDER": "Write a comment…",
+        "ACTION": "Post comment"
+      },
+      "LIST": {
+        "TITLE": "Comments on selected media",
+        "DESCRIPTION": "Moderate comments and replies as soon as they arrive.",
+        "REFRESH": "Refresh",
+        "SELECT_MEDIA": "Select a post or reel to view its comments.",
+        "EMPTY": "There are no comments on this media yet.",
+        "LOAD_MORE": "Load more comments"
+      },
+      "STATUS": {
+        "HIDDEN": "Hidden",
+        "VISIBLE": "Visible"
+      },
+      "ACTIONS": {
+        "REPLY": "Reply",
+        "HIDE": "Hide",
+        "UNHIDE": "Unhide",
+        "DELETE": "Delete"
+      },
+      "REPLY": {
+        "LABEL": "Reply to comment",
+        "PLACEHOLDER": "Write a reply…",
+        "CANCEL": "Cancel",
+        "SEND": "Send reply"
+      },
+      "SUCCESS": {
+        "CREATED": "Comment posted successfully.",
+        "REPLIED": "Reply posted successfully.",
+        "HIDDEN": "Comment hidden successfully.",
+        "UNHIDDEN": "Comment unhidden successfully.",
+        "DELETED": "Comment deleted permanently."
+      },
+      "ERRORS": {
+        "GENERIC": "Instagram could not complete this request. Please try again.",
+        "RATE_LIMITED": "Instagram is temporarily rate-limiting actions. Please wait a moment and try again."
+      }
+    },
     "CHANNELS": {
       "MESSENGER": "Messenger",
       "WEB_WIDGET": "Website",
