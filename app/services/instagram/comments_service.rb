@@ -26,7 +26,7 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
       return
     end
 
-    return if comment_already_processed?
+    return if comment_id.blank? || self_authored_comment? || comment_already_processed?
 
     ensure_contact
     return if @contact_inbox.blank?
@@ -37,7 +37,15 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
   private
 
   def comment_already_processed?
-    @inbox.messages.exists?(source_id: comment[:id])
+    @inbox.messages.exists?(source_id: comment_id)
+  end
+
+  def self_authored_comment?
+    commenter_id.present? && commenter_id.to_s == channel.instagram_id.to_s
+  end
+
+  def comment_id
+    comment[:id]
   end
 
   def ensure_contact
@@ -83,21 +91,25 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
   def create_comment_message
     conversation = find_or_create_conversation
 
-    conversation.messages.create!(
-      account_id: conversation.account_id,
-      inbox_id: conversation.inbox_id,
-      message_type: :incoming,
-      status: :sent,
-      source_id: comment[:id],
-      content: comment[:text],
-      sender: @contact,
-      content_attributes: {
-        instagram_comment: true,
-        comment_id: comment[:id],
-        media_id: comment.dig(:media, :id),
-        media_product_type: comment.dig(:media, :media_product_type)
-      }
-    )
+    conversation.with_lock do
+      return if comment_already_processed?
+
+      conversation.messages.create!(
+        account_id: conversation.account_id,
+        inbox_id: conversation.inbox_id,
+        message_type: :incoming,
+        status: :sent,
+        source_id: comment_id,
+        content: comment[:text],
+        sender: @contact,
+        content_attributes: {
+          instagram_comment: true,
+          comment_id: comment_id,
+          media_id: comment.dig(:media, :id),
+          media_product_type: comment.dig(:media, :media_product_type)
+        }
+      )
+    end
   end
 
   def find_or_create_conversation
