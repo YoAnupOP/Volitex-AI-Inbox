@@ -5,7 +5,10 @@
 class Instagram::CommentsClient
   GRAPH_HOST = 'https://graph.instagram.com'.freeze
   MEDIA_FIELDS = 'id,caption,media_type,media_product_type,media_url,thumbnail_url,timestamp,permalink'.freeze
-  COMMENT_FIELDS = 'id,text,timestamp,username,hidden,like_count,replies{id,text,timestamp,username,hidden}'.freeze
+  COMMENT_FIELDS = [
+    'id,text,timestamp,hidden,like_count,parent_id,from{id,username}',
+    'replies{id,text,timestamp,hidden,like_count,parent_id,from{id,username}}'
+  ].join(',').freeze
   RATE_LIMIT_ERROR_CODES = [4, 17, 32, 613, 80007].freeze
 
   class RequestError < StandardError
@@ -23,11 +26,19 @@ class Instagram::CommentsClient
   end
 
   def media(after: nil)
-    get(channel.instagram_id, fields: MEDIA_FIELDS, limit: 50, after: after)
+    get(
+      channel.instagram_id,
+      edge: 'media',
+      fields: MEDIA_FIELDS,
+      limit: 50,
+      after: after
+    )
   end
 
   def comments(media_id, after: nil)
-    get(media_id, fields: COMMENT_FIELDS, limit: 100, after: after, edge: 'comments')
+    response = get(media_id, fields: COMMENT_FIELDS, limit: 100, after: after, edge: 'comments')
+    build_comment_tree(response)
+    apply_business_identity(response)
   end
 
   def create_comment(media_id, message)
@@ -84,6 +95,70 @@ class Instagram::CommentsClient
 
   def api_version
     GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')
+  end
+
+  def apply_business_identity(response)
+    each_comment(response['data']) do |comment|
+      apply_business_identity_to_comment(comment)
+    end
+    response
+  end
+
+  def build_comment_tree(response)
+    comments_by_id = {}
+    collect_comments(response['data'], comments_by_id)
+    comments_by_id.each_value { |comment| comment['replies'] = { 'data' => [] } }
+
+    response['data'] = comments_by_id.each_value.filter_map do |comment|
+      parent = comments_by_id[comment['parent_id']]
+      if parent && parent != comment
+        parent['replies']['data'] << comment
+        next
+      end
+
+      comment
+    end
+    response
+  end
+
+  def collect_comments(entries, comments_by_id, parent_id: nil)
+    Array(entries).each do |comment|
+      comment_id = comment['id']
+      next if comment_id.blank?
+
+      collected_comment = comments_by_id[comment_id] ||= comment.except('replies')
+      merge_missing_comment_attributes(collected_comment, comment)
+      collected_comment['parent_id'] = comment['parent_id'] if comment['parent_id'].present?
+      collected_comment['parent_id'] ||= parent_id
+
+      collect_comments(comment.dig('replies', 'data'), comments_by_id, parent_id: comment_id)
+    end
+  end
+
+  def merge_missing_comment_attributes(comment, duplicate)
+    duplicate.each do |key, value|
+      next if key == 'replies'
+
+      comment[key] = value unless comment.key?(key) && !comment[key].nil?
+    end
+
+    return if duplicate['from'].blank?
+
+    comment['from'] = duplicate['from'].merge(comment['from'] || {})
+  end
+
+  def each_comment(entries, &)
+    Array(entries).each do |comment|
+      yield comment
+      each_comment(comment.dig('replies', 'data'), &)
+    end
+  end
+
+  def apply_business_identity_to_comment(comment)
+    author = comment['from'] || {}
+    return unless author['id'].to_s == channel.instagram_id.to_s && author['username'].blank?
+
+    comment['username'] = channel.inbox.name.presence
   end
 
   def request_options(method, params)

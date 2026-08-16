@@ -1335,6 +1335,11 @@
     },
     "INSTAGRAM_COMMENTS": {
       "TAB": "Comments Manager",
+      "WORKSPACE": {
+        "NAV_LABEL": "Instagram inbox workspace",
+        "CONVERSATIONS": "Conversations",
+        "COMMENTS": "Comments"
+      },
       "EYEBROW": "Instagram moderation",
       "TITLE": "Comments Manager",
       "DESCRIPTION": "Create, reply to, hide, unhide, and permanently delete comments on your Instagram posts and reels.",
@@ -1365,9 +1370,24 @@
         "EMPTY": "There are no comments on this media yet.",
         "LOAD_MORE": "Load more comments"
       },
+      "FILTERS": {
+        "SEARCH_LABEL": "Search comments",
+        "SEARCH_PLACEHOLDER": "Search by username or comment text",
+        "STATUS_LABEL": "Status",
+        "SORT_LABEL": "Sort by",
+        "ALL": "All comments",
+        "HIDDEN": "Hidden",
+        "VISIBLE": "Visible",
+        "REPLIED": "Replied",
+        "UNREPLIED": "Unreplied",
+        "NEWEST": "Newest first",
+        "OLDEST": "Oldest first",
+        "EMPTY": "No loaded comments match these filters."
+      },
       "STATUS": {
         "HIDDEN": "Hidden",
-        "VISIBLE": "Visible"
+        "VISIBLE": "Visible",
+        "REPLY": "Reply"
       },
       "ACTIONS": {
         "REPLY": "Reply",

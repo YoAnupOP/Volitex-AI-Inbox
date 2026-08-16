@@ -8,6 +8,7 @@ import {
 } from 'dashboard/composables/store.js';
 
 import ChatListHeader from './ChatListHeader.vue';
+import InstagramInboxNavigation from 'dashboard/routes/dashboard/conversation/InstagramInboxNavigation.vue';
 import ConversationList from './ConversationList.vue';
 import Dialog from 'dashboard/components-next/dialog/Dialog.vue';
 import ConversationFilter from 'next/filter/ConversationFilter.vue';
@@ -891,6 +892,7 @@ watch(conversationFilters, (newVal, oldVal) => {
     ]"
   >
     <slot />
+    <InstagramInboxNavigation :inbox-id="conversationInbox" />
     <ChatListHeader
       :page-title="pageTitle"
       :has-applied-filters="hasAppliedFilters"

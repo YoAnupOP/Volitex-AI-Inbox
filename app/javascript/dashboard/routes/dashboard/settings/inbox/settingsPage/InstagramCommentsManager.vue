@@ -5,6 +5,7 @@ import { useAlert } from 'dashboard/composables';
 import Button from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import InstagramCommentsAPI from 'dashboard/api/channel/instagramComments';
+import InstagramCommentThread from './InstagramCommentThread.vue';
 
 const props = defineProps({
   inbox: { type: Object, required: true },
@@ -24,6 +25,9 @@ const loadingComments = ref(false);
 const submittingComment = ref(false);
 const pendingAction = ref('');
 const errorMessage = ref('');
+const searchQuery = ref('');
+const selectedFilter = ref('all');
+const selectedSort = ref('newest');
 
 const selectedMedia = computed(() =>
   media.value.find(item => item.id === selectedMediaId.value)
@@ -31,6 +35,10 @@ const selectedMedia = computed(() =>
 
 const hasMoreMedia = computed(() => Boolean(mediaCursor.value));
 const hasMoreComments = computed(() => Boolean(commentsCursor.value));
+
+const normalizedSearchQuery = computed(() =>
+  searchQuery.value.trim().toLocaleLowerCase()
+);
 
 const mediaOptions = computed(() =>
   media.value.map(item => ({
@@ -40,7 +48,9 @@ const mediaOptions = computed(() =>
 );
 
 const requestError = error =>
-  error.response?.data?.message || error.message || t('INBOX_MGMT.INSTAGRAM_COMMENTS.ERRORS.GENERIC');
+  error.response?.data?.message ||
+  error.message ||
+  t('INBOX_MGMT.INSTAGRAM_COMMENTS.ERRORS.GENERIC');
 
 const setError = error => {
   errorMessage.value =
@@ -55,9 +65,56 @@ const responseData = response => response?.data?.data || [];
 
 const normalizeComment = comment => ({
   ...comment,
+  username: comment.from?.username || comment.username,
   hidden: Boolean(comment.hidden),
-  replies: comment.replies?.data || comment.replies || [],
+  replies: (comment.replies?.data || comment.replies || []).map(
+    normalizeComment
+  ),
 });
+
+const matchesSearch = comment => {
+  if (!normalizedSearchQuery.value) return true;
+
+  return [comment.username, comment.text].some(value =>
+    value?.toLocaleLowerCase().includes(normalizedSearchQuery.value)
+  );
+};
+
+const matchesFilter = comment => {
+  switch (selectedFilter.value) {
+    case 'hidden':
+      return comment.hidden;
+    case 'visible':
+      return !comment.hidden;
+    case 'replied':
+      return comment.replies.length > 0;
+    case 'unreplied':
+      return comment.replies.length === 0;
+    default:
+      return true;
+  }
+};
+
+const sortByTimestamp = entries =>
+  [...entries].sort((left, right) => {
+    const difference = new Date(right.timestamp) - new Date(left.timestamp);
+    return selectedSort.value === 'newest' ? difference : -difference;
+  });
+
+const filterCommentTree = comment => {
+  const replies = sortByTimestamp(
+    comment.replies.map(filterCommentTree).filter(Boolean)
+  );
+  return matchesSearch(comment) || replies.length
+    ? { ...comment, replies }
+    : null;
+};
+
+const filteredComments = computed(() =>
+  sortByTimestamp(
+    comments.value.filter(matchesFilter).map(filterCommentTree).filter(Boolean)
+  )
+);
 
 const fetchMedia = async ({ append = false } = {}) => {
   loadingMedia.value = true;
@@ -131,6 +188,7 @@ const createComment = async () => {
       })
     );
     newComment.value = '';
+    await fetchComments();
     useAlert(t('INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.CREATED'));
   } catch (error) {
     setError(error);
@@ -139,11 +197,30 @@ const createComment = async () => {
   }
 };
 
-const findComment = commentId => {
-  const topLevel = comments.value.find(comment => comment.id === commentId);
-  if (topLevel) return topLevel;
+const findComment = (commentId, entries = comments.value) => {
+  const comment = entries.find(item => item.id === commentId);
+  return (
+    comment ||
+    entries.map(item => findComment(commentId, item.replies)).find(Boolean)
+  );
+};
 
-  return comments.value.flatMap(comment => comment.replies).find(reply => reply.id === commentId);
+const removeComment = (entries, commentId) =>
+  entries
+    .filter(comment => comment.id !== commentId)
+    .map(comment => ({
+      ...comment,
+      replies: removeComment(comment.replies, commentId),
+    }));
+
+const startReply = commentId => {
+  replyCommentId.value = commentId;
+  replyMessage.value = '';
+};
+
+const cancelReply = () => {
+  replyCommentId.value = '';
+  replyMessage.value = '';
 };
 
 const replyToComment = async () => {
@@ -154,7 +231,11 @@ const replyToComment = async () => {
   pendingAction.value = `reply-${commentId}`;
   errorMessage.value = '';
   try {
-    const response = await InstagramCommentsAPI.reply(props.inbox.id, commentId, message);
+    const response = await InstagramCommentsAPI.reply(
+      props.inbox.id,
+      commentId,
+      message
+    );
     const parent = findComment(commentId);
     if (parent) {
       parent.replies = parent.replies || [];
@@ -168,8 +249,8 @@ const replyToComment = async () => {
         })
       );
     }
-    replyCommentId.value = '';
-    replyMessage.value = '';
+    cancelReply();
+    await fetchComments();
     useAlert(t('INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.REPLIED'));
   } catch (error) {
     setError(error);
@@ -185,7 +266,13 @@ const setVisibility = async comment => {
   try {
     await InstagramCommentsAPI.setVisibility(props.inbox.id, comment.id, hide);
     comment.hidden = hide;
-    useAlert(t(hide ? 'INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.HIDDEN' : 'INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.UNHIDDEN'));
+    useAlert(
+      t(
+        hide
+          ? 'INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.HIDDEN'
+          : 'INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.UNHIDDEN'
+      )
+    );
   } catch (error) {
     setError(error);
   } finally {
@@ -198,14 +285,7 @@ const deleteComment = async comment => {
   errorMessage.value = '';
   try {
     await InstagramCommentsAPI.delete(props.inbox.id, comment.id);
-    const topLevelIndex = comments.value.findIndex(item => item.id === comment.id);
-    if (topLevelIndex >= 0) {
-      comments.value.splice(topLevelIndex, 1);
-    } else {
-      comments.value.forEach(item => {
-        item.replies = item.replies.filter(reply => reply.id !== comment.id);
-      });
-    }
+    comments.value = removeComment(comments.value, comment.id);
     useAlert(t('INBOX_MGMT.INSTAGRAM_COMMENTS.SUCCESS.DELETED'));
   } catch (error) {
     setError(error);
@@ -246,7 +326,9 @@ onMounted(fetchMedia);
     <div class="flex flex-col gap-1 mb-6">
       <div class="flex items-center gap-2 text-n-blue-11">
         <span class="i-lucide-message-square-more size-5" />
-        <p class="text-sm font-medium m-0">{{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.EYEBROW') }}</p>
+        <p class="text-sm font-medium m-0">
+          {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.EYEBROW') }}
+        </p>
       </div>
       <h2 class="text-2xl font-semibold text-n-slate-12 m-0">
         {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.TITLE') }}
@@ -266,7 +348,9 @@ onMounted(fetchMedia);
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(18rem,0.7fr)_minmax(0,1.6fr)]">
-      <aside class="rounded-2xl bg-n-surface-1 p-5 outline outline-1 -outline-offset-1 outline-n-weak h-fit">
+      <aside
+        class="rounded-2xl bg-n-surface-1 p-5 outline outline-1 -outline-offset-1 outline-n-weak h-fit"
+      >
         <div class="flex items-center justify-between gap-3 mb-4">
           <div>
             <h3 class="font-semibold text-n-slate-12 m-0">
@@ -279,7 +363,10 @@ onMounted(fetchMedia);
           <Spinner v-if="loadingMedia" :size="18" class="text-n-blue-9" />
         </div>
 
-        <label class="block text-sm font-medium text-n-slate-12 mb-2" for="instagram-media">
+        <label
+          class="block text-sm font-medium text-n-slate-12 mb-2"
+          for="instagram-media"
+        >
           {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.SELECT_LABEL') }}
         </label>
         <select
@@ -288,24 +375,41 @@ onMounted(fetchMedia);
           :disabled="loadingMedia || !mediaOptions.length"
           class="w-full rounded-lg border-0 bg-n-surface-2 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <option value="" disabled>{{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.PLACEHOLDER') }}</option>
-          <option v-for="item in mediaOptions" :key="item.value" :value="item.value">
+          <option value="" disabled>
+            {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.PLACEHOLDER') }}
+          </option>
+          <option
+            v-for="item in mediaOptions"
+            :key="item.value"
+            :value="item.value"
+          >
             {{ item.label }}
           </option>
         </select>
 
-        <div v-if="selectedMedia" class="mt-4 overflow-hidden rounded-xl bg-n-surface-2">
+        <div
+          v-if="selectedMedia"
+          class="mt-4 overflow-hidden rounded-xl bg-n-surface-2"
+        >
           <img
             v-if="mediaThumbnail(selectedMedia)"
             :src="mediaThumbnail(selectedMedia)"
-            :alt="selectedMedia.caption || $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.PREVIEW_ALT')"
+            :alt="
+              selectedMedia.caption ||
+              $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.PREVIEW_ALT')
+            "
             class="aspect-square w-full object-cover"
           />
           <div class="p-3">
             <p class="line-clamp-2 text-sm font-medium text-n-slate-12 m-0">
-              {{ selectedMedia.caption || $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.UNTITLED') }}
+              {{
+                selectedMedia.caption ||
+                $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.UNTITLED')
+              }}
             </p>
-            <p class="mt-1 mb-0 text-xs uppercase tracking-wide text-n-slate-11">
+            <p
+              class="mt-1 mb-0 text-xs uppercase tracking-wide text-n-slate-11"
+            >
               {{ selectedMedia.media_product_type || selectedMedia.media_type }}
             </p>
           </div>
@@ -322,13 +426,18 @@ onMounted(fetchMedia);
           @click="fetchMedia({ append: true })"
         />
 
-        <p v-if="!loadingMedia && !media.length" class="mt-4 text-sm text-n-slate-11">
+        <p
+          v-if="!loadingMedia && !media.length"
+          class="mt-4 text-sm text-n-slate-11"
+        >
           {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.MEDIA.EMPTY') }}
         </p>
       </aside>
 
       <main class="min-w-0">
-        <div class="rounded-2xl bg-n-surface-1 p-5 outline outline-1 -outline-offset-1 outline-n-weak">
+        <div
+          class="rounded-2xl bg-n-surface-1 p-5 outline outline-1 -outline-offset-1 outline-n-weak"
+        >
           <div class="flex items-start justify-between gap-4 mb-4">
             <div>
               <h3 class="font-semibold text-n-slate-12 m-0">
@@ -338,14 +447,18 @@ onMounted(fetchMedia);
                 {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.CREATE.DESCRIPTION') }}
               </p>
             </div>
-            <span class="rounded-full bg-n-blue-3 px-2.5 py-1 text-xs font-medium text-n-blue-11">
+            <span
+              class="rounded-full bg-n-blue-3 px-2.5 py-1 text-xs font-medium text-n-blue-11"
+            >
               {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.CREATE.META_REVIEW_LABEL') }}
             </span>
           </div>
           <textarea
             v-model="newComment"
             :disabled="!selectedMediaId || submittingComment"
-            :placeholder="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.CREATE.PLACEHOLDER')"
+            :placeholder="
+              $t('INBOX_MGMT.INSTAGRAM_COMMENTS.CREATE.PLACEHOLDER')
+            "
             rows="3"
             class="mb-3 w-full resize-y rounded-xl border-0 bg-n-surface-2 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand disabled:cursor-not-allowed disabled:opacity-60"
           />
@@ -382,58 +495,117 @@ onMounted(fetchMedia);
             />
           </div>
 
-          <div v-if="loadingComments && !comments.length" class="flex min-h-40 items-center justify-center rounded-2xl bg-n-surface-1 outline outline-1 -outline-offset-1 outline-n-weak">
+          <div
+            v-if="selectedMediaId && comments.length"
+            class="mb-4 grid gap-3 rounded-2xl bg-n-surface-1 p-4 outline outline-1 -outline-offset-1 outline-n-weak md:grid-cols-[minmax(0,1fr)_11rem_11rem]"
+          >
+            <label class="block text-sm font-medium text-n-slate-12">
+              <span class="mb-2 block">{{
+                $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.SEARCH_LABEL')
+              }}</span>
+              <input
+                v-model="searchQuery"
+                type="search"
+                :placeholder="
+                  $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.SEARCH_PLACEHOLDER')
+                "
+                class="w-full rounded-lg border-0 bg-n-surface-2 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand"
+              />
+            </label>
+            <label class="block text-sm font-medium text-n-slate-12">
+              <span class="mb-2 block">{{
+                $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.STATUS_LABEL')
+              }}</span>
+              <select
+                v-model="selectedFilter"
+                class="w-full rounded-lg border-0 bg-n-surface-2 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand"
+              >
+                <option value="all">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.ALL') }}
+                </option>
+                <option value="visible">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.VISIBLE') }}
+                </option>
+                <option value="hidden">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.HIDDEN') }}
+                </option>
+                <option value="replied">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.REPLIED') }}
+                </option>
+                <option value="unreplied">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.UNREPLIED') }}
+                </option>
+              </select>
+            </label>
+            <label class="block text-sm font-medium text-n-slate-12">
+              <span class="mb-2 block">{{
+                $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.SORT_LABEL')
+              }}</span>
+              <select
+                v-model="selectedSort"
+                class="w-full rounded-lg border-0 bg-n-surface-2 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand"
+              >
+                <option value="newest">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.NEWEST') }}
+                </option>
+                <option value="oldest">
+                  {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.OLDEST') }}
+                </option>
+              </select>
+            </label>
+          </div>
+
+          <div
+            v-if="loadingComments && !comments.length"
+            class="flex min-h-40 items-center justify-center rounded-2xl bg-n-surface-1 outline outline-1 -outline-offset-1 outline-n-weak"
+          >
             <Spinner :size="26" class="text-n-blue-9" />
           </div>
-          <div v-else-if="!selectedMediaId" class="rounded-2xl bg-n-surface-1 p-8 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak">
+          <div
+            v-else-if="!selectedMediaId"
+            class="rounded-2xl bg-n-surface-1 p-8 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak"
+          >
             {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.LIST.SELECT_MEDIA') }}
           </div>
-          <div v-else-if="!comments.length" class="rounded-2xl bg-n-surface-1 p-8 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak">
+          <div
+            v-else-if="!comments.length"
+            class="rounded-2xl bg-n-surface-1 p-8 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak"
+          >
             {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.LIST.EMPTY') }}
           </div>
+          <div
+            v-else-if="!filteredComments.length"
+            class="rounded-2xl bg-n-surface-1 p-8 text-center text-sm text-n-slate-11 outline outline-1 -outline-offset-1 outline-n-weak"
+          >
+            {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.FILTERS.EMPTY') }}
+          </div>
           <div v-else class="flex flex-col gap-3">
-            <article
-              v-for="comment in comments"
+            <InstagramCommentThread
+              v-for="comment in filteredComments"
               :key="comment.id"
-              class="rounded-2xl bg-n-surface-1 p-5 outline outline-1 -outline-offset-1 outline-n-weak"
-            >
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <p class="m-0 text-sm font-semibold text-n-slate-12">@{{ comment.username || $t('INBOX_MGMT.INSTAGRAM_COMMENTS.UNKNOWN_USER') }}</p>
-                    <span v-if="comment.hidden" class="rounded-full bg-n-amber-3 px-2 py-0.5 text-xs font-medium text-n-amber-11">
-                      {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.STATUS.HIDDEN') }}
-                    </span>
-                    <span v-else class="rounded-full bg-n-teal-3 px-2 py-0.5 text-xs font-medium text-n-teal-11">
-                      {{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.STATUS.VISIBLE') }}
-                    </span>
-                  </div>
-                  <p class="mt-1 mb-0 text-xs text-n-slate-11">{{ formatTimestamp(comment.timestamp) }}</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <Button size="xs" variant="outline" color="slate" icon="i-lucide-reply" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.REPLY')" @click="replyCommentId = comment.id; replyMessage = ''" />
-                  <Button size="xs" variant="outline" :color="comment.hidden ? 'teal' : 'amber'" :icon="comment.hidden ? 'i-lucide-eye' : 'i-lucide-eye-off'" :label="$t(comment.hidden ? 'INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.UNHIDE' : 'INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.HIDE')" :is-loading="pendingAction === `visibility-${comment.id}`" @click="setVisibility(comment)" />
-                  <Button size="xs" variant="outline" color="ruby" icon="i-lucide-trash-2" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.DELETE')" :is-loading="pendingAction === `delete-${comment.id}`" @click="deleteComment(comment)" />
-                </div>
-              </div>
-              <p class="mb-0 mt-4 whitespace-pre-wrap text-sm text-n-slate-12">{{ comment.text }}</p>
-
-              <form v-if="replyCommentId === comment.id" class="mt-4 rounded-xl bg-n-surface-2 p-3" @submit.prevent="replyToComment">
-                <label class="mb-2 block text-sm font-medium text-n-slate-12">{{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.REPLY.LABEL') }}</label>
-                <textarea v-model="replyMessage" rows="2" :placeholder="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.REPLY.PLACEHOLDER')" class="mb-3 w-full resize-y rounded-lg border-0 bg-n-surface-1 px-3 py-2 text-sm text-n-slate-12 outline outline-1 -outline-offset-1 outline-n-weak focus:outline-n-brand" />
-                <div class="flex justify-end gap-2"><Button size="sm" variant="ghost" color="slate" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.REPLY.CANCEL')" @click.prevent="replyCommentId = ''; replyMessage = ''" /><Button size="sm" icon="i-lucide-send" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.REPLY.SEND')" :disabled="!replyMessage.trim()" :is-loading="pendingAction === `reply-${comment.id}`" type="submit" /></div>
-              </form>
-
-              <div v-if="comment.replies.length" class="mt-4 flex flex-col gap-3 border-l-2 border-n-weak pl-4">
-                <div v-for="reply in comment.replies" :key="reply.id" class="rounded-xl bg-n-surface-2 p-3">
-                  <div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2"><p class="m-0 text-sm font-semibold text-n-slate-12">@{{ reply.username || $t('INBOX_MGMT.INSTAGRAM_COMMENTS.UNKNOWN_USER') }}</p><span v-if="reply.hidden" class="rounded-full bg-n-amber-3 px-2 py-0.5 text-xs font-medium text-n-amber-11">{{ $t('INBOX_MGMT.INSTAGRAM_COMMENTS.STATUS.HIDDEN') }}</span></div><p class="mt-1 mb-0 text-xs text-n-slate-11">{{ formatTimestamp(reply.timestamp) }}</p></div><div class="flex flex-wrap gap-2"><Button size="xs" variant="outline" :color="reply.hidden ? 'teal' : 'amber'" :label="$t(reply.hidden ? 'INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.UNHIDE' : 'INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.HIDE')" :is-loading="pendingAction === `visibility-${reply.id}`" @click="setVisibility(reply)" /><Button size="xs" variant="outline" color="ruby" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.ACTIONS.DELETE')" :is-loading="pendingAction === `delete-${reply.id}`" @click="deleteComment(reply)" /></div></div>
-                  <p class="mb-0 mt-3 whitespace-pre-wrap text-sm text-n-slate-12">{{ reply.text }}</p>
-                </div>
-              </div>
-            </article>
+              :comment="comment"
+              :reply-comment-id="replyCommentId"
+              :reply-message="replyMessage"
+              :pending-action="pendingAction"
+              :format-timestamp="formatTimestamp"
+              @start-reply="startReply"
+              @update:reply-message="replyMessage = $event"
+              @cancel-reply="cancelReply"
+              @submit-reply="replyToComment"
+              @set-visibility="setVisibility"
+              @delete-comment="deleteComment"
+            />
           </div>
 
-          <Button v-if="hasMoreComments" class="mt-4 w-full" variant="outline" color="slate" :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.LIST.LOAD_MORE')" :is-loading="loadingComments" @click="fetchComments({ append: true })" />
+          <Button
+            v-if="hasMoreComments"
+            class="mt-4 w-full"
+            variant="outline"
+            color="slate"
+            :label="$t('INBOX_MGMT.INSTAGRAM_COMMENTS.LIST.LOAD_MORE')"
+            :is-loading="loadingComments"
+            @click="fetchComments({ append: true })"
+          />
         </div>
       </main>
     </div>

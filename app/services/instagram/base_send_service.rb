@@ -25,23 +25,15 @@ class Instagram::BaseSendService < Base::SendOnChannelService
 
   def send_comment_reply
     comment_id = replied_message.content_attributes['comment_id']
-    response = HTTParty.post(
-      "https://graph.instagram.com/v22.0/#{comment_id}/replies",
-      body: { message: message.outgoing_content },
-      query: { access_token: channel.access_token }
-    )
+    response = Instagram::CommentsClient.new(channel).reply(comment_id, message.outgoing_content)
 
-    parsed_response = response.parsed_response
-    if response.success? && parsed_response['error'].blank?
-      # Comment replies return `id` (the new comment's ID), not `message_id`
-      message.update!(source_id: parsed_response['id'] || parsed_response['message_id'])
-      parsed_response
-    else
-      external_error = external_error(parsed_response)
-      Rails.logger.error("Instagram comment reply error: #{external_error}")
-      Messages::StatusUpdateService.new(message, 'failed', external_error).perform
-      nil
-    end
+    # Comment replies return `id` (the new comment's ID), not `message_id`.
+    message.update!(source_id: response['id'])
+    response
+  rescue Instagram::CommentsClient::RequestError => e
+    Rails.logger.error("Instagram comment reply error: #{e.message}")
+    Messages::StatusUpdateService.new(message, 'failed', e.message).perform
+    nil
   end
 
   def replied_message

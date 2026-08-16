@@ -2,6 +2,7 @@
 import { frontendURL } from '../../../helper/URLHelper';
 import store from '../../../store';
 import ConversationView from './ConversationView.vue';
+import InstagramCommentsPage from './InstagramCommentsPage.vue';
 
 const CONVERSATION_PERMISSIONS = [
   'administrator',
@@ -76,6 +77,14 @@ export default {
       props: route => {
         return { inboxId: route.params.inbox_id };
       },
+    },
+    {
+      path: frontendURL('accounts/:accountId/inbox/:inbox_id/comments'),
+      name: 'instagram_comments',
+      meta: {
+        permissions: CONVERSATION_PERMISSIONS,
+      },
+      component: InstagramCommentsPage,
     },
     {
       path: frontendURL(

@@ -31,6 +31,8 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
       message.update!(content: I18n.t('conversations.messages.deleted'), content_type: :text, content_attributes: { deleted: true })
       message.attachments.destroy_all
     end
+  rescue Instagram::CommentsClient::RequestError => e
+    render json: { error: e.message }, status: e.status
   end
 
   def retry
@@ -86,12 +88,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
     channel = @conversation.inbox.channel
     return unless channel.is_a?(Channel::Instagram)
 
-    HTTParty.delete(
-      "https://graph.instagram.com/v22.0/#{comment_id}",
-      query: { access_token: channel.access_token }
-    )
-  rescue StandardError => e
-    Rails.logger.error("Failed to delete Instagram comment #{comment_id}: #{e.message}")
+    Instagram::CommentsClient.new(channel).delete(comment_id)
   end
 
   def message
