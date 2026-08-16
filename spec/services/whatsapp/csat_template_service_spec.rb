@@ -20,6 +20,7 @@ RSpec.describe Whatsapp::CsatTemplateService do
   end
 
   before do
+    allow(GlobalConfigService).to receive(:load).with('WHATSAPP_API_VERSION', 'v24.0').and_return('v24.0')
     allow(ENV).to receive(:fetch).and_call_original
     allow(ENV).to receive(:fetch).with('WHATSAPP_CLOUD_BASE_URL', anything).and_return('https://graph.facebook.com')
   end
@@ -190,7 +191,7 @@ RSpec.describe Whatsapp::CsatTemplateService do
       }
 
       expect(HTTParty).to receive(:post).with(
-        "https://graph.facebook.com/v14.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates",
+        "https://graph.facebook.com/v24.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates",
         headers: {
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
@@ -252,7 +253,7 @@ RSpec.describe Whatsapp::CsatTemplateService do
       # rubocop:enable RSpec/VerifiedDoubles
 
       expect(HTTParty).to receive(:delete).with(
-        "https://graph.facebook.com/v14.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=test_template",
+        "https://graph.facebook.com/v24.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=test_template",
         headers: {
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
@@ -269,7 +270,7 @@ RSpec.describe Whatsapp::CsatTemplateService do
       # rubocop:enable RSpec/VerifiedDoubles
 
       expect(HTTParty).to receive(:delete).with(
-        "https://graph.facebook.com/v14.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=#{expected_template_name}",
+        "https://graph.facebook.com/v24.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=#{expected_template_name}",
         anything
       ).and_return(mock_response)
 
@@ -300,7 +301,7 @@ RSpec.describe Whatsapp::CsatTemplateService do
                                                                    }])
 
       expect(HTTParty).to receive(:get).with(
-        "https://graph.facebook.com/v14.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=test_template",
+        "https://graph.facebook.com/v24.0/#{whatsapp_channel.provider_config['business_account_id']}/message_templates?name=test_template",
         headers: {
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
