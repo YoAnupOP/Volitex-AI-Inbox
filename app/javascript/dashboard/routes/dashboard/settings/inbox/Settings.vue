@@ -347,6 +347,10 @@ export default {
       }
       return this.$t('INBOX_MGMT.ADD.CHANNEL_NAME.PLACEHOLDER');
     },
+    instagramAccountId() {
+      if (!this.isAnInstagramChannel || !this.inbox.instagram_id) return '';
+      return String(this.inbox.instagram_id);
+    },
     textAreaChannels() {
       if (
         this.isATwilioChannel ||
@@ -881,6 +885,16 @@ export default {
                 "
                 @blur="v$.selectedInboxName.$touch"
               />
+            </SettingsFieldSection>
+            <SettingsFieldSection
+              v-if="instagramAccountId"
+              :label="$t('INBOX_MGMT.ADD.INSTAGRAM.ACCOUNT_ID.LABEL')"
+            >
+              <span
+                class="flex items-center px-3 py-2 rounded-lg bg-n-slate-2 border border-n-weak text-n-slate-12 text-sm font-medium"
+              >
+                {{ instagramAccountId }}
+              </span>
             </SettingsFieldSection>
             <SettingsFieldSection
               v-if="isAPIInbox"
