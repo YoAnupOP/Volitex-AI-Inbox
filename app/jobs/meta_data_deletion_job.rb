@@ -2,62 +2,88 @@ class MetaDataDeletionJob < ApplicationJob
   queue_as :default
 
   def perform(user_id, confirmation_code)
-    deletion_request = MetaDataDeletionRequest.find_by(confirmation_code: confirmation_code)
+    deletion_request = MetaDataDeletionRequest.find_by(confirmation_code: confirmation_code, user_id: user_id)
     return unless deletion_request
 
-    deletion_request.update!(status: 'processing')
+    deletion_request.with_lock do
+      next if deletion_request.status == 'completed'
 
-    begin
-      # Find and anonymize contacts associated with this Meta user
-      anonymize_contacts(user_id)
-
-      # Delete messages
-      delete_messages(user_id)
-
-      # Mark as completed
+      deletion_request.update!(status: 'processing', error_message: nil)
+      erase_meta_owned_channel_data!(user_id)
       deletion_request.update!(status: 'completed', completed_at: Time.current)
-
-      Rails.logger.info "Completed data deletion for Meta user_id: #{user_id}"
-    rescue StandardError => e
-      deletion_request.update!(status: 'failed', error_message: e.message)
-      Rails.logger.error "Failed data deletion for Meta user_id: #{user_id}, error: #{e.message}"
-      raise
     end
+  rescue StandardError => e
+    deletion_request&.update!(status: 'failed', error_message: e.message)
+    Rails.logger.error("Meta data deletion failed request=#{confirmation_code}: #{e.class}: #{e.message}")
+    raise
   end
 
   private
 
-  def anonymize_contacts(user_id)
-    # Find contacts linked to this Meta user via channel provider_config
-    whatsapp_contacts = Contact.joins(inbox: :channel)
-                               .where(channels: { type: 'Channel::Whatsapp' })
-                               .where("channels.provider_config->>'user_id' = ?", user_id)
+  # Meta supplies the app-scoped user ID. In this application that ID is stored
+  # on the OAuth/Embedded-Signup channel, so deletion is deliberately scoped to
+  # data in inboxes owned by those channels, not the entire Chatwoot account.
+  def erase_meta_owned_channel_data!(user_id)
+    channels = meta_owned_channels(user_id)
+    inbox_ids = channels.filter_map { |channel| channel.inbox&.id }
+    return if inbox_ids.empty?
 
-    instagram_contacts = Contact.joins(inbox: :channel)
-                                .where(channels: { type: 'Channel::Instagram' })
-                                .where("channels.provider_config->>'user_id' = ?", user_id)
+    contact_inboxes = ContactInbox.where(inbox_id: inbox_ids)
+    contact_ids = contact_inboxes.distinct.pluck(:contact_id)
+    conversation_ids = Conversation.where(inbox_id: inbox_ids).pluck(:id)
+    message_ids = Message.where(conversation_id: conversation_ids).pluck(:id)
 
-    # Anonymize instead of delete (preserve conversation history for business)
-    (whatsapp_contacts + instagram_contacts).uniq.each do |contact|
-      contact.update!(
-        name: "Deleted User #{SecureRandom.hex(4)}",
-        email: nil,
-        phone_number: nil,
-        additional_attributes: {},
-        custom_attributes: {}
-      )
+    ActiveRecord::Base.transaction do
+      purge_messages!(message_ids)
+      CsatSurveyResponse.where(conversation_id: conversation_ids).delete_all
+      Conversation.where(id: conversation_ids).destroy_all
+      ContactInbox.where(id: contact_inboxes.select(:id)).destroy_all
+      anonymize_contacts_without_other_inboxes!(contact_ids)
+
+      # Destroying the inbox also removes the channel credentials and invokes
+      # the channel's normal webhook teardown lifecycle.
+      channels.each { |channel| channel.inbox&.destroy! }
     end
   end
 
-  def delete_messages(user_id)
-    # Delete messages from channels linked to this Meta user
-    channel_ids = Channel::Whatsapp.where("provider_config->>'user_id' = ?", user_id)
-                                   .or(Channel::Instagram.where("provider_config->>'user_id' = ?", user_id))
-                                   .pluck(:id)
+  def meta_owned_channels(user_id)
+    whatsapp = Channel::Whatsapp.where("provider_config->>'user_id' = ?", user_id)
+    # Instagram Login returns this app-scoped Meta user ID as `instagram_id`.
+    instagram = Channel::Instagram.where(instagram_id: user_id)
+    whatsapp.to_a + instagram.to_a
+  end
 
-    inbox_ids = Inbox.where(channel_id: channel_ids).pluck(:id)
-    conversation_ids = Conversation.where(inbox_id: inbox_ids).pluck(:id)
+  def purge_messages!(message_ids)
+    return if message_ids.empty?
 
-    Message.where(conversation_id: conversation_ids).delete_all
+    # Message#destroy purges ActiveStorage attachments via its association,
+    # unlike delete_all which leaves binary PII and attachment rows behind.
+    Message.where(id: message_ids).find_each(&:destroy!)
+  end
+
+  def anonymize_contacts_without_other_inboxes!(contact_ids)
+    return if contact_ids.empty?
+
+    shared_contact_ids = ContactInbox.where(contact_id: contact_ids).distinct.pluck(:contact_id)
+    Contact.where(id: contact_ids - shared_contact_ids).find_each do |contact|
+      contact.avatar.purge if contact.avatar.attached?
+      Note.where(contact_id: contact.id).delete_all
+      CsatSurveyResponse.where(contact_id: contact.id).delete_all
+      # We intentionally bypass validations and callbacks: the related inbox and
+      # conversations are already gone, and callbacks could re-create data.
+      # rubocop:disable Rails/SkipsModelValidations
+      contact.update_columns(
+        name: "Deleted Meta User #{SecureRandom.hex(8)}",
+        email: nil,
+        phone_number: nil,
+        identifier: nil,
+        additional_attributes: {},
+        custom_attributes: {},
+        location: '',
+        last_name: '',
+        middle_name: ''
+      )
+      # rubocop:enable Rails/SkipsModelValidations
+    end
   end
 end

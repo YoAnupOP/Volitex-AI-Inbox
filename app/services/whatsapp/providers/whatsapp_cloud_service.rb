@@ -26,7 +26,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     response = HTTParty.post(
       "#{phone_id_path}/messages",
       headers: api_headers,
-      body: request_body.to_json
+      body: request_body.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -40,7 +41,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def fetch_whatsapp_templates(url)
-    response = HTTParty.get(url)
+    response = HTTParty.get(url, **http_timeouts)
     unless response.success?
       Rails.logger.warn "[WHATSAPP] Template sync failed for account #{whatsapp_channel.account_id} " \
                         "inbox #{whatsapp_channel.inbox&.id}: #{response.code} #{error_message(response)}"
@@ -60,12 +61,12 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
 
   def validate_provider_config?
     config = whatsapp_channel.provider_config
-    response = HTTParty.get("#{business_account_path}/message_templates?access_token=#{config['api_key']}")
+    response = HTTParty.get("#{business_account_path}/message_templates?access_token=#{config['api_key']}", **http_timeouts)
     return log_transfer_failure('waba_or_token_check', response) unless response.success?
     # The templates check only proves the WABA/token pair, so verify the phone_number_id belongs to this WABA when it changes.
     return true unless whatsapp_channel.provider_config_changed?
 
-    phone_response = HTTParty.get("#{business_account_path}/phone_numbers?fields=id&limit=100&access_token=#{config['api_key']}")
+    phone_response = HTTParty.get("#{business_account_path}/phone_numbers?fields=id&limit=100&access_token=#{config['api_key']}", **http_timeouts)
     ids = phone_response.parsed_response.is_a?(Hash) ? Array(phone_response.parsed_response['data']) : []
     return true if phone_response.success? && ids.any? { |number| number['id'] == config['phone_number_id'].to_s }
 
@@ -135,7 +136,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
         **recipient_params(phone_number),
         text: { body: message.outgoing_content },
         type: 'text'
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -155,7 +157,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
         **recipient_params(phone_number),
         'type' => type,
         type.to_s => type_content
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -250,7 +253,8 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
         **recipient_params(phone_number),
         interactive: payload,
         type: 'interactive'
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)

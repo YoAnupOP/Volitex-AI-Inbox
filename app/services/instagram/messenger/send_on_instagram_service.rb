@@ -16,7 +16,8 @@ class Instagram::Messenger::SendOnInstagramService < Instagram::BaseSendService
     response = HTTParty.post(
       'https://graph.facebook.com/v11.0/me/messages',
       body: message_content,
-      query: query
+      query: query,
+      **http_timeouts
     )
 
     process_response(response, message_content)

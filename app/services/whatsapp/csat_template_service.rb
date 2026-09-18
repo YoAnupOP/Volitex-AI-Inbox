@@ -3,6 +3,8 @@ class Whatsapp::CsatTemplateService
   DEFAULT_LANGUAGE = 'en'.freeze
   TEMPLATE_CATEGORY = 'UTILITY'.freeze
   TEMPLATE_STATUS_PENDING = 'PENDING'.freeze
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
 
   def initialize(whatsapp_channel)
     @whatsapp_channel = whatsapp_channel
@@ -21,13 +23,14 @@ class Whatsapp::CsatTemplateService
     template_name ||= CsatTemplateNameService.csat_template_name(@whatsapp_channel.inbox.id)
     response = HTTParty.delete(
       "#{business_account_path}/message_templates?name=#{template_name}",
-      headers: api_headers
+      headers: api_headers,
+      **http_timeouts
     )
     { success: response.success?, response_body: response.body }
   end
 
   def get_template_status(template_name)
-    response = HTTParty.get("#{business_account_path}/message_templates?name=#{template_name}", headers: api_headers)
+    response = HTTParty.get("#{business_account_path}/message_templates?name=#{template_name}", headers: api_headers, **http_timeouts)
 
     if response.success? && response['data']&.any?
       template_data = response['data'].first
@@ -98,7 +101,8 @@ class Whatsapp::CsatTemplateService
     HTTParty.post(
       "#{business_account_path}/message_templates",
       headers: api_headers,
-      body: request_body.to_json
+      body: request_body.to_json,
+      **http_timeouts
     )
   end
 
@@ -138,5 +142,9 @@ class Whatsapp::CsatTemplateService
 
   def api_base_path
     ENV.fetch('WHATSAPP_CLOUD_BASE_URL', 'https://graph.facebook.com')
+  end
+
+  def http_timeouts
+    { open_timeout: HTTP_OPEN_TIMEOUT, timeout: HTTP_READ_TIMEOUT }
   end
 end

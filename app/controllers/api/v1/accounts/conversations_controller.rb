@@ -130,19 +130,26 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   end
 
   def custom_attributes
-    @conversation.custom_attributes = params.permit(custom_attributes: {})[:custom_attributes]
+    attributes = params.permit(custom_attributes: {})[:custom_attributes].to_h
+    if attributes.keys.intersect?(Conversations::AutomationOwnershipService::RESERVED_ATTRIBUTE_KEYS)
+      return render json: { error: 'Automation ownership can only be changed with toggle_ai_mode.' }, status: :unprocessable_entity
+    end
+
+    @conversation.custom_attributes = attributes
     @conversation.save!
   end
 
-  # Toggle AI mode for this conversation.
-  # When ai_mode is true, n8n AI automation handles replies and human agents should not reply.
-  # When ai_mode is false, human agents handle replies and n8n AI should skip.
+  # This is the only supported ownership transition for the Volitex n8n control plane.
   def toggle_ai_mode
     ai_mode = params[:ai_mode].to_s == 'true'
-    @conversation.custom_attributes['ai_mode'] = ai_mode
-    @conversation.save!
+    ownership = Conversations::AutomationOwnershipService.new(conversation: @conversation, actor: Current.user)
+    ai_mode ? ownership.enable_n8n! : ownership.handoff_to_human!
 
-    render json: { ai_mode: ai_mode, conversation_id: @conversation.id }
+    render json: {
+      ai_mode: ai_mode,
+      automation_owner: @conversation.reload.custom_attributes['automation_owner'],
+      conversation_id: @conversation.id
+    }
   end
 
   def destroy

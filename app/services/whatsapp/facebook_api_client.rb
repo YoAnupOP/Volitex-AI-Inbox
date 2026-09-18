@@ -1,5 +1,7 @@
 class Whatsapp::FacebookApiClient
   BASE_URI = 'https://graph.facebook.com'.freeze
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
   # Base webhook fields resent on every subscribe so Meta won't reset to defaults. `calls` is added by callers only when voice is enabled.
   WEBHOOK_DEFAULT_FIELDS = %w[messages smb_message_echoes].freeze
 
@@ -15,7 +17,7 @@ class Whatsapp::FacebookApiClient
         client_id: GlobalConfigService.load('WHATSAPP_APP_ID', ''),
         client_secret: GlobalConfigService.load('WHATSAPP_APP_SECRET', ''),
         code: code
-      }
+      }, **http_timeouts
     )
 
     handle_response(response, 'Token exchange failed')
@@ -24,7 +26,7 @@ class Whatsapp::FacebookApiClient
   def fetch_phone_numbers(waba_id)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{waba_id}/phone_numbers",
-      query: { access_token: @access_token }
+      query: { access_token: @access_token }, **http_timeouts
     )
 
     handle_response(response, 'WABA phone numbers fetch failed')
@@ -36,7 +38,7 @@ class Whatsapp::FacebookApiClient
       query: {
         input_token: input_token,
         access_token: build_app_access_token
-      }
+      }, **http_timeouts
     )
 
     handle_response(response, 'Token validation failed')
@@ -46,7 +48,7 @@ class Whatsapp::FacebookApiClient
     response = HTTParty.post(
       "#{BASE_URI}/#{@api_version}/#{phone_number_id}/register",
       headers: request_headers,
-      body: { messaging_product: 'whatsapp', pin: pin.to_s }.to_json
+      body: { messaging_product: 'whatsapp', pin: pin.to_s }.to_json, **http_timeouts
     )
 
     handle_response(response, 'Phone registration failed')
@@ -57,7 +59,7 @@ class Whatsapp::FacebookApiClient
   def deregister_phone_number(phone_number_id)
     response = HTTParty.post(
       "#{BASE_URI}/#{@api_version}/#{phone_number_id}/deregister",
-      headers: request_headers
+      headers: request_headers, **http_timeouts
     )
 
     handle_response(response, 'Phone deregistration failed')
@@ -66,7 +68,7 @@ class Whatsapp::FacebookApiClient
   def phone_number_verified?(phone_number_id)
     response = HTTParty.get(
       "#{BASE_URI}/#{@api_version}/#{phone_number_id}",
-      headers: request_headers
+      headers: request_headers, **http_timeouts
     )
 
     data = handle_response(response, 'Phone status check failed')
@@ -86,7 +88,7 @@ class Whatsapp::FacebookApiClient
     response = HTTParty.post(
       "#{BASE_URI}/#{@api_version}/#{waba_id}/subscribed_apps",
       headers: request_headers,
-      body: { subscribed_fields: subscribed_fields }.to_json
+      body: { subscribed_fields: subscribed_fields }.to_json, **http_timeouts
     )
 
     handle_response(response, 'App subscription to WABA failed')
@@ -101,7 +103,7 @@ class Whatsapp::FacebookApiClient
           override_callback_uri: callback_url,
           verify_token: verify_token
         }
-      }.to_json
+      }.to_json, **http_timeouts
     )
 
     handle_response(response, 'Phone number webhook callback override failed')
@@ -115,7 +117,7 @@ class Whatsapp::FacebookApiClient
         webhook_configuration: {
           override_callback_uri: ''
         }
-      }.to_json
+      }.to_json, **http_timeouts
     )
 
     handle_response(response, 'Phone number webhook callback clear failed')
@@ -125,7 +127,7 @@ class Whatsapp::FacebookApiClient
   def unsubscribe_app_from_waba(waba_id)
     response = HTTParty.delete(
       "#{BASE_URI}/#{@api_version}/#{waba_id}/subscribed_apps",
-      headers: request_headers
+      headers: request_headers, **http_timeouts
     )
 
     handle_response(response, 'WABA app unsubscription failed')
@@ -138,6 +140,10 @@ class Whatsapp::FacebookApiClient
       'Authorization' => "Bearer #{@access_token}",
       'Content-Type' => 'application/json'
     }
+  end
+
+  def http_timeouts
+    { open_timeout: HTTP_OPEN_TIMEOUT, timeout: HTTP_READ_TIMEOUT }
   end
 
   def build_app_access_token

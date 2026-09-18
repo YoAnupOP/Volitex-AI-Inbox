@@ -22,7 +22,11 @@ class ConversationPolicy < ApplicationPolicy
   end
 
   def agent_bot?
-    user.is_a?(AgentBot)
+    return false unless user.is_a?(AgentBot) && user.account_id == account.id && user.inboxes.exists?(id: record.inbox_id)
+    return true unless user.bot_config.to_h['volitex_control_plane'] == 'n8n'
+
+    record.assignee_agent_bot_id == user.id &&
+      record.custom_attributes.to_h['automation_owner'] == Conversations::AutomationOwnershipService::N8N_OWNER
   end
 
   def inbox_access?

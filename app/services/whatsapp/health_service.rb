@@ -15,6 +15,8 @@ class Whatsapp::HealthService
   end
 
   BASE_URI = 'https://graph.facebook.com'.freeze
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
   MINIMUM_HEALTH_API_VERSION = 24.0
   PERSISTED_FIELDS = %i[
     id
@@ -83,7 +85,9 @@ class Whatsapp::HealthService
       query: {
         fields: fields,
         access_token: @access_token
-      }
+      },
+      open_timeout: HTTP_OPEN_TIMEOUT,
+      timeout: HTTP_READ_TIMEOUT
     )
 
     handle_response(response)

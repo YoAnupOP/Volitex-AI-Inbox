@@ -3,9 +3,6 @@ permissions:
   contents: read
 on:
   push:
-    branches:
-      - develop
-      - master
   pull_request:
   workflow_dispatch:
 
@@ -49,6 +46,25 @@ jobs:
         run: pnpm i
       - name: Run frontend tests
         run: pnpm run test:coverage
+
+  dependency-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - name: Install pnpm dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Scan Ruby dependencies
+        run: bundle exec bundle-audit check --update
+      - name: Scan production JavaScript dependencies
+        run: pnpm audit --prod --audit-level high
 
   # Backend tests with parallelization
   backend-tests:

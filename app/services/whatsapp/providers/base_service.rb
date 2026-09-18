@@ -10,6 +10,8 @@
 
 class Whatsapp::Providers::BaseService
   pattr_initialize [:whatsapp_channel!]
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
 
   def send_message(_phone_number, _message)
     raise 'Overwrite this method in child class'
@@ -39,6 +41,10 @@ class Whatsapp::Providers::BaseService
       handle_error(response, message)
       nil
     end
+  end
+
+  def http_timeouts
+    { open_timeout: HTTP_OPEN_TIMEOUT, timeout: HTTP_READ_TIMEOUT }
   end
 
   def handle_error(response, message)

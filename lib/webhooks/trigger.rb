@@ -68,6 +68,7 @@ class Webhooks::Trigger
 
     case @webhook_type
     when :agent_bot_webhook
+      Conversations::AutomationOwnershipService.system_handoff!(message.conversation)
       update_conversation_status(message)
     when :api_inbox_webhook
       update_message_status(error)

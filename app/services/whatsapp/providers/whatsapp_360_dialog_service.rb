@@ -18,7 +18,8 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
         to: phone_number,
         template: template_body_parameters(template_info),
         type: 'template'
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -27,7 +28,7 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
   def sync_templates
     # ensuring that channels with wrong provider config wouldn't keep trying to sync templates
     whatsapp_channel.mark_message_templates_updated
-    response = HTTParty.get("#{api_base_path}/configs/templates", headers: api_headers)
+    response = HTTParty.get("#{api_base_path}/configs/templates", headers: api_headers, **http_timeouts)
     whatsapp_channel.update(message_templates: response['waba_templates'], message_templates_last_updated: Time.now.utc) if response.success?
   end
 
@@ -37,7 +38,8 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
       headers: { 'D360-API-KEY': whatsapp_channel.provider_config['api_key'], 'Content-Type': 'application/json' },
       body: {
         url: "#{ENV.fetch('FRONTEND_URL', nil)}/webhooks/whatsapp/#{whatsapp_channel.phone_number}"
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
     response.success?
   end
@@ -65,7 +67,8 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
         to: phone_number,
         text: { body: message.outgoing_content },
         type: 'text'
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -87,7 +90,8 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
         'to' => phone_number,
         'type' => type,
         type.to_s => type_content
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
@@ -120,7 +124,8 @@ class Whatsapp::Providers::Whatsapp360DialogService < Whatsapp::Providers::BaseS
         to: phone_number,
         interactive: payload,
         type: 'interactive'
-      }.to_json
+      }.to_json,
+      **http_timeouts
     )
 
     process_response(response, message)
