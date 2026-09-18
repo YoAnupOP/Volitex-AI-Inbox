@@ -1,5 +1,7 @@
 class Instagram::BaseSendService < Base::SendOnChannelService
   pattr_initialize [:message!]
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
 
   private
 
@@ -94,6 +96,10 @@ class Instagram::BaseSendService < Base::SendOnChannelService
       Messages::StatusUpdateService.new(message, 'failed', external_error).perform
       nil
     end
+  end
+
+  def http_timeouts
+    { open_timeout: HTTP_OPEN_TIMEOUT, timeout: HTTP_READ_TIMEOUT }
   end
 
   def external_error(response)

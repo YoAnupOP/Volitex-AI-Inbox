@@ -34,11 +34,12 @@ class Webhooks::WhatsappController < ActionController::API
   end
 
   def meta_signature_verification_required?
-    return true if whatsapp_channel.blank?
-    return false unless whatsapp_channel.provider == 'whatsapp_cloud'
-    return true if channel_meta_app_secrets(whatsapp_channel).present?
-
-    whatsapp_channel.provider_config['source'] == 'embedded_signup'
+    # Meta signs every Cloud API delivery with the app secret. Manual channels
+    # are still Cloud API channels, so they must never bypass this check merely
+    # because their provider config does not contain a per-channel app secret.
+    # Unknown numbers remain signed too; this prevents unauthenticated requests
+    # from reaching the webhook job before it rejects the unknown channel.
+    whatsapp_channel.blank? || whatsapp_channel.provider == 'whatsapp_cloud'
   end
 
   def whatsapp_business_payload_channel

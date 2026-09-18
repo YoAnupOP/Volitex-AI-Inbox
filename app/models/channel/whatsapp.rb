@@ -27,6 +27,11 @@ class Channel::Whatsapp < ApplicationRecord
 
   self.table_name = 'channel_whatsapp'
   EDITABLE_ATTRS = [:phone_number, :provider, { provider_config: {} }].freeze
+  SENSITIVE_PROVIDER_CONFIG_KEYS = %w[
+    api_key app_secret app_secret_key api_secret client_secret verification_pin webhook_verify_token
+  ].freeze
+
+  encrypts :encrypted_provider_config if Chatwoot.encryption_configured?
 
   # default at the moment is 360dialog lets change later.
   PROVIDERS = %w[default whatsapp_cloud].freeze
@@ -43,6 +48,24 @@ class Channel::Whatsapp < ApplicationRecord
 
   def name
     'Whatsapp'
+  end
+
+  # Keep routing and non-secret metadata queryable in provider_config while
+  # placing credentials in a separately encrypted column. This preserves the
+  # existing channel API without exposing WABA keys in PostgreSQL JSONB dumps.
+  def provider_config
+    super.to_h.merge(decrypted_provider_config)
+  end
+
+  def provider_config=(value)
+    config = value.to_h.stringify_keys
+    sensitive_config = config.slice(*SENSITIVE_PROVIDER_CONFIG_KEYS)
+    if sensitive_config.present? && !Chatwoot.encryption_configured?
+      raise ArgumentError, 'Active Record encryption keys are required for WhatsApp credentials'
+    end
+
+    self.encrypted_provider_config = sensitive_config.to_json if Chatwoot.encryption_configured?
+    super(config.except(*SENSITIVE_PROVIDER_CONFIG_KEYS))
   end
 
   # Mirrors Channel::TwilioSms#voice_enabled? so the call subsystem can duck-type across providers.
@@ -134,7 +157,10 @@ class Channel::Whatsapp < ApplicationRecord
   private
 
   def ensure_webhook_verify_token
-    provider_config['webhook_verify_token'] ||= SecureRandom.hex(16) if provider == 'whatsapp_cloud'
+    return unless provider == 'whatsapp_cloud'
+    return if provider_config['webhook_verify_token'].present?
+
+    self.provider_config = provider_config.merge('webhook_verify_token' => SecureRandom.hex(16))
   end
 
   def validate_provider_config
@@ -167,5 +193,13 @@ class Channel::Whatsapp < ApplicationRecord
     # Only auto-setup webhooks for whatsapp_cloud provider with manual setup
     # Embedded signup calls setup_webhooks explicitly in EmbeddedSignupService
     provider == 'whatsapp_cloud' && provider_config['source'] != 'embedded_signup'
+  end
+
+  def decrypted_provider_config
+    return {} if encrypted_provider_config.blank?
+
+    JSON.parse(encrypted_provider_config).stringify_keys
+  rescue JSON::ParserError
+    {}
   end
 end

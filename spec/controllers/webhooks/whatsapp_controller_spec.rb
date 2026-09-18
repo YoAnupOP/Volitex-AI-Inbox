@@ -99,7 +99,7 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
       expect(response).to have_http_status(:success)
     end
 
-    it 'skips signature validation for manual whatsapp cloud channels without an app secret' do
+    it 'requires the global app signature for manual whatsapp cloud channels without a channel app secret' do
       channel.update!(
         provider_config: channel.provider_config.except('app_secret', 'app_secret_key', 'api_secret', 'client_secret', 'source')
       )
@@ -120,9 +120,19 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
         }]
       }.to_json
 
-      post_unsigned_whatsapp_webhook("/webhooks/whatsapp/#{channel.phone_number}", channel_body)
+      post_whatsapp_webhook("/webhooks/whatsapp/#{channel.phone_number}", channel_body)
 
       expect(response).to have_http_status(:success)
+    end
+
+    it 'rejects an unsigned manual whatsapp cloud payload' do
+      channel.update!(provider_config: channel.provider_config.except('app_secret', 'app_secret_key', 'api_secret', 'client_secret', 'source'))
+      allow(Webhooks::WhatsappEventsJob).to receive(:perform_later)
+
+      post_unsigned_whatsapp_webhook("/webhooks/whatsapp/#{channel.phone_number}", body)
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(Webhooks::WhatsappEventsJob).not_to have_received(:perform_later)
     end
 
     it 'returns unauthorized when signature is missing' do
@@ -145,6 +155,24 @@ RSpec.describe 'Webhooks::WhatsappController', type: :request do
 
       expect(response).to have_http_status(:unauthorized)
       expect(Webhooks::WhatsappEventsJob).not_to have_received(:perform_later)
+    end
+
+    it 'requires a valid signature before an unknown phone number reaches the job' do
+      allow(Webhooks::WhatsappEventsJob).to receive(:perform_later)
+
+      post_unsigned_whatsapp_webhook('/webhooks/whatsapp/unknown-number', body)
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(Webhooks::WhatsappEventsJob).not_to have_received(:perform_later)
+    end
+
+    it 'hands duplicate signed deliveries to the idempotent event processor' do
+      allow(Webhooks::WhatsappEventsJob).to receive(:perform_later)
+
+      2.times { post_whatsapp_webhook("/webhooks/whatsapp/#{channel.phone_number}", body) }
+
+      expect(response).to have_http_status(:success)
+      expect(Webhooks::WhatsappEventsJob).to have_received(:perform_later).twice
     end
 
     context 'when phone number is in inactive list' do

@@ -664,6 +664,7 @@ Rails.application.routes.draw do
   post 'webhooks/shopify', to: 'webhooks/shopify#events'
   post 'webhooks/meta/deauthorize', to: 'webhooks/meta#deauthorize'
   post 'webhooks/meta/data_deletion', to: 'webhooks/meta#data_deletion'
+  get 'data-deletion/:confirmation_code', to: 'webhooks/meta#data_deletion_status'
 
   namespace :twitter do
     resource :callback, only: [:show]

@@ -6,15 +6,16 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def create
-    # Block human replies when AI mode is enabled for this conversation
-    if ai_mode_enabled? && human_reply?
-      render json: { error: 'AI mode is active. Disable AI mode to send human replies.' }, status: :unprocessable_entity
-      return
-    end
+    return render_automation_owner_error unless permitted_by_automation_owner?
+    return render_existing_automation_delivery if existing_automation_delivery
 
     user = Current.user || @resource
-    mb = Messages::MessageBuilder.new(user, @conversation, params)
+    mb = Messages::MessageBuilder.new(user, @conversation, message_params_for_actor)
     @message = mb.perform
+  rescue ActiveRecord::RecordNotUnique
+    return render_existing_automation_delivery if existing_automation_delivery
+
+    raise
   rescue StandardError => e
     render_could_not_create_error(e.message)
   end
@@ -69,14 +70,60 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
 
   private
 
-  def ai_mode_enabled?
-    @conversation.custom_attributes&.dig('ai_mode') == true
+  def automation_ownership
+    @automation_ownership ||= Conversations::AutomationOwnershipService.new(conversation: @conversation, actor: Current.user)
   end
 
-  def human_reply?
-    # AgentBot messages are allowed (they come from automation)
-    # Human agent messages are blocked when AI mode is on
-    Current.user.present? && !Current.user.is_a?(AgentBot)
+  def permitted_by_automation_owner?
+    if Current.user.is_a?(AgentBot)
+      return true unless automation_ownership.n8n_bot?(Current.user)
+
+      return automation_ownership.n8n_owner?(Current.user)
+    end
+
+    @conversation.custom_attributes.to_h['automation_owner'] != Conversations::AutomationOwnershipService::N8N_OWNER
+  end
+
+  def render_automation_owner_error
+    message = Current.user.is_a?(AgentBot) ? 'n8n does not own this conversation.' : 'n8n owns this conversation. Take over before replying.'
+    render json: { error: message }, status: :unprocessable_entity
+  end
+
+  def automation_delivery_id
+    return unless Current.user.is_a?(AgentBot)
+
+    params[:automation_delivery_id].presence
+  end
+
+  def existing_automation_delivery
+    return unless automation_delivery_id
+
+    @conversation.messages.find_by(source_id: automation_delivery_source_id)
+  end
+
+  def render_existing_automation_delivery
+    @message = existing_automation_delivery
+    render :create, status: :ok
+  end
+
+  def message_params_for_actor
+    return params unless Current.user.is_a?(AgentBot) && automation_ownership.n8n_bot?(Current.user)
+
+    raise ArgumentError, 'automation_delivery_id is required for n8n replies' if automation_delivery_id.blank?
+
+    params.deep_dup.tap do |message_params|
+      content_attributes = message_params[:content_attributes]
+      content_attributes = content_attributes.to_unsafe_h if content_attributes.is_a?(ActionController::Parameters)
+      content_attributes = content_attributes.to_h.merge('automation_delivery_id' => automation_delivery_id)
+      message_params[:content_attributes] = content_attributes
+      message_params[:sender_type] = 'AgentBot'
+      message_params[:sender_id] = Current.user.id
+      message_params[:source_id] = automation_delivery_source_id
+    end
+  end
+
+  def automation_delivery_source_id
+    "volitex:n8n:#{Current.user.id}:#{automation_delivery_id}"
   end
 
   def instagram_comment?

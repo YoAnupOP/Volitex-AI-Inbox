@@ -23,6 +23,8 @@ class Channel::Instagram < ApplicationRecord
   encrypts :access_token if Chatwoot.encryption_configured?
 
   AUTHORIZATION_ERROR_THRESHOLD = 1
+  HTTP_OPEN_TIMEOUT = 5
+  HTTP_READ_TIMEOUT = 15
 
   validates :access_token, presence: true
   validates :instagram_id, uniqueness: true, presence: true
@@ -49,7 +51,9 @@ class Channel::Instagram < ApplicationRecord
       query: {
         subscribed_fields: %w[messages message_reactions messaging_seen comments],
         access_token: access_token
-      }
+      },
+      open_timeout: HTTP_OPEN_TIMEOUT,
+      timeout: HTTP_READ_TIMEOUT
     )
   rescue StandardError => e
     Rails.logger.debug { "Rescued: #{e.inspect}" }
@@ -61,7 +65,9 @@ class Channel::Instagram < ApplicationRecord
       "https://graph.instagram.com/v22.0/#{instagram_id}/subscribed_apps",
       query: {
         access_token: access_token
-      }
+      },
+      open_timeout: HTTP_OPEN_TIMEOUT,
+      timeout: HTTP_READ_TIMEOUT
     )
     true
   rescue StandardError => e

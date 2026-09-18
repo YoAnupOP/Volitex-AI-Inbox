@@ -179,6 +179,47 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(conversation.messages.first.content_type).to eq(params[:content_type])
       end
     end
+
+    context 'when the Volitex n8n AgentBot owns the conversation' do
+      let(:agent) { create(:user, account: account, role: :agent) }
+      let!(:n8n_bot) { create(:agent_bot, account: account, bot_config: { 'volitex_control_plane' => 'n8n' }) }
+      let(:headers) { { api_access_token: n8n_bot.access_token.token } }
+      let(:params) { { content: 'automation reply', content_attributes: {}, automation_delivery_id: 'delivery-123' } }
+
+      before do
+        create(:agent_bot_inbox, account: account, inbox: inbox, agent_bot: n8n_bot)
+        Conversations::AutomationOwnershipService.new(conversation: conversation, actor: agent).enable_n8n!
+      end
+
+      it 'accepts a delivery once and returns the existing message for a retry' do
+        path = api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id)
+
+        post path, params: params, headers: headers, as: :json
+        expect(response).to have_http_status(:success), response.body
+        message_id = response.parsed_body['id']
+        expect(response.parsed_body['content_attributes']).to include('automation_delivery_id' => 'delivery-123')
+        expect(Message.find(message_id).content_attributes).to include('automation_delivery_id' => 'delivery-123')
+        expect(Message.find(message_id).source_id).to eq("volitex:n8n:#{n8n_bot.id}:delivery-123")
+
+        post path, params: params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:success)
+        expect(response.parsed_body['id']).to eq(message_id)
+        expect(conversation.messages.where(source_id: "volitex:n8n:#{n8n_bot.id}:delivery-123").count).to eq(1)
+      end
+
+      it 'rejects the n8n bot after a human takes over' do
+        Conversations::AutomationOwnershipService.new(conversation: conversation, actor: agent).handoff_to_human!
+
+        post api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id),
+             params: params,
+             headers: headers,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq('n8n does not own this conversation.')
+      end
+    end
   end
 
   describe 'GET /api/v1/accounts/{account.id}/conversations/:id/messages' do

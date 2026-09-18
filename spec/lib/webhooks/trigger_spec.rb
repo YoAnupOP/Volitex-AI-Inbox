@@ -120,6 +120,25 @@ describe Webhooks::Trigger do
         expect(activity_message.content).to eq(agent_bot_error_content)
       end
 
+      it 'hands a timed-out n8n conversation back to humans without sending a reply' do
+        n8n_bot = create(:agent_bot, account: account, bot_config: { 'volitex_control_plane' => 'n8n' })
+        create(:agent_bot_inbox, account: account, inbox: inbox, agent_bot: n8n_bot)
+        pending_conversation.update!(
+          assignee_agent_bot: n8n_bot,
+          custom_attributes: { 'ai_mode' => true, 'automation_owner' => 'n8n', 'automation_agent_bot_id' => n8n_bot.id }
+        )
+        payload = { event: 'message_created', id: pending_message.id }
+
+        expect(SafeFetch).to receive(:fetch).and_raise(Timeout::Error, 'n8n timeout')
+
+        trigger.execute(url, payload, webhook_type)
+
+        pending_conversation.reload
+        expect(pending_conversation.assignee_agent_bot).to be_nil
+        expect(pending_conversation.custom_attributes).to include('ai_mode' => false, 'automation_owner' => 'human')
+        expect(pending_conversation.messages.outgoing).to be_empty
+      end
+
       it 'does not change message status or enqueue activity when conversation is not pending' do
         payload = { event: 'message_created', conversation: { id: conversation.id }, id: message.id }
 

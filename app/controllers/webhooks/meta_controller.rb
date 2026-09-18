@@ -1,5 +1,7 @@
 class Webhooks::MetaController < ActionController::Base
+  skip_forgery_protection
   before_action :verify_signed_request
+  skip_before_action :verify_signed_request, only: :data_deletion_status
 
   def deauthorize
     user_id = parse_signed_request(params[:signed_request])
@@ -19,6 +21,18 @@ class Webhooks::MetaController < ActionController::Base
     render json: {
       url: "#{ENV.fetch('FRONTEND_URL', 'https://inbox.volitexai.tech')}/data-deletion/#{confirmation_code}",
       confirmation_code: confirmation_code
+    }
+  end
+
+  def data_deletion_status
+    deletion_request = MetaDataDeletionRequest.find_by(confirmation_code: params[:confirmation_code])
+    return render json: { error: 'Not found' }, status: :not_found unless deletion_request
+
+    render json: {
+      confirmation_code: deletion_request.confirmation_code,
+      status: deletion_request.status,
+      requested_at: deletion_request.requested_at,
+      completed_at: deletion_request.completed_at
     }
   end
 
@@ -59,11 +73,9 @@ class Webhooks::MetaController < ActionController::Base
   end
 
   def deactivate_channels(user_id)
-    # Deactivate WhatsApp channels
-    Channel::Whatsapp.where("provider_config->>'user_id' = ?", user_id).update_all(active: false)
-
-    # Deactivate Instagram channels
-    Channel::Instagram.where("provider_config->>'user_id' = ?", user_id).update_all(active: false)
+    channels = Channel::Whatsapp.where("provider_config->>'user_id' = ?", user_id).to_a
+    channels += Channel::Instagram.where(instagram_id: user_id).to_a
+    channels.each { |channel| channel.inbox&.destroy! }
 
     Rails.logger.info "Deactivated channels for Meta user_id: #{user_id}"
   end

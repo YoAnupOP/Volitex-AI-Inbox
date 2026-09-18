@@ -68,7 +68,7 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
   def fetch_commenter_profile
     fields = 'name,username,profile_pic'
     url = "#{base_uri}/#{commenter_id}?fields=#{fields}&access_token=#{@inbox.channel.access_token}"
-    response = HTTParty.get(url)
+    response = HTTParty.get(url, open_timeout: 5, timeout: 15)
 
     if response.success?
       result = JSON.parse(response.body).with_indifferent_access
