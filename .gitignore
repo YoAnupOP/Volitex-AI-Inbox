@@ -29,6 +29,11 @@ master.key
 
 # Ignore env files
 .env
+.env.*
+!.env.example
+
+# Editor local-history files can contain environment snapshots and credentials.
+.history/
 
 public/uploads
 public/packs*
