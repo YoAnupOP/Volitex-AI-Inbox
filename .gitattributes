@@ -1,0 +1,2 @@
+# Shell scripts run by Linux containers and production tooling must use LF.
+*.sh text eol=lf
