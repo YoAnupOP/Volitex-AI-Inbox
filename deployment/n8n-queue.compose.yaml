@@ -98,7 +98,7 @@ services:
 
   n8n-main:
     <<: *n8n
-    command: ['n8n', 'start']
+    command: ['start']
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
@@ -116,7 +116,7 @@ services:
 
   n8n-worker:
     <<: *n8n
-    command: ['n8n', 'worker', '--concurrency=${N8N_WORKER_CONCURRENCY:?Set N8N_WORKER_CONCURRENCY}']
+    command: ['worker', '--concurrency=${N8N_WORKER_CONCURRENCY:?Set N8N_WORKER_CONCURRENCY}']
     depends_on:
       n8n-postgres:
         condition: service_healthy
