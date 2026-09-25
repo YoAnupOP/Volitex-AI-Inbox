@@ -185,7 +185,7 @@ Run [restore_postgres_backup.sh](../../deployment/production/restore_postgres_ba
 export RESTORE_DATABASE_URL='postgresql://<restore-admin>:<password>@<isolated-restore-host>:5432/volitex_inbox_restore_test'
 export BACKUP_S3_URI='s3://<off-server-backup-bucket>/volitex'
 export AGE_IDENTITY='/etc/volitex/backup-age-key.txt'
-deployment/production/restore_postgres_backup.sh '<UTC-timestamp>/volitex.dump.age' '20260918000003'
+deployment/production/restore_postgres_backup.sh '<UTC-timestamp>/volitex.dump.age' '20260925000000'
 ```
 
 Destroy the isolated restore database after recording the evidence. Never restore a production dump over production to test it.
