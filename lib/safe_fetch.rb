@@ -31,7 +31,7 @@ module SafeFetch
     raise InvalidUrlError, e.message
   rescue SsrfFilter::Error, Resolv::ResolvError => e
     raise UnsafeUrlError, e.message
-  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, OpenSSL::SSL::SSLError => e
+  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError, SystemCallError, OpenSSL::SSL::SSLError => e
     raise FetchError, e.message
   end
 

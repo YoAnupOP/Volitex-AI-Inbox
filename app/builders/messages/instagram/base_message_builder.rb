@@ -100,7 +100,9 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
     return if message_content.blank? && all_unsupported_files?
 
-    @message = conversation.messages.create!(message_params)
+    @message = create_message_atomically
+    return if @message.blank?
+
     save_story_id
 
     attachments.each do |attachment|
@@ -179,7 +181,18 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   def find_message_by_source_id(source_id)
     return unless source_id
 
-    @message = Message.find_by(source_id: source_id)
+    @message = @inbox.messages.find_by(source_id: source_id)
+  end
+
+  def create_message_atomically
+    @inbox.transaction(requires_new: true) do
+      conversation.messages.create!(message_params)
+    end
+  rescue ActiveRecord::RecordNotUnique => e
+    raise unless e.message.include?('index_messages_on_inbox_incoming_source_id')
+
+    Rails.logger.info("Ignoring duplicate Instagram message #{message_identifier} in inbox #{@inbox.id}")
+    nil
   end
 
   def all_unsupported_files?

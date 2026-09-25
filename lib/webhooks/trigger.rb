@@ -1,6 +1,6 @@
 class Webhooks::Trigger
   SUPPORTED_ERROR_HANDLE_EVENTS = %w[message_created message_updated].freeze
-  RETRYABLE_AGENT_BOT_STATUSES = [429, 500].freeze
+  RETRYABLE_AGENT_BOT_STATUSES = [429, 500, 502, 503, 504].freeze
 
   class RetryableError < StandardError
     attr_reader :status
@@ -124,7 +124,9 @@ class Webhooks::Trigger
   end
 
   def retryable_agent_bot_error?(error)
-    @webhook_type == :agent_bot_webhook && RETRYABLE_AGENT_BOT_STATUSES.include?(http_status(error))
+    return false unless @webhook_type == :agent_bot_webhook
+
+    RETRYABLE_AGENT_BOT_STATUSES.include?(http_status(error)) || error.is_a?(SafeFetch::FetchError)
   end
 
   def http_status(error)

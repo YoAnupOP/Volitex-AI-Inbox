@@ -38,7 +38,7 @@ sudo ufw allow 443/tcp
 sudo ufw enable
 ```
 
-Use SSH keys, disable password SSH authentication after confirming the second administrative login, and enable unattended security updates. Install Coolify using its current official installer, then access Coolify only through its TLS-protected administrator URL.
+Use SSH keys, disable password SSH authentication after confirming the second administrative login, and enable unattended security updates. Install Coolify using its current official installer, then access Coolify only through its TLS-protected administrator URL. Install the backup/monitoring host tools (`postgresql-client`, `awscli`, `age`, `curl`, and `jq`) before scheduling the operational scripts below.
 
 ### Self-hosted PostgreSQL
 
@@ -49,13 +49,13 @@ Provision two separate self-hosted PostgreSQL services with separate persistent 
 | Volitex AI Inbox | `volitex_inbox_production` | `volitex_inbox` | only this database |
 | n8n | `volitex_n8n` | `volitex_n8n` | only this database |
 
-Use an immutable Volitex PostgreSQL image that includes the required extensions listed in section 0 and configure `pg_stat_statements` before the first migration. The n8n stack provisions its own PostgreSQL service from `deployment/n8n-queue.compose.yaml`. Neither database has a published port. Container-to-container connections remain on the private Coolify/Docker network; do not add TLS to that private path merely to imitate a managed-service topology.
+Use an immutable Volitex PostgreSQL image that includes the required extensions listed in section 0 and configure `pg_stat_statements` before the first migration. Provision the Volitex PostgreSQL instance as a Coolify-managed private service with persistent storage and automatic restart/start-on-boot behavior equivalent to Docker `restart: unless-stopped`. Configure a PostgreSQL readiness healthcheck using `pg_isready -U <volitex-role> -d volitex_inbox_production`; Coolify must keep the service private on the application network with no public port 5432. The n8n stack provisions its own PostgreSQL service from `deployment/n8n-queue.compose.yaml`. Neither database has a published port. Container-to-container connections remain on the private Coolify/Docker network; do not add TLS to that private path merely to imitate a managed-service topology.
 
 Take an encrypted, off-server logical backup before every schema/data migration. A persistent volume protects against container recreation and reboot; it is not a backup and does not protect against VPS loss, operator error, or ransomware.
 
 ### Self-hosted Redis / Valkey
 
-Provision a dedicated self-hosted Redis/Valkey boundary with a persistent volume and generated password for Volitex. The n8n Compose stack provisions a second dedicated Valkey service with a different password, named volume, and `volitex:n8n` Bull prefix. Do **not** share a Redis database, password, namespace, or container between Sidekiq/ActionCable and n8n/Bull queues.
+Provision a dedicated self-hosted Redis/Valkey boundary as a Coolify-managed private service with persistent storage, a generated password, and automatic restart/start-on-boot behavior equivalent to Docker `restart: unless-stopped`. Configure an authenticated readiness healthcheck such as `valkey-cli --no-auth-warning -a "$REDIS_PASSWORD" ping | grep -q PONG`; Coolify must keep the service private on the application network with no public port 6379. The n8n Compose stack provisions a second dedicated Valkey service with a different password, named volume, and `volitex:n8n` Bull prefix. Do **not** share a Redis database, password, namespace, or container between Sidekiq/ActionCable and n8n/Bull queues.
 
 Do not publish either Redis/Valkey port. Sidekiq and ActionCable use the Volitex Redis/Valkey service because they are components of the same application and share its operational failure domain. Apply `noeviction` or an explicitly documented eviction policy sized for the available VPS memory; an eviction policy is an operational decision, not a default to leave implicit.
 
@@ -128,7 +128,7 @@ FB_VERIFY_TOKEN=<random-verification-token>
 IG_VERIFY_TOKEN=<random-verification-token>
 ```
 
-Provision the private Volitex PostgreSQL and Redis/Valkey services before this application, with their own Coolify-managed volumes and secrets. Do not attach the Inbox to the n8n database, n8n Valkey service, or n8n credentials. Before the first deploy, record the encrypted off-server pre-migration backup identifier. Deploy the application. Coolify starts `rails` and `sidekiq`; the Rails entrypoint runs pending migrations. Verify:
+Provision the private Volitex PostgreSQL and Redis/Valkey services before this application, with their own Coolify-managed volumes, secrets, automatic restart/start-on-boot behavior, and readiness healthchecks as specified above. Do not attach the Inbox to the n8n database, n8n Valkey service, or n8n credentials. Before the first deploy, record the encrypted off-server pre-migration backup identifier. Deploy the application. Coolify starts `rails` and `sidekiq`; the Rails entrypoint runs pending migrations. Verify:
 
 ```bash
 curl --fail --silent --show-error https://inbox.volitexai.tech/api >/dev/null
@@ -163,10 +163,10 @@ Sign in once, set a strong owner password and MFA, configure the SMTP-backed rec
 5. From the Inbox release container, provision a dedicated n8n machine identity once per customer account:
 
 ```bash
-bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,https://automation.volitexai.tech/webhook/volitex-inbox]'
+bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,https://automation.volitexai.tech/webhook/volitex-inbox-<AGENT_BOT_ID>]'
 ```
 
-Copy the resulting AgentBot token and signing secret only through the authenticated UI into n8n credentials. Attach the bot to the automation inbox. Never use an administrator or human-agent token in n8n.
+Copy the resulting AgentBot token and signing secret only through the authenticated UI into credentials dedicated to that AgentBot. Provision one tenant-scoped ingress workflow from the workflow template, configure its expected account and AgentBot IDs, replace the webhook path placeholder with the AgentBot ID, assign that AgentBot's HMAC credential, and activate it before enabling automation. Attach the bot to the automation inbox. Never use an administrator or human-agent token in n8n. The full provisioning and tenant-isolation procedure is in [n8n-control-plane.md](n8n-control-plane.md).
 6. In n8n, validate the exact Inbox webhook signature and retain the delivery ID before processing. Include a fresh `automation_delivery_id` on every `POST /api/v1/accounts/:account_id/conversations/:conversation_id/messages` reply. A retry of the same ID is idempotent. The exact request and failure contract is [n8n-control-plane.md](n8n-control-plane.md).
 7. Turn AI mode on from the Inbox UI and verify that `automation_owner=n8n` and the dedicated bot is assigned. Have a human take over; verify the bot is unassigned and that a subsequent n8n reply is rejected with 422. The full contract is [n8n-control-plane.md](n8n-control-plane.md).
 
@@ -174,28 +174,25 @@ Copy the resulting AgentBot token and signing secret only through the authentica
 
 ### Backups
 
-* PostgreSQL: take encrypted logical backups of both self-hosted PostgreSQL services daily and before every migration, then transfer and verify them off-server. Retain the matching Active Record encryption key set and `N8N_ENCRYPTION_KEY` for the full backup-retention period. VPS snapshots may supplement these backups but do not replace tested logical restore.
+* PostgreSQL: schedule [backup_postgres.sh](../../deployment/production/backup_postgres.sh) daily and before every migration. It creates custom-format dumps for both self-hosted PostgreSQL services, encrypts them with an age recipient, uploads them to the off-server S3-compatible prefix (set `AWS_ENDPOINT_URL` for a non-AWS provider), downloads each object again, decrypts it, and verifies that `pg_restore --list` can read it. Retain the matching age identity, Active Record encryption key set, and `N8N_ENCRYPTION_KEY` for the full backup-retention period. VPS snapshots may supplement these backups but do not replace tested logical restore.
 * Object storage: enable versioning/lifecycle and provider replication or daily export. This replaces local media storage in this deployment.
 * n8n: back up `volitex_n8n`, retain an encrypted export of workflows excluding credentials, retain `N8N_ENCRYPTION_KEY`, and record the n8n, PostgreSQL, and Valkey image digests. The `n8n_data` volume is persistent operational state, not a substitute for the database backup.
 * Configuration: maintain a password-manager record of all Coolify secrets and image digests; never back up secrets in the repository.
 
-The P0 validation has already performed a full format dump and isolated restore of the test database, verifying both a known marker and schema migration `20260918000003`. Repeat this from the self-hosted Volitex PostgreSQL service into an isolated restore target before first client activation and quarterly thereafter:
+Run [restore_postgres_backup.sh](../../deployment/production/restore_postgres_backup.sh) from a host with access to the isolated restore database before first client activation and quarterly thereafter. The script downloads a selected off-server dump, restores it with `pg_restore --clean --if-exists`, and verifies the latest migration. This repository cannot perform that production verification without the target database and backup credentials; record the command output and restore-database identifier in the release record.
 
 ```bash
-pg_dump --format=custom --no-owner --no-privileges \
-  "host=<private-volitex-postgres-service-hostname> port=5432 dbname=volitex_inbox_production user=volitex_inbox" \
-  --file=volitex-inbox-prechange.dump
-createdb --host=<isolated-restore-host> --username=<restore-admin> volitex_inbox_restore_test
-pg_restore --clean --if-exists --no-owner --dbname=volitex_inbox_restore_test volitex-inbox-prechange.dump
-psql --host=<isolated-restore-host> --username=<restore-admin> --dbname=volitex_inbox_restore_test \
-  -c 'SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1;'
+export RESTORE_DATABASE_URL='postgresql://<restore-admin>:<password>@<isolated-restore-host>:5432/volitex_inbox_restore_test'
+export BACKUP_S3_URI='s3://<off-server-backup-bucket>/volitex'
+export AGE_IDENTITY='/etc/volitex/backup-age-key.txt'
+deployment/production/restore_postgres_backup.sh '<UTC-timestamp>/volitex.dump.age' '20260918000003'
 ```
 
 Destroy the isolated restore database after recording the evidence. Never restore a production dump over production to test it.
 
 ### Monitoring and alerts
 
-Alert on HTTP availability/TLS expiry for both domains, Sidekiq queue latency/retries/dead jobs, n8n execution failures and queue age, both PostgreSQL services' connections/storage/backup freshness, both Redis/Valkey services' memory/evictions/connection errors, VPS CPU/RAM/NVMe capacity and IOPS, object-storage failures, and Meta webhook delivery errors. Send alerts to an operator channel that is checked outside business hours during the first client launch.
+Schedule [monitor.sh](../../deployment/production/monitor.sh) every minute with `INBOX_HEALTH_URL`, `N8N_HEALTH_URL`, `ALERT_WEBHOOK_URL`, and `MONITOR_DISK_PATH=/`. Also provide `VOLITEX_DATABASE_URL`, `N8N_DATABASE_URL`, `VOLITEX_REDIS_URL`, and `N8N_REDIS_URL` so it checks PostgreSQL connection headroom and Redis/Valkey connection/eviction failures. It alerts on either public health endpoint failing, disk usage crossing the configured threshold, PostgreSQL connection exhaustion, or Redis/Valkey evictions. Configure the hosting provider's monitoring to additionally alert on TLS expiry, VPS CPU/RAM/NVMe capacity and IOPS. Configure Sidekiq Web/metrics, n8n execution failures and queue age, PostgreSQL storage/backup freshness, object-storage failures, and Meta webhook delivery errors; these are not exposed by the liveness script and must be recorded in the operator's monitoring system.
 
 ## 7. Mandatory smoke test and reboot test
 
@@ -213,7 +210,17 @@ Complete and record every item:
 - [ ] Force n8n's outgoing Inbox API request to fail; verify bounded workflow retry, alerting, and `automation_delivery_id` idempotency. This is not the automatic human-handoff signal.
 - [ ] Upload/download a media attachment from the configured object store.
 - [ ] Create an encrypted backup and restore it into an isolated database as described above.
-- [ ] Reboot the VPS from the provider panel. Wait for Coolify, then verify both domains, Rails, Sidekiq, n8n main, and n8n worker recover without manual intervention.
+- [ ] Reboot the VPS from the provider panel. Wait for Coolify and verify recovery without manual intervention:
+  - [ ] Volitex PostgreSQL is running and healthy through its `pg_isready` check.
+  - [ ] Volitex Valkey is running and healthy through its authenticated readiness check.
+  - [ ] Rails is running and healthy.
+  - [ ] Sidekiq is running and consuming its configured queues.
+  - [ ] n8n PostgreSQL is running and healthy.
+  - [ ] n8n Valkey is running and healthy.
+  - [ ] n8n main is running and healthy.
+  - [ ] n8n worker is running and healthy through its private readiness check.
+  - [ ] The final Volitex HTTP smoke test succeeds: `curl --fail --silent --show-error https://inbox.volitexai.tech/api >/dev/null`.
+  - [ ] The final n8n readiness smoke test succeeds: `curl --fail --silent --show-error https://automation.volitexai.tech/healthz >/dev/null`.
 
 Do not declare the client live until this checklist and the reboot test are recorded.
 
