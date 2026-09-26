@@ -14,7 +14,7 @@ class ScopeInstagramMessageSourceIndex < ActiveRecord::Migration[7.1]
             'Resolve them intentionally, without deleting production data, then rerun this migration. '
     end
 
-    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: BUILD_INDEX_NAME)
+    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, nil, name: BUILD_INDEX_NAME)
 
     add_index :messages,
               %i[inbox_id source_id],
@@ -23,17 +23,13 @@ class ScopeInstagramMessageSourceIndex < ActiveRecord::Migration[7.1]
               name: BUILD_INDEX_NAME,
               algorithm: :concurrently
 
-    if index_exists?(:messages, name: INDEX_NAME)
-      remove_index :messages, name: INDEX_NAME, algorithm: :concurrently
-      rename_index :messages, BUILD_INDEX_NAME, INDEX_NAME
-    else
-      rename_index :messages, BUILD_INDEX_NAME, INDEX_NAME
-    end
+    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, nil, name: INDEX_NAME)
+    rename_index :messages, BUILD_INDEX_NAME, INDEX_NAME
   end
 
   def down
-    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: INDEX_NAME)
-    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: BUILD_INDEX_NAME)
+    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, nil, name: INDEX_NAME)
+    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, nil, name: BUILD_INDEX_NAME)
   end
 
   private
