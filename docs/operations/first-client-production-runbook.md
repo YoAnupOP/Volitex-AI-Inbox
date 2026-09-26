@@ -14,6 +14,7 @@ Before creating a real client account, all of these must be true:
 4. The Hostinger KVM 4 VPS is the first-client infrastructure boundary: Coolify, Volitex, n8n, their separate PostgreSQL and Redis/Valkey services, and their persistent volumes run on it. The only public application entry points are Coolify HTTPS routes.
 5. The self-hosted Volitex PostgreSQL image and configuration provide `pgcrypto`, `pg_trgm`, `vector`, and `pg_stat_statements`. Run [check_postgres_extensions.sh](../../deployment/production/check_postgres_extensions.sh) against the empty Volitex database before the first migration. A plain PostgreSQL image without `vector`, or one without the required extension configuration, will fail the first migration.
 6. Object storage is provisioned. Set `ACTIVE_STORAGE_SERVICE=s3_compatible`; this production compose intentionally has no persistent local media volume. For a first client, this avoids treating VPS disk as the source of truth for client attachments.
+7. The exact release lockfile passes the dependency security scan. A failed `bundle-audit` result is a release blocker until the affected dependency is upgraded or the exposure is conclusively shown not to apply to the deployed code path.
 
 If any item fails, do not configure a client WABA or send a client message.
 
