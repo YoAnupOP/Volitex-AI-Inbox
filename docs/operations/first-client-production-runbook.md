@@ -12,7 +12,7 @@ Before creating a real client account, all of these must be true:
 2. The public Git history has been purged of the complete `.history/` directory (including its tracked environment snapshots) and checked without printing any secret. The safe procedure is in [Git history cleanup](#appendix-a-git-history-cleanup-for-the-exposed-secret).
 3. The three `ACTIVE_RECORD_ENCRYPTION_*` values, `SECRET_KEY_BASE`, Meta configuration, WABA credentials, and n8n encryption key exist only in a password manager and Coolify secrets. They must never be in Git, workflow JSON, terminal history, or screenshots.
 4. The Hostinger KVM 4 VPS is the first-client infrastructure boundary: Coolify, Volitex, n8n, their separate PostgreSQL and Redis/Valkey services, and their persistent volumes run on it. The only public application entry points are Coolify HTTPS routes.
-5. The self-hosted Volitex PostgreSQL image and configuration provide `pgcrypto`, `pg_trgm`, `vector`, and `pg_stat_statements`. A plain PostgreSQL image without `vector`, or one without the required extension configuration, will fail the first migration.
+5. The self-hosted Volitex PostgreSQL image and configuration provide `pgcrypto`, `pg_trgm`, `vector`, and `pg_stat_statements`. Run [check_postgres_extensions.sh](../../deployment/production/check_postgres_extensions.sh) against the empty Volitex database before the first migration. A plain PostgreSQL image without `vector`, or one without the required extension configuration, will fail the first migration.
 6. Object storage is provisioned. Set `ACTIVE_STORAGE_SERVICE=s3_compatible`; this production compose intentionally has no persistent local media volume. For a first client, this avoids treating VPS disk as the source of truth for client attachments.
 
 If any item fails, do not configure a client WABA or send a client message.
@@ -38,7 +38,7 @@ sudo ufw allow 443/tcp
 sudo ufw enable
 ```
 
-Use SSH keys, disable password SSH authentication after confirming the second administrative login, and enable unattended security updates. Install Coolify using its current official installer, then access Coolify only through its TLS-protected administrator URL. Install the backup/monitoring host tools (`postgresql-client`, `awscli`, `age`, `curl`, and `jq`) before scheduling the operational scripts below.
+Use SSH keys, disable password SSH authentication after confirming the second administrative login, and enable unattended security updates. Install Coolify using its current official installer, then access Coolify only through its TLS-protected administrator URL. Install the backup/monitoring host tools (`postgresql-client`, `awscli`, `age`, `curl`, `jq`, and `redis-tools`) before scheduling the operational scripts below.
 
 ### Self-hosted PostgreSQL
 
@@ -49,7 +49,7 @@ Provision two separate self-hosted PostgreSQL services with separate persistent 
 | Volitex AI Inbox | `volitex_inbox_production` | `volitex_inbox` | only this database |
 | n8n | `volitex_n8n` | `volitex_n8n` | only this database |
 
-Use an immutable Volitex PostgreSQL image that includes the required extensions listed in section 0 and configure `pg_stat_statements` before the first migration. Provision the Volitex PostgreSQL instance as a Coolify-managed private service with persistent storage and automatic restart/start-on-boot behavior equivalent to Docker `restart: unless-stopped`. Configure a PostgreSQL readiness healthcheck using `pg_isready -U <volitex-role> -d volitex_inbox_production`; Coolify must keep the service private on the application network with no public port 5432. The n8n stack provisions its own PostgreSQL service from `deployment/n8n-queue.compose.yaml`. Neither database has a published port. Container-to-container connections remain on the private Coolify/Docker network; do not add TLS to that private path merely to imitate a managed-service topology.
+Use an immutable pgvector PostgreSQL image for the Volitex service, currently reviewed as `pgvector/pgvector@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f` for the multi-platform image index. Record the exact digest actually deployed. Configure `shared_preload_libraries=pg_stat_statements`, then run [check_postgres_extensions.sh](../../deployment/production/check_postgres_extensions.sh) before the first migration. Provision the Volitex PostgreSQL instance as a Coolify-managed private service with persistent storage and automatic restart/start-on-boot behavior equivalent to Docker `restart: unless-stopped`. Configure a PostgreSQL readiness healthcheck using `pg_isready -U <volitex-role> -d volitex_inbox_production`; Coolify must keep the service private on the application network with no public port 5432. The n8n stack provisions its own PostgreSQL service from `deployment/n8n-queue.compose.yaml`. Neither database has a published port. Container-to-container connections remain on the private Coolify/Docker network; do not add TLS to that private path merely to imitate a managed-service topology.
 
 Take an encrypted, off-server logical backup before every schema/data migration. A persistent volume protects against container recreation and reboot; it is not a backup and does not protect against VPS loss, operator error, or ransomware.
 
@@ -128,7 +128,7 @@ FB_VERIFY_TOKEN=<random-verification-token>
 IG_VERIFY_TOKEN=<random-verification-token>
 ```
 
-Provision the private Volitex PostgreSQL and Redis/Valkey services before this application, with their own Coolify-managed volumes, secrets, automatic restart/start-on-boot behavior, and readiness healthchecks as specified above. Do not attach the Inbox to the n8n database, n8n Valkey service, or n8n credentials. Before the first deploy, record the encrypted off-server pre-migration backup identifier. Deploy the application. Coolify starts `rails` and `sidekiq`; the Rails entrypoint runs pending migrations. Verify:
+Provision the private Volitex PostgreSQL and Redis/Valkey services before this application, with their own Coolify-managed volumes, secrets, automatic restart/start-on-boot behavior, and readiness healthchecks as specified above. Do not attach the Inbox to the n8n database, n8n Valkey service, or n8n credentials. Before the first deploy, record the encrypted off-server pre-migration backup identifier. Deploy the application. The Compose `migrate` service runs `bundle exec rails db:chatwoot_prepare` once and must complete successfully before Compose starts `rails` or `sidekiq`; do not manually start the application containers while the migration service is failing. Verify:
 
 ```bash
 curl --fail --silent --show-error https://inbox.volitexai.tech/api >/dev/null
@@ -192,7 +192,7 @@ Destroy the isolated restore database after recording the evidence. Never restor
 
 ### Monitoring and alerts
 
-Schedule [monitor.sh](../../deployment/production/monitor.sh) every minute with `INBOX_HEALTH_URL`, `N8N_HEALTH_URL`, `ALERT_WEBHOOK_URL`, and `MONITOR_DISK_PATH=/`. Also provide `VOLITEX_DATABASE_URL`, `N8N_DATABASE_URL`, `VOLITEX_REDIS_URL`, and `N8N_REDIS_URL` so it checks PostgreSQL connection headroom and Redis/Valkey connection/eviction failures. It alerts on either public health endpoint failing, disk usage crossing the configured threshold, PostgreSQL connection exhaustion, or Redis/Valkey evictions. Configure the hosting provider's monitoring to additionally alert on TLS expiry, VPS CPU/RAM/NVMe capacity and IOPS. Configure Sidekiq Web/metrics, n8n execution failures and queue age, PostgreSQL storage/backup freshness, object-storage failures, and Meta webhook delivery errors; these are not exposed by the liveness script and must be recorded in the operator's monitoring system.
+Schedule [monitor.sh](../../deployment/production/monitor.sh) every minute with `INBOX_HEALTH_URL`, `N8N_HEALTH_URL`, `ALERT_WEBHOOK_URL`, and `MONITOR_DISK_PATH=/`. Also provide `VOLITEX_DATABASE_URL`, `N8N_DATABASE_URL`, `VOLITEX_REDIS_URL`, and `N8N_REDIS_URL` so it checks PostgreSQL connection headroom, Redis/Valkey connection/eviction failures, Sidekiq queue backlogs, host memory pressure, and unhealthy Docker containers. Optional thresholds are `SIDEKIQ_QUEUE_BACKLOG_ALERT`, `SIDEKIQ_QUEUE_NAMES`, `MEMORY_USED_ALERT_PERCENT`, and `DISK_USED_ALERT_PERCENT`. It alerts on either public health endpoint failing, disk or memory pressure, PostgreSQL connection exhaustion, Redis/Valkey evictions, queue backlog, or unhealthy containers. Configure the hosting provider's monitoring to additionally alert on TLS expiry, VPS CPU/NVMe capacity and IOPS. Configure Sidekiq Web/metrics, n8n execution failures and queue age, PostgreSQL storage/backup freshness, object-storage failures, and Meta webhook delivery errors; these are not exposed by the liveness script and must be recorded in the operator's monitoring system.
 
 ## 7. Mandatory smoke test and reboot test
 
@@ -224,7 +224,11 @@ Complete and record every item:
 
 Do not declare the client live until this checklist and the reboot test are recorded.
 
-## 8. Volitex-only updates and rollback
+## 8. Staging load and failure test
+
+Before the first client is activated, run the guarded [staging webhook load test](webhook-load-test.md) against the same Compose topology. Exercise multiple tenants, duplicate deliveries, burst concurrency, slow/unavailable n8n, a stopped worker, and database/Redis failure in staging. Record acknowledgement latency, HTTP error rate, duplicate count, queue age, PostgreSQL connections, Redis memory, CPU, and RAM. The test is a measurement procedure, not a capacity guarantee; benchmark again on the provisioned KVM 4.
+
+## 9. Volitex-only updates and rollback
 
 1. Create a Volitex branch, make the smallest change, and run CI. Evaluate upstream only as security intelligence; do not sync it.
 2. Publish the new Volitex image and record both the current and proposed digests.

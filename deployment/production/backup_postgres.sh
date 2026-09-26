@@ -14,17 +14,11 @@ command -v aws >/dev/null || { echo 'aws CLI is required' >&2; exit 1; }
 command -v age >/dev/null || { echo 'age is required' >&2; exit 1; }
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-work_dir="${BACKUP_WORK_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/volitex-backup.XXXXXX")}"
-created_work_dir=false
-
-if [[ -z "${BACKUP_WORK_DIR:-}" ]]; then
-  created_work_dir=true
-fi
+backup_parent="${BACKUP_WORK_DIR:-${TMPDIR:-/tmp}}"
+work_dir="$(mktemp -d "${backup_parent%/}/volitex-backup.XXXXXX")"
 
 cleanup() {
-  if [[ "$created_work_dir" == true ]]; then
-    rm -rf -- "$work_dir"
-  fi
+  rm -rf -- "$work_dir"
 }
 trap cleanup EXIT
 

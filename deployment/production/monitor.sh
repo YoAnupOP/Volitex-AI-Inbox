@@ -57,6 +57,56 @@ check_redis() {
   fi
 }
 
+check_sidekiq_queues() {
+  local redis_url="$1"
+  local queue
+  local backlog
+  local threshold="${SIDEKIQ_QUEUE_BACKLOG_ALERT:-100}"
+
+  for queue in ${SIDEKIQ_QUEUE_NAMES:-critical high medium default mailers}; do
+    if ! backlog="$(redis-cli --no-auth-warning -u "$redis_url" llen "queue:${queue}")"; then
+      failures+=("Sidekiq queue ${queue} check failed")
+      continue
+    fi
+
+    if [[ "$backlog" -ge "$threshold" ]]; then
+      failures+=("Sidekiq queue ${queue} backlog is ${backlog}")
+    fi
+  done
+}
+
+check_memory() {
+  local available_kb
+  local total_kb
+  local used_percent
+
+  if [[ ! -r /proc/meminfo ]]; then
+    return
+  fi
+
+  available_kb="$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo)"
+  total_kb="$(awk '/^MemTotal:/ { print $2 }' /proc/meminfo)"
+  if [[ -z "$available_kb" || -z "$total_kb" || "$total_kb" -eq 0 ]]; then
+    failures+=('memory pressure check failed')
+    return
+  fi
+
+  used_percent="$((100 - available_kb * 100 / total_kb))"
+  if [[ "$used_percent" -ge "${MEMORY_USED_ALERT_PERCENT:-85}" ]]; then
+    failures+=("memory usage is ${used_percent}%")
+  fi
+}
+
+check_unhealthy_containers() {
+  command -v docker >/dev/null || return
+
+  local unhealthy
+  unhealthy="$(docker ps --filter health=unhealthy --format '{{.Names}}' 2>/dev/null || true)"
+  if [[ -n "$unhealthy" ]]; then
+    failures+=("unhealthy containers: ${unhealthy//$'\n'/, }")
+  fi
+}
+
 if [[ -n "${VOLITEX_DATABASE_URL:-}" || -n "${N8N_DATABASE_URL:-}" ]]; then
   command -v psql >/dev/null || failures+=('psql is required when database URLs are configured')
   [[ -n "${VOLITEX_DATABASE_URL:-}" ]] && check_postgres volitex "$VOLITEX_DATABASE_URL"
@@ -68,6 +118,10 @@ if [[ -n "${VOLITEX_REDIS_URL:-}" || -n "${N8N_REDIS_URL:-}" ]]; then
   [[ -n "${VOLITEX_REDIS_URL:-}" ]] && check_redis volitex "$VOLITEX_REDIS_URL"
   [[ -n "${N8N_REDIS_URL:-}" ]] && check_redis n8n "$N8N_REDIS_URL"
 fi
+
+[[ -n "${VOLITEX_REDIS_URL:-}" ]] && check_sidekiq_queues "$VOLITEX_REDIS_URL"
+check_memory
+check_unhealthy_containers
 
 disk_path="${MONITOR_DISK_PATH:-/}"
 disk_used="$(df -P "$disk_path" | awk 'NR == 2 { gsub(/%/, "", $5); print $5 }')"
