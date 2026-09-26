@@ -2,6 +2,7 @@ class ScopeInstagramMessageSourceIndex < ActiveRecord::Migration[7.1]
   disable_ddl_transaction!
 
   INDEX_NAME = 'index_messages_on_inbox_incoming_source_id'.freeze
+  BUILD_INDEX_NAME = "#{INDEX_NAME}_instagram".freeze
 
   def up
     mark_existing_instagram_messages
@@ -13,18 +14,26 @@ class ScopeInstagramMessageSourceIndex < ActiveRecord::Migration[7.1]
             'Resolve them intentionally, without deleting production data, then rerun this migration. '
     end
 
-    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: INDEX_NAME)
+    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: BUILD_INDEX_NAME)
 
     add_index :messages,
               %i[inbox_id source_id],
               unique: true,
               where: instagram_incoming_message_predicate,
-              name: INDEX_NAME,
+              name: BUILD_INDEX_NAME,
               algorithm: :concurrently
+
+    if index_exists?(:messages, name: INDEX_NAME)
+      remove_index :messages, name: INDEX_NAME, algorithm: :concurrently
+      rename_index :messages, BUILD_INDEX_NAME, INDEX_NAME
+    else
+      rename_index :messages, BUILD_INDEX_NAME, INDEX_NAME
+    end
   end
 
   def down
     remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: INDEX_NAME)
+    remove_index :messages, name: BUILD_INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: BUILD_INDEX_NAME)
   end
 
   private
