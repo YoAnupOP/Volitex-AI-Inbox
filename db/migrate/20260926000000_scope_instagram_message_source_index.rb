@@ -1,4 +1,4 @@
-class AddUniqueIncomingMessageSourcePerInbox < ActiveRecord::Migration[7.0]
+class ScopeInstagramMessageSourceIndex < ActiveRecord::Migration[7.1]
   disable_ddl_transaction!
 
   INDEX_NAME = 'index_messages_on_inbox_incoming_source_id'.freeze
@@ -9,9 +9,11 @@ class AddUniqueIncomingMessageSourcePerInbox < ActiveRecord::Migration[7.0]
 
     if duplicate_count.positive?
       raise ActiveRecord::MigrationError,
-            "Cannot add #{INDEX_NAME}: #{duplicate_count} duplicate incoming (inbox_id, source_id) groups exist. " \
+            "Cannot replace #{INDEX_NAME}: #{duplicate_count} duplicate Instagram (inbox_id, source_id) groups exist. " \
             'Resolve them intentionally, without deleting production data, then rerun this migration. '
     end
+
+    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: INDEX_NAME)
 
     add_index :messages,
               %i[inbox_id source_id],
@@ -22,7 +24,7 @@ class AddUniqueIncomingMessageSourcePerInbox < ActiveRecord::Migration[7.0]
   end
 
   def down
-    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently
+    remove_index :messages, name: INDEX_NAME, algorithm: :concurrently if index_exists?(:messages, name: INDEX_NAME)
   end
 
   private

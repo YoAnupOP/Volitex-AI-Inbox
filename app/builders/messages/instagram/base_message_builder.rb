@@ -165,7 +165,8 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
       content: message_content,
       sender: @outgoing_echo ? nil : contact,
       content_attributes: {
-        in_reply_to_external_id: message_reply_attributes
+        in_reply_to_external_id: message_reply_attributes,
+        inbound_source: 'instagram'
       }
     }
 
