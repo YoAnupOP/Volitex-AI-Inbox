@@ -4,7 +4,7 @@ ruby '3.4.4'
 
 ##-- base gems for rails --##
 gem 'rack-cors', '2.0.0', require: 'rack/cors'
-gem 'rails', '~> 7.1'
+gem 'rails', '~> 7.2.3', '>= 7.2.3.2'
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', require: false
 
@@ -57,6 +57,8 @@ gem 'aws-sdk-s3', require: false
 gem 'azure-storage-blob', git: 'https://github.com/chatwoot/azure-storage-ruby', branch: 'chatwoot', require: false
 gem 'google-cloud-storage', '>= 1.48.0', require: false
 gem 'image_processing'
+# Active Storage's safe libvips processing path requires ruby-vips 2.2.1+.
+gem 'ruby-vips', '>= 2.2.1', '< 3'
 
 ##-- for actionmailbox --##
 gem 'aws-actionmailbox-ses', '~> 0'
@@ -195,10 +197,12 @@ gem 'reverse_markdown'
 
 gem 'iso-639'
 gem 'ruby-openai'
-gem 'ai-agents', '>= 0.12.0'
+gem 'ai-agents',
+    git: 'https://github.com/chatwoot/ai-agents.git',
+    ref: '7816d01eed31bf267bfd0911f6e350a153b627ca'
 
 # TODO: Move this gem as a dependency of ai-agents
-gem 'ruby_llm', '>= 1.14.1'
+gem 'ruby_llm', '~> 2.0', '>= 2.0.0'
 gem 'ruby_llm-schema'
 
 gem 'cld3', '~> 3.7'

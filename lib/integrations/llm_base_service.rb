@@ -143,12 +143,13 @@ class Integrations::LlmBaseService
   end
 
   def build_ruby_llm_response(response, messages)
+    tokens = response.tokens
     {
       message: response.content,
       usage: {
-        'prompt_tokens' => response.input_tokens,
-        'completion_tokens' => response.output_tokens,
-        'total_tokens' => (response.input_tokens || 0) + (response.output_tokens || 0)
+        'prompt_tokens' => tokens.input,
+        'completion_tokens' => tokens.output,
+        'total_tokens' => (tokens.input || 0) + (tokens.output || 0)
       },
       request_messages: messages
     }
