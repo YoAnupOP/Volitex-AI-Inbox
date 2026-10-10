@@ -878,6 +878,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('canned_list'),
         },
         {
+          name: 'Settings Quick Menus',
+          label: t('QUICK_MENUS.TITLE'),
+          icon: 'i-lucide-list-checks',
+          to: accountScopedRoute('quick_menus'),
+        },
+        {
           name: 'Settings Integrations',
           label: t('SIDEBAR.INTEGRATIONS'),
           icon: 'i-lucide-blocks',
@@ -1068,7 +1074,9 @@ const themeState = useTheme();
       />
       <div
         class="px-1 py-1.5 flex-shrink-0 flex w-full z-50 gap-2 items-center border-t border-n-weak shadow-[0px_-2px_4px_0px_rgba(27,28,29,0.02)]"
-        :class="isEffectivelyCollapsed ? 'justify-center flex-col' : 'justify-between'"
+        :class="
+          isEffectivelyCollapsed ? 'justify-center flex-col' : 'justify-between'
+        "
       >
         <div class="flex-grow min-w-0 flex items-center justify-center">
           <SidebarProfileMenu
@@ -1078,10 +1086,20 @@ const themeState = useTheme();
         </div>
         <button
           class="flex-shrink-0 flex items-center justify-center size-8 rounded-lg hover:bg-n-alpha-1 cursor-pointer text-n-slate-11 hover:text-n-slate-12 transition-colors"
+          :title="
+            themeState.isDarkMode
+              ? 'Switch to Light Mode'
+              : 'Switch to Dark Mode'
+          "
           @click="themeState.toggleTheme"
-          :title="themeState.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
-          <span :class="themeState.isDarkMode ? 'i-lucide-sun size-4' : 'i-lucide-moon size-4'" />
+          <span
+            :class="
+              themeState.isDarkMode
+                ? 'i-lucide-sun size-4'
+                : 'i-lucide-moon size-4'
+            "
+          />
         </button>
       </div>
     </section>

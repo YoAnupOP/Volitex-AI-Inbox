@@ -378,6 +378,15 @@ RSpec.describe Conversations::MessageWindowService do
       expect(service.can_reply?).to be true
     end
 
+    it 'closes the WhatsApp Cloud window at exactly 24 hours after the latest inbound message' do
+      travel_to(Time.zone.parse('2026-10-10 12:00:00')) do
+        create(:message, account: conversation.account, inbox: whatsapp_inbox, conversation: conversation,
+                         message_type: :incoming, created_at: 24.hours.ago)
+
+        expect(described_class.new(conversation).can_reply?).to be false
+      end
+    end
+
     it 'return false if the last message is incoming and outside the messaging window (24 hours limit)' do
       create(
         :message,

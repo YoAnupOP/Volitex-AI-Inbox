@@ -11,10 +11,11 @@ import VideoCallButton from '../VideoCallButton.vue';
 import { INBOX_TYPES } from 'dashboard/helper/inbox';
 import { mapGetters } from 'vuex';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import QuickMenuPicker from 'dashboard/components-next/quickMenus/QuickMenuPicker.vue';
 
 export default {
   name: 'ReplyBottomPanel',
-  components: { NextButton, FileUpload, VideoCallButton },
+  components: { NextButton, FileUpload, VideoCallButton, QuickMenuPicker },
   mixins: [inboxMixin],
   props: {
     isNote: {
@@ -122,6 +123,14 @@ export default {
       default: false,
     },
     isEditorDisabled: {
+      type: Boolean,
+      default: false,
+    },
+    isWhatsAppCloudInbox: {
+      type: Boolean,
+      default: false,
+    },
+    canReply: {
       type: Boolean,
       default: false,
     },
@@ -357,6 +366,11 @@ export default {
         faded
         sm
         @click="$emit('selectWhatsappTemplate')"
+      />
+      <QuickMenuPicker
+        v-if="isWhatsAppCloudInbox && !isOnPrivateNote"
+        :conversation-id="conversationId"
+        :can-reply="canReply"
       />
       <NextButton
         v-if="enableContentTemplates"

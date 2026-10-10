@@ -118,9 +118,10 @@ class Whatsapp::Providers::BaseService
 
   def create_list_payload(message)
     rows = create_rows(message.content_attributes['items'])
-    section1 = { 'rows' => rows }
+    section1 = { 'title' => I18n.t('conversations.messages.whatsapp.list_section_title'), 'rows' => rows }
     sections = [section1]
-    json_hash = { :button => I18n.t('conversations.messages.whatsapp.list_button_label'), 'sections' => sections }
+    button_label = I18n.t('conversations.messages.whatsapp.list_button_label').each_char.take(20).join
+    json_hash = { :button => button_label, 'sections' => sections }
     create_payload('list', message.outgoing_content, JSON.generate(json_hash))
   end
 end

@@ -30,6 +30,7 @@ import {
 import WhatsappTemplates from './WhatsappTemplates/Modal.vue';
 import ContentTemplates from './ContentTemplates/ContentTemplatesModal.vue';
 import { MESSAGE_MAX_LENGTH } from 'shared/helpers/MessageTypeHelper';
+import { isQuickMenuActionVisible } from 'dashboard/components-next/quickMenus/quickMenuHelper';
 import inboxMixin, { INBOX_FEATURES } from 'shared/mixins/inboxMixin';
 import { trimContent, debounce, getRecipients } from '@chatwoot/utils';
 import wootConstants from 'dashboard/constants/globals';
@@ -202,6 +203,9 @@ export default {
         !this.currentChat?.can_reply &&
         !(this.isAWhatsAppChannel || this.isAPIInbox)
       );
+    },
+    isWhatsAppCloudInbox() {
+      return isQuickMenuActionVisible(this.inbox);
     },
     inboxId() {
       return this.currentChat.inbox_id;
@@ -1420,6 +1424,8 @@ export default {
         :is-send-disabled="isReplyButtonDisabled"
         :is-note="isPrivate"
         :is-editor-disabled="isEditorDisabled"
+        :is-whats-app-cloud-inbox="isWhatsAppCloudInbox"
+        :can-reply="Boolean(currentChat?.can_reply)"
         :on-file-upload="onFileUpload"
         :on-send="onSendReply"
         :conversation-type="conversationType"

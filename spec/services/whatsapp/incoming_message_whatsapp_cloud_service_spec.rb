@@ -1,6 +1,15 @@
 require 'rails_helper'
 
 describe Whatsapp::IncomingMessageWhatsappCloudService do
+  describe '#message_content' do
+    it 'continues to store button and list selections as their visible titles' do
+      service = described_class.allocate
+
+      expect(service.send(:message_content, { interactive: { button_reply: { title: 'Billing' } } })).to eq('Billing')
+      expect(service.send(:message_content, { interactive: { list_reply: { title: 'Technical help' } } })).to eq('Technical help')
+    end
+  end
+
   describe '#perform' do
     after do
       Redis::Alfred.scan_each(match: 'MESSAGE_SOURCE_KEY::*') { |key| Redis::Alfred.delete(key) }

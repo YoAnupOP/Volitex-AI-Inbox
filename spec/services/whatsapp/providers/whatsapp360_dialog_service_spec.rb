@@ -57,7 +57,8 @@ describe Whatsapp::Providers::Whatsapp360DialogService do
 
         expected_action = {
           button: I18n.t('conversations.messages.whatsapp.list_button_label'),
-          sections: [{ rows: %w[Burito Pasta Sushi Salad].map { |i| { id: i, title: i } } }]
+          sections: [{ title: I18n.t('conversations.messages.whatsapp.list_section_title'),
+                       rows: %w[Burito Pasta Sushi Salad].map { |i| { id: i, title: i } } }]
         }.to_json
 
         stub_request(:post, 'https://waba.360dialog.io/v1/messages')

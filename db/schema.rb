@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_26_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_10_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1291,6 +1291,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_26_000000) do
     t.index ["slug"], name: "index_portals_on_slug", unique: true
   end
 
+  create_table "quick_menus", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "name", null: false
+    t.text "body", null: false
+    t.jsonb "items", default: [], null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_quick_menus_on_account_id"
+  end
+
+  add_check_constraint "quick_menus", "char_length(body) BETWEEN 1 AND 1024 AND length(btrim(body)) > 0", name: "quick_menus_body_length_check"
+  add_check_constraint "quick_menus", "CASE WHEN jsonb_typeof(items) = 'array' THEN jsonb_array_length(items) BETWEEN 1 AND 10 ELSE false END", name: "quick_menus_items_count_check"
+
   create_table "portals_members", id: false, force: :cascade do |t|
     t.bigint "portal_id", null: false
     t.bigint "user_id", null: false
@@ -1517,6 +1530,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_26_000000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "quick_menus", "accounts", on_delete: :cascade
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").

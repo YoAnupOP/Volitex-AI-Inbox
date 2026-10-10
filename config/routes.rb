@@ -124,6 +124,7 @@ Rails.application.routes.draw do
             end
           end
           resources :canned_responses, only: [:index, :create, :update, :destroy]
+          resources :quick_menus, only: [:index, :show, :create, :update, :destroy]
           resources :automation_rules, only: [:index, :create, :show, :update, :destroy] do
             post :clone
           end
@@ -174,6 +175,7 @@ Rails.application.routes.draw do
               post :unread
               post :custom_attributes
               post :toggle_ai_mode
+              post :send_quick_menu
               get :attachments
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?

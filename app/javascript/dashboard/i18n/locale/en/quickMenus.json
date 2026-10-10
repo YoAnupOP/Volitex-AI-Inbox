@@ -1,0 +1,56 @@
+{
+  "QUICK_MENUS": {
+    "TITLE": "Quick Menus",
+    "DESCRIPTION": "Create reusable WhatsApp button and list messages for your agents.",
+    "AVAILABLE": "Available menus",
+    "EMPTY": "No Quick Menus have been created yet.",
+    "LOADING": "Loading Quick Menus...",
+    "ITEMS": "items",
+    "ITEM_COUNT_LABEL": "{count} items · {type}",
+    "BODY_COUNTER": "{count} / 1024",
+    "TITLE_COUNTER": "{count} / {limit}",
+    "BUTTONS": "Reply buttons",
+    "LIST": "List message",
+    "BUTTON_LIMIT": "Reply buttons · up to 3 items · 20 characters each",
+    "ROW_LIMIT": "List rows · up to 10 items · 24 characters each",
+    "NEW": "New menu",
+    "EDIT": "Edit",
+    "DELETE": "Delete",
+    "DELETE_TITLE": "Delete Quick Menu",
+    "EDIT_TITLE": "Edit menu",
+    "NAME": "Menu name",
+    "BODY": "Message body",
+    "ITEM_TITLE": "Option {number}",
+    "REMOVE": "Remove",
+    "ADD_ITEM": "Add option",
+    "PREVIEW": "WhatsApp preview",
+    "SAVE": "Save menu",
+    "SAVED": "Quick Menu saved.",
+    "DELETED": "Quick Menu deleted.",
+    "DELETE_CONFIRM": "Delete {name}?",
+    "ERRORS": {
+      "LOAD": "Could not load Quick Menus.",
+      "SAVE": "Could not save Quick Menu.",
+      "DELETE": "Could not delete Quick Menu."
+    },
+    "VALIDATION": {
+      "NAME_REQUIRED": "Enter a menu name.",
+      "BODY_REQUIRED": "Enter message text.",
+      "BODY_TOO_LONG": "Message body must be 1,024 characters or fewer.",
+      "REQUIRED": "Enter a non-blank title.",
+      "TOO_LONG": "This title exceeds the WhatsApp character limit.",
+      "DUPLICATE": "Option titles must be unique.",
+      "ITEM_COUNT": "Add between 1 and 10 options."
+    },
+    "COMPOSER": {
+      "ACTION": "Quick Menus",
+      "SENDING": "Sending...",
+      "SENT": "Quick Menu sent.",
+      "PICKER_TITLE": "Choose a Quick Menu",
+      "CLOSED_WINDOW": "Quick Menus are unavailable because the WhatsApp customer-service window is closed.",
+      "LOAD_ERROR": "Could not load Quick Menus.",
+      "SEND_ERROR": "Could not send this Quick Menu.",
+      "EMPTY": "No Quick Menus are available."
+    }
+  }
+}

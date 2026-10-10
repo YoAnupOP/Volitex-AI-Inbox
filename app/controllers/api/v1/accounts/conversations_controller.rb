@@ -2,6 +2,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   include Events::Types
   include DateRangeHelper
   include HmacConcern
+  include Api::V1::Accounts::QuickMenuSending
 
   before_action :conversation, except: [:index, :meta, :search, :create, :filter]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
