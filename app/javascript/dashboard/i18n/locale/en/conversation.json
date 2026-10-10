@@ -68,6 +68,7 @@
     "FAIL_DELETE_MESSSAGE": "Couldn't delete message! Try again",
     "NO_RESPONSE": "No response",
     "RESPONSE": "Response",
+    "INTERACTIVE_OPTIONS": "Interactive message options",
     "RATING_TITLE": "Rating",
     "FEEDBACK_TITLE": "Feedback",
     "REPLY_MESSAGE_NOT_FOUND": "Message not available",
