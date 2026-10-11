@@ -47,6 +47,10 @@ Codex can automate repository changes, CI/test execution, image/digest verificat
 
 ## Frozen release and exact production artifact
 
+### Candidate release gate (2026-10-11)
+
+The artifact below is a historical master release, **not the Quick Menu candidate**. Do not deploy it expecting Quick Menus. The current candidate must pass non-publishing image build, isolated web/Sidekiq boot, security triage, and authorized Meta/n8n smoke verification before a new release is selected. See [production candidate verification](production-candidate-verification.md) for executed checks and blockers. Never treat historical audit or image claims as evidence for a newer commit.
+
 | Item | Value |
 |---|---|
 | Git branch | master |
@@ -74,7 +78,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 - [ALREADY DONE] WhatsApp credentials and Instagram/Facebook OAuth tokens are protected by Active Record encryption when the three encryption keys are configured. WhatsApp sensitive provider configuration is separate from queryable routing metadata.
 - [ALREADY DONE] deployment/n8n-queue.compose.yaml defines separate n8n PostgreSQL, n8n Valkey, n8n main, and n8n worker services. Its environment contract is deployment/.env.n8n.example.
 - [ALREADY DONE] The repository contains backup_postgres.sh, restore_postgres_backup.sh, monitor.sh, check_postgres_extensions.sh, and the staging webhook load-test harness.
-- [ALREADY DONE] Ruby bundle-audit is clean for the frozen lockfile.
+- [CODEX AUTOMATABLE] Rerun Ruby and JavaScript dependency audits for the selected candidate. Historical audit results do not clear current advisories.
 
 ## 0.2 Not needed yet
 
@@ -283,6 +287,8 @@ WHATSAPP_API_VERSION=v24.0
 ~~~
 
 Never create a populated .env in Git. Deploy and let the migrate service run bundle exec rails db:chatwoot_prepare. Rails and Sidekiq depend on migration success.
+
+For an upgrade containing the WhatsApp credential encryption migration, retain a verified pre-migration backup and all three encryption keys, then run `bundle exec rails volitex:encrypt_whatsapp_provider_configs` from the migrated release. Verify the backfill and channel delivery before accepting the release; see [credential encryption recovery](whatsapp-credential-encryption.md). Keep the original keys with retained encrypted backups. Do not roll back across this boundary without matching data and keys.
 
 Verify:
 
@@ -688,4 +694,4 @@ Recovery time and recovery-point objectives are not promises until restore and V
 
 “Volitex AI Inbox is actually deployed and operating in production for a paying client” means the KVM 4 exists and the real deployment has passed infrastructure, Meta, backup, monitoring, smoke, failure, reboot, and client-acceptance checks. That state does not exist until the manual first-client sequence is completed.
 
-The codebase is prepared. The first real deployment still requires careful operator execution and measured validation of the single-VPS failure domain.
+Preparation is a release-specific gate. The current candidate is not cleared merely because this runbook exists. The first real deployment requires the candidate verification record, careful operator execution, and measured validation of the single-VPS failure domain.

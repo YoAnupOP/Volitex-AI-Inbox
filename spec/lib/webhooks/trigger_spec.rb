@@ -32,6 +32,15 @@ describe Webhooks::Trigger do
   end
 
   describe '#execute' do
+    it 'does not log webhook credentials or error response bodies' do
+      private_url = 'https://test.com/webhook?token=private-value'
+      error = SafeFetch::HttpError.new('404 response containing private-value')
+      expect(SafeFetch).to receive(:fetch).and_raise(error)
+      expect(Rails.logger).to receive(:warn).with('[Webhooks::Trigger] delivery failed type=api_inbox_webhook error=SafeFetch::HttpError')
+
+      trigger.execute(private_url, payload, webhook_type)
+    end
+
     it 'triggers webhook' do
       expect(SafeFetch).to receive(:fetch).with(
         url,

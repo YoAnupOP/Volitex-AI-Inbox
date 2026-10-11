@@ -1,0 +1,36 @@
+name: Verify non-production candidate
+
+on:
+  push:
+    branches: [codex/whatsapp-interactive-quick-menus]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build exact candidate without publishing
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          load: true
+          tags: volitex-candidate:${{ github.sha }}
+          build-args: GIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=candidate-amd64
+          cache-to: type=gha,mode=max,scope=candidate-amd64
+      - name: Verify isolated production boot
+        run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA"
+      - name: Record candidate identity
+        run: |
+          echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          echo "Build digest: ${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+          docker image inspect "volitex-candidate:$GITHUB_SHA" --format 'Local image ID: {{.Id}}' >> "$GITHUB_STEP_SUMMARY"

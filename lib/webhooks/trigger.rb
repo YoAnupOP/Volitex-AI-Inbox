@@ -33,7 +33,7 @@ class Webhooks::Trigger
 
   def handle_failure(error)
     handle_error(error)
-    Rails.logger.warn "Exception: Invalid webhook URL #{@url} : #{error.message}"
+    Rails.logger.warn "[Webhooks::Trigger] delivery failed type=#{@webhook_type} error=#{error.class.name}"
   end
 
   private

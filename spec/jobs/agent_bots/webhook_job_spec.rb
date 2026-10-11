@@ -36,6 +36,13 @@ RSpec.describe AgentBots::WebhookJob do
     expect(handlers).to include('Webhooks::Trigger::RetryableError')
   end
 
+  it 'does not log customer payloads on retryable failures' do
+    allow(Webhooks::Trigger).to receive(:execute).and_raise(retryable_error)
+    expect(Rails.logger).to receive(:warn).with('[AgentBots::WebhookJob] attempt 0 failed Webhooks::Trigger::RetryableError')
+
+    expect { described_class.new.perform(url, payload, webhook_type) }.to raise_error(Webhooks::Trigger::RetryableError)
+  end
+
   it 'retries 3 times and handles failure after retries are exhausted' do
     allow(Webhooks::Trigger).to receive(:execute).and_raise(retryable_error)
     trigger_instance = instance_double(Webhooks::Trigger, handle_failure: true)
