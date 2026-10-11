@@ -40,12 +40,22 @@ commits existed at the start of this audit.
   checks the section label, open-button limit, and exact row IDs/titles. This late
   check is distinguished from the completed 102-example local batch below; its
   final verification result is recorded in the execution's final response.
+- The new send endpoint bypassed the normal message controller's n8n ownership
+  gate. Quick Menu send validation now uses the same owner attribute and existing
+  ownership-service constant, returning `automation_owned` until human takeover.
+  A request regression checks that no message is created while n8n owns the
+  conversation and that sending works after the existing handoff service runs.
+  This late check also requires separate final verification because Docker became
+  unavailable after the completed local batch.
 
 CRUD uses account-scoped queries and the existing Pundit context. Agents can read
 their account's menus; administrators can mutate them. Conversation lookup uses
 the authenticated account's display IDs and existing conversation authorization.
 Send validation checks the menu, conversation, inbox, and channel account IDs,
 Cloud provider, and existing authoritative `Conversation#can_reply?` service.
+It preserves the existing n8n/human ownership restriction. Pundit remains the
+account/conversation authorization mechanism; ownership is a message-send business
+rule matching the ordinary message endpoint.
 An account-local display ID collision resolves only to that account's conversation;
 it is never a global conversation lookup.
 

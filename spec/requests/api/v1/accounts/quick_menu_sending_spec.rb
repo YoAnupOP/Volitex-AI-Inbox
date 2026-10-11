@@ -109,4 +109,19 @@ RSpec.describe 'Quick Menu sending API', type: :request do
     expect(response.parsed_body.dig('error', 'code')).to eq('message_rejected')
     expect(conversation.messages.outgoing.count).to eq(0)
   end
+
+  it 'requires human takeover while n8n owns the conversation and sends after handoff' do
+    conversation.update!(custom_attributes: { 'automation_owner' => 'n8n', 'ai_mode' => true })
+    expect do
+      post path, params: { quick_menu_id: menu.id }, headers: agent.create_new_auth_token, as: :json
+    end.not_to change(conversation.messages.outgoing, :count)
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig('error', 'code')).to eq('automation_owned')
+
+    Conversations::AutomationOwnershipService.new(conversation: conversation, actor: agent).handoff_to_human!
+    post path, params: { quick_menu_id: menu.id }, headers: agent.create_new_auth_token, as: :json
+    expect(response).to have_http_status(:created)
+    expect(conversation.reload.custom_attributes['automation_owner']).to eq('human')
+    expect(conversation.messages.outgoing.last.sender).to eq(agent)
+  end
 end

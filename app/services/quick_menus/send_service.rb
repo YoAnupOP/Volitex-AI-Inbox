@@ -22,6 +22,10 @@ class QuickMenus::SendService
   private
 
   def validate_sendable!
+    if @conversation.custom_attributes.to_h['automation_owner'] == Conversations::AutomationOwnershipService::N8N_OWNER
+      raise Error.new('automation_owned', 'n8n owns this conversation. Take over before replying.')
+    end
+
     raise Error.new('invalid_menu', @quick_menu.errors.full_messages.to_sentence) unless @quick_menu.valid?
     raise Error.new('unsupported_inbox', 'Quick Menus can only be sent from a WhatsApp Cloud inbox.') unless cloud_whatsapp_inbox?
     raise Error.new('window_closed', 'The WhatsApp customer-service window is closed.') unless @conversation.can_reply?
