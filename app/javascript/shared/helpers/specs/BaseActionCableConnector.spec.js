@@ -62,7 +62,10 @@ describe('BaseActionCableConnector', () => {
     consumers.length = 0;
     vi.useFakeTimers();
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
-    Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
     connector = new TestConnector(app, 'token', '', 20000, 30000, 90000);
   });
 
@@ -137,6 +140,7 @@ describe('BaseActionCableConnector', () => {
   });
 
   it('stops timers and does not reconnect after explicit teardown', () => {
+    connector.disconnect();
     connector.disconnect();
     consumers[0].subscription.callbacks.disconnected();
     vi.advanceTimersByTime(30000);

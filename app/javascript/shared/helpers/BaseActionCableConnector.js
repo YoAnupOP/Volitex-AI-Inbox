@@ -43,7 +43,8 @@ class BaseActionCableConnector {
   }
 
   createConnection = () => {
-    const generation = ++this.connectionGeneration;
+    this.connectionGeneration += 1;
+    const generation = this.connectionGeneration;
     this.subscriptionConfirmed = false;
     this.consumer = createConsumer(this.websocketURL);
     this.subscription = this.consumer.subscriptions.create(
@@ -70,7 +71,10 @@ class BaseActionCableConnector {
     );
 
     this.subscriptionTimeoutTimer = setTimeout(() => {
-      if (generation === this.connectionGeneration && !this.subscriptionConfirmed) {
+      if (
+        generation === this.connectionGeneration &&
+        !this.subscriptionConfirmed
+      ) {
         this.handleUnhealthyConnection('subscription_timeout', generation);
       }
     }, SUBSCRIPTION_TIMEOUT);
@@ -128,7 +132,10 @@ class BaseActionCableConnector {
     );
     const delay = Math.round(exponentialDelay * (0.75 + Math.random() * 0.5));
     this.reconnectAttempts += 1;
-    this.logDiagnostic('reconnect_attempt', { attempt: this.reconnectAttempts, delay });
+    this.logDiagnostic('reconnect_attempt', {
+      attempt: this.reconnectAttempts,
+      delay,
+    });
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
@@ -201,7 +208,10 @@ class BaseActionCableConnector {
   removeBrowserEventListeners = () => {
     window.removeEventListener('online', this.handleOnline);
     window.removeEventListener('offline', this.handleOffline);
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    document.removeEventListener(
+      'visibilitychange',
+      this.handleVisibilityChange
+    );
   };
 
   handleOnline = () => {
@@ -211,7 +221,10 @@ class BaseActionCableConnector {
   };
 
   handleOffline = () =>
-    this.handleUnhealthyConnection('browser_offline', this.connectionGeneration);
+    this.handleUnhealthyConnection(
+      'browser_offline',
+      this.connectionGeneration
+    );
 
   handleVisibilityChange = () => {
     if (!document.hidden) this.checkConnectionHealth(this.connectionGeneration);
@@ -233,10 +246,16 @@ class BaseActionCableConnector {
 
   disconnectCurrentConnection = () => {
     this.clearSubscriptionTimeout();
-    this.subscription?.unsubscribe();
-    this.consumer?.disconnect();
+    const subscription = this.subscription;
+    const consumer = this.consumer;
+    this.subscription = null;
+    this.consumer = null;
+    subscription?.unsubscribe();
+    consumer?.disconnect();
   };
 
+  // Diagnostic output intentionally uses no instance data, which includes credentials.
+  // eslint-disable-next-line class-methods-use-this
   logDiagnostic = (event, details = {}) => {
     // Deliberately excludes pubsub tokens, websocket URLs, and event payloads.
     if (window.chatwootConfig?.logActionCableDiagnostics) {
