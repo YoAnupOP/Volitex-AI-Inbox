@@ -2,7 +2,7 @@ module Api::V1::Accounts::QuickMenuSending
   extend ActiveSupport::Concern
 
   def send_quick_menu
-    quick_menu = Current.account.quick_menus.find(params.require(:quick_menu_id))
+    quick_menu = Current.account.quick_menus.find(params.permit(:quick_menu_id).require(:quick_menu_id))
     authorize quick_menu, :show?
     message = QuickMenus::SendService.new(conversation: @conversation, quick_menu: quick_menu, user: Current.user).perform
     render json: message.attributes.slice('id', 'content', 'content_type', 'content_attributes', 'status'),

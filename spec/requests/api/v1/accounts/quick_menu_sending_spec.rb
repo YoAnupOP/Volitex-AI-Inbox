@@ -85,9 +85,11 @@ RSpec.describe 'Quick Menu sending API', type: :request do
   end
 
   it 'rejects missing menu IDs and invalid saved menus without creating a message' do
-    post path, params: {}, headers: agent.create_new_auth_token, as: :json
-    expect(response).to have_http_status(:unprocessable_entity)
-    expect(response.parsed_body.dig('error', 'code')).to eq('invalid_request')
+    [{}, { quick_menu_id: [menu.id] }, { quick_menu_id: { id: menu.id } }].each do |payload|
+      post path, params: payload, headers: agent.create_new_auth_token, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body.dig('error', 'code')).to eq('invalid_request')
+    end
     menu.items = [{ title: 'A' * 21 }]
     menu.save!(validate: false)
     expect do

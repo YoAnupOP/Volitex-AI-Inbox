@@ -47,6 +47,9 @@ commits existed at the start of this audit.
   conversation and that sending works after the existing handoff service runs.
   This late check also requires separate final verification because Docker became
   unavailable after the completed local batch.
+- Send IDs now use scalar strong parameters before lookup. Array/object IDs would
+  otherwise make ActiveRecord return an array or reject the lookup with a server
+  error. The existing invalid-request regression also covers these malformed IDs.
 
 CRUD uses account-scoped queries and the existing Pundit context. Agents can read
 their account's menus; administrators can mutate them. Conversation lookup uses
