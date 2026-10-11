@@ -135,8 +135,11 @@ jobs:
       - name: Create database
         run: bundle exec rake db:create
 
-      - name: Seed database
+      - name: Load test schema
         run: bundle exec rake db:schema:load
+
+      - name: Compile assets for rendered-view specs
+        run: bundle exec rake assets:precompile
 
       - name: Run backend tests (parallelized)
         run: |
