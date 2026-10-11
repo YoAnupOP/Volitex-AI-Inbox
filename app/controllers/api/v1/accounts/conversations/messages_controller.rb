@@ -6,12 +6,14 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def create
-    return render_automation_owner_error unless permitted_by_automation_owner?
-    return render_existing_automation_delivery if existing_automation_delivery
+    @conversation.with_lock do
+      return render_automation_owner_error unless permitted_by_automation_owner?
+      return render_existing_automation_delivery if existing_automation_delivery
 
-    user = Current.user || @resource
-    mb = Messages::MessageBuilder.new(user, @conversation, message_params_for_actor)
-    @message = mb.perform
+      user = Current.user || @resource
+      mb = Messages::MessageBuilder.new(user, @conversation, message_params_for_actor)
+      @message = mb.perform
+    end
   rescue ActiveRecord::RecordNotUnique
     return render_existing_automation_delivery if existing_automation_delivery
 

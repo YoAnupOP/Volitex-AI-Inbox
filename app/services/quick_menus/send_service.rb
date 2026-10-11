@@ -15,8 +15,10 @@ class QuickMenus::SendService
   end
 
   def perform
-    validate_sendable!
-    Messages::MessageBuilder.new(@user, @conversation, message_params).perform
+    @conversation.with_lock do
+      validate_sendable!
+      Messages::MessageBuilder.new(@user, @conversation, message_params).perform
+    end
   end
 
   private

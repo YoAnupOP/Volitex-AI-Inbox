@@ -230,6 +230,20 @@ RSpec.describe 'Conversation Messages API', type: :request do
           Message.transaction(requires_new: true) { message.dup.save! }
         end.to raise_error(ActiveRecord::RecordNotUnique)
       end
+
+      it 'rejects a reply when handoff occurs after the conversation is loaded' do
+        allow_any_instance_of(Api::V1::Accounts::Conversations::MessagesController).to receive(:conversation).and_wrap_original do |method|
+          method.call
+          Conversations::AutomationOwnershipService.new(conversation: conversation, actor: agent).handoff_to_human!
+        end
+
+        post api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id),
+             params: params, headers: headers, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body['error']).to eq('n8n does not own this conversation.')
+        expect(conversation.messages.outgoing).to be_empty
+      end
     end
   end
 

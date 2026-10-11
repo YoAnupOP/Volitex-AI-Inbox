@@ -43,6 +43,15 @@ RSpec.describe 'Quick Menu sending API', type: :request do
     )
   end
 
+  it 'rechecks ownership when the loaded conversation is stale' do
+    stale_conversation = Conversation.find(conversation.id)
+    Conversation.find(conversation.id).update!(custom_attributes: { 'automation_owner' => 'n8n' })
+    service = QuickMenus::SendService.new(conversation: stale_conversation, quick_menu: menu, user: agent)
+
+    expect { service.perform }.to raise_error(QuickMenus::SendService::Error, 'n8n owns this conversation. Take over before replying.')
+    expect(conversation.messages.outgoing).to be_empty
+  end
+
   it 'rejects menus and conversations from other accounts without exposing them' do
     other_menu = create(:quick_menu, account: create(:account))
     post path, params: { quick_menu_id: other_menu.id }, headers: agent.create_new_auth_token, as: :json
