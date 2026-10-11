@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_10_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_11_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1173,6 +1173,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_10_000000) do
     t.index ["inbox_id", "source_id"], name: "index_messages_on_inbox_incoming_source_id", unique: true, where: "((message_type = 0) AND (source_id IS NOT NULL) AND ((content_attributes ->> 'inbound_source'::text) = 'instagram'::text))"
     t.index ["inbox_id"], name: "index_messages_on_inbox_id"
     t.index ["sender_type", "sender_id", "created_at"], name: "index_messages_on_sender_and_created"
+    t.index ["sender_type", "sender_id", "source_id"], name: "index_messages_on_n8n_delivery_source_id", unique: true, where: "(((sender_type)::text = 'AgentBot'::text) AND (source_id ~~ 'volitex:n8n:%'::text))"
     t.index ["sender_type", "sender_id"], name: "index_messages_on_sender_type_and_sender_id"
     t.index ["source_id"], name: "index_messages_on_source_id"
   end
@@ -1291,6 +1292,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_10_000000) do
     t.index ["slug"], name: "index_portals_on_slug", unique: true
   end
 
+  create_table "portals_members", id: false, force: :cascade do |t|
+    t.bigint "portal_id", null: false
+    t.bigint "user_id", null: false
+    t.index ["portal_id", "user_id"], name: "index_portals_members_on_portal_id_and_user_id", unique: true
+    t.index ["portal_id"], name: "index_portals_members_on_portal_id"
+    t.index ["user_id"], name: "index_portals_members_on_user_id"
+  end
+
   create_table "quick_menus", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.string "name", null: false
@@ -1299,17 +1308,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_10_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_quick_menus_on_account_id"
-  end
-
-  add_check_constraint "quick_menus", "char_length(body) BETWEEN 1 AND 1024 AND length(btrim(body)) > 0", name: "quick_menus_body_length_check"
-  add_check_constraint "quick_menus", "CASE WHEN jsonb_typeof(items) = 'array' THEN jsonb_array_length(items) BETWEEN 1 AND 10 ELSE false END", name: "quick_menus_items_count_check"
-
-  create_table "portals_members", id: false, force: :cascade do |t|
-    t.bigint "portal_id", null: false
-    t.bigint "user_id", null: false
-    t.index ["portal_id", "user_id"], name: "index_portals_members_on_portal_id_and_user_id", unique: true
-    t.index ["portal_id"], name: "index_portals_members_on_portal_id"
-    t.index ["user_id"], name: "index_portals_members_on_user_id"
+    t.check_constraint "\nCASE\n    WHEN jsonb_typeof(items) = 'array'::text THEN jsonb_array_length(items) >= 1 AND jsonb_array_length(items) <= 10\n    ELSE false\nEND", name: "quick_menus_items_count_check"
+    t.check_constraint "char_length(body) >= 1 AND char_length(body) <= 1024 AND length(btrim(body)) > 0", name: "quick_menus_body_length_check"
   end
 
   create_table "related_categories", force: :cascade do |t|

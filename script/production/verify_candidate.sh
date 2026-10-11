@@ -58,6 +58,7 @@ import sys
 assert json.load(open(sys.argv[1]))['status'] == 'woot'
 PY
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/api >/dev/null
+docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/app/login >/dev/null
 docker exec "$prefix-web" bundle exec rails runner 'require "sidekiq/api"; raise unless ActiveRecord::Base.connection.active?; raise unless Redis.new(url: ENV.fetch("REDIS_URL")).ping == "PONG"; raise unless ActiveRecord::Base.connection.table_exists?(:quick_menus); raise unless Sidekiq::ProcessSet.new.size.positive?; puts "Database, Redis, Quick Menus schema and Sidekiq verified"'
 docker restart "$prefix-web" "$prefix-worker" >/dev/null
 sleep 15
