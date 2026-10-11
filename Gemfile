@@ -155,7 +155,7 @@ gem 'geocoder'
 gem 'maxminddb'
 
 # to create db triggers
-gem 'hairtrigger'
+gem 'hairtrigger', '~> 1.3'
 
 gem 'procore-sift'
 

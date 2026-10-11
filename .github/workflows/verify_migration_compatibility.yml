@@ -41,8 +41,6 @@ jobs:
           node-version: 24
       - name: Resolve supported HairTrigger patch
         run: |
-          ruby -e 'path="Gemfile"; File.write(path, File.read(path).sub("gem \u0027hairtrigger\u0027", "gem \u0027hairtrigger\u0027, \u0027~> 1.3\u0027"))'
-          bundle lock --update hairtrigger --conservative
           sudo apt-get update && sudo apt-get install -y libvips-dev
           bundle install --jobs 4
           pnpm install --frozen-lockfile --ignore-scripts
@@ -71,4 +69,5 @@ jobs:
           path: |
             Gemfile
             Gemfile.lock
+            db/schema.rb
             tmp/production_critical_results.json

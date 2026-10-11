@@ -219,6 +219,17 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(response).to have_http_status(:unprocessable_entity)
         expect(response.parsed_body['error']).to eq('n8n does not own this conversation.')
       end
+
+      it 'enforces n8n delivery uniqueness at the database boundary' do
+        post api_v1_account_conversation_messages_url(account_id: account.id, conversation_id: conversation.display_id),
+             params: params, headers: headers, as: :json
+        expect(response).to have_http_status(:success)
+        message = Message.find(response.parsed_body['id'])
+
+        expect do
+          Message.transaction(requires_new: true) { message.dup.save! }
+        end.to raise_error(ActiveRecord::RecordNotUnique)
+      end
     end
   end
 

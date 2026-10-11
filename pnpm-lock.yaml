@@ -358,8 +358,8 @@ importers:
         specifier: 6.4.2
         version: 6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2)
       vite-plugin-ruby:
-        specifier: ^5.2.1
-        version: 5.2.1(vite@6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2))
+        specifier: ^5.2.5
+        version: 5.2.5(vite@6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2))
       vitest:
         specifier: 3.2.6
         version: 3.2.6(@types/node@22.7.0)(jiti@1.21.6)(jsdom@27.2.0)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2)
@@ -3598,8 +3598,9 @@ packages:
     resolution: {integrity: sha512-yBYjY9QX2hnRmZHAjG/f13MzmBzxzYgQhFrke06TTyKY5zSTEqkOeukBzIdVA3j3ulu8Qa3MbVFShV7T2RmGtQ==}
     engines: {node: '>= 0.4'}
 
-  obug@2.1.1:
-    resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
+  obug@2.2.1:
+    resolution: {integrity: sha512-XrsrhT5sybtKI6wakr2SPOlGZWWYbUXZ7a0jT8/QOeAPau+1X/bSegNe5YR75oJmEZQbKningirmGOEJCIk61Q==}
+    engines: {node: '>=12.20.0'}
 
   on-finished@2.3.0:
     resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
@@ -4732,8 +4733,8 @@ packages:
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
 
-  vite-plugin-ruby@5.2.1:
-    resolution: {integrity: sha512-wI3F/Yr4e4mEwiMff/cvNwGu8nZok5wrwUjHxO8we+h3y9+qCluO3Y5dzvz6vHJDBya9fKXkltoMwoJhaB2SRg==}
+  vite-plugin-ruby@5.2.5:
+    resolution: {integrity: sha512-Oa1cmA7FobR49YcFPa+hvASenxd8tI1jQeOuDRJNh9gsbO8ugDCHI0zh75niQGq8cnMXriJfhJrPa2F2qDeA5Q==}
     peerDependencies:
       vite: 6.4.2
 
@@ -8671,7 +8672,7 @@ snapshots:
       define-properties: 1.2.1
       es-object-atoms: 1.0.0
 
-  obug@2.1.1: {}
+  obug@2.2.1: {}
 
   on-finished@2.3.0:
     dependencies:
@@ -9966,10 +9967,10 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-ruby@5.2.1(vite@6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2)):
+  vite-plugin-ruby@5.2.5(vite@6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2)):
     dependencies:
-      obug: 2.1.1
-      tinyglobby: 0.2.16
+      obug: 2.2.1
+      tinyglobby: 0.2.17
       vite: 6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2)
 
   vite@6.4.2(@types/node@22.7.0)(jiti@1.21.6)(lightningcss@1.32.0)(sass@1.79.3)(terser@5.33.0)(yaml@2.8.2):
