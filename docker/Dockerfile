@@ -136,10 +136,12 @@ RUN apk update && apk add --no-cache \
   && gem install bundler -v "$BUNDLER_VERSION"
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/
-COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
-RUN if [ "$RAILS_ENV" != "production" ]; then \
-  ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+RUN --mount=from=node,source=/usr/local/lib/node_modules,target=/node-tools \
+  if [ "$RAILS_ENV" != "production" ]; then \
+  mkdir -p /usr/local/lib/node_modules \
+  && cp -a /node-tools/. /usr/local/lib/node_modules/ \
+  && ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
   && npm install -g pnpm@${PNPM_VERSION} \
   && pnpm --version; \
@@ -147,6 +149,7 @@ RUN if [ "$RAILS_ENV" != "production" ]; then \
 
 COPY --from=pre-builder /gems/ /gems/
 COPY --from=pre-builder /app /app
+RUN if [ "$RAILS_ENV" = "production" ]; then rm -rf /app/spec /app/test /app/tests; fi
 
 # Copy .git_sha file from pre-builder stage
 COPY --from=pre-builder /app/.git_sha /app/.git_sha
