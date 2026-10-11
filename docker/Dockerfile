@@ -94,6 +94,7 @@ RUN printf '%s\n' "$GIT_SHA" > /app/.git_sha
 
 # Remove unnecessary files
 RUN rm -rf /gems/ruby/3.4.0/cache/*.gem \
+  && find /gems -type d -name node_modules -prune -exec rm -rf {} + \
   && find /gems/ruby/3.4.0/gems/ \( -name "*.c" -o -name "*.o" \) -delete \
   && rm -rf .git \
   && rm .gitignore
