@@ -7,7 +7,7 @@ RSpec.describe Whatsapp::Providers::BaseService do
 
     I18n.with_locale(:es) do
       payload = described_class.allocate.create_list_payload(message)
-      action = JSON.parse(payload['action'])
+      action = JSON.parse(payload[:action])
       expect(action['sections'].first['title']).to eq('Options')
       expect(action['button'].length).to be <= 20
       expect(action['sections'].first['rows']).to eq(items.map { |item| { 'id' => item['value'], 'title' => item['title'] } })
