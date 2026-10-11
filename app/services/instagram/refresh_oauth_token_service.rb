@@ -66,8 +66,7 @@ class Instagram::RefreshOauthTokenService
     )
 
     unless response.success?
-      Rails.logger.error "Failed to refresh Instagram token: #{response.body}"
-      raise "Failed to refresh Instagram token: #{response.body}"
+      raise "Failed to refresh Instagram token: HTTP #{response.code}"
     end
 
     JSON.parse(response.body)
@@ -86,7 +85,7 @@ class Instagram::RefreshOauthTokenService
     update_channel_tokens(refreshed_token_data)
     channel.reload[:access_token]
   rescue StandardError => e
-    Rails.logger.error("Token refresh failed: #{e.message}")
+    Rails.logger.error("Instagram token refresh failed: #{e.class.name}")
     channel[:access_token]
   end
 end

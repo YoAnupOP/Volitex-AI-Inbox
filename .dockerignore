@@ -1,4 +1,9 @@
 .bundle
+.git
+.codex
+.kilo
+config/master.key
+config/credentials/*.key
 .env
 .env.*
 docker-compose.*

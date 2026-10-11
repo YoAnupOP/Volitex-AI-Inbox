@@ -1,0 +1,27 @@
+name: Resolve candidate Ruby audit patch
+
+on:
+  push:
+    branches: [codex/whatsapp-interactive-quick-menus]
+    paths: [.github/workflows/resolve_ruby_audit.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+      - name: Resolve a compatible Vite Ruby and rack-proxy patch
+        run: |
+          ruby -e 'File.open("Gemfile", "a") { |f| f.puts "\ngem \u0027vite_ruby\u0027, \u0027>= 3.11.1\u0027, require: false\ngem \u0027rack-proxy\u0027, \u0027~> 1.0.3\u0027, require: false" }'
+          bundle lock --update vite_ruby rack-proxy --conservative
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ruby-audit-resolution
+          path: |
+            Gemfile
+            Gemfile.lock

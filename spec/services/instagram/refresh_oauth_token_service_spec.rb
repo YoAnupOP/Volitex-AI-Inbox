@@ -34,6 +34,16 @@ RSpec.describe Instagram::RefreshOauthTokenService do
   end
 
   describe '#access_token' do
+    it 'does not log tokens returned in provider errors' do
+      instagram_channel.update!(expires_at: 5.days.from_now, updated_at: 25.hours.ago)
+      stub_request(:get, 'https://graph.instagram.com/refresh_access_token')
+        .with(query: { 'access_token' => fixed_token, 'grant_type' => 'ig_refresh_token' })
+        .to_return(status: 401, body: { error: fixed_token }.to_json)
+      expect(Rails.logger).to receive(:error).with('Instagram token refresh failed: RuntimeError')
+
+      expect(service.access_token).to eq(fixed_token)
+    end
+
     context 'when token is valid and not eligible for refresh' do
       before do
         instagram_channel.update!(
