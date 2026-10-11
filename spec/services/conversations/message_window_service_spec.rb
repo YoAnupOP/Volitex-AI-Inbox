@@ -387,6 +387,15 @@ RSpec.describe Conversations::MessageWindowService do
       end
     end
 
+    it 'uses the latest customer timestamp when an older message is inserted later' do
+      create(:message, account: conversation.account, inbox: whatsapp_inbox, conversation: conversation,
+                       message_type: :incoming, created_at: 1.hour.ago)
+      create(:message, account: conversation.account, inbox: whatsapp_inbox, conversation: conversation,
+                       message_type: :incoming, created_at: 25.hours.ago)
+
+      expect(described_class.new(conversation).can_reply?).to be true
+    end
+
     it 'return false if the last message is incoming and outside the messaging window (24 hours limit)' do
       create(
         :message,

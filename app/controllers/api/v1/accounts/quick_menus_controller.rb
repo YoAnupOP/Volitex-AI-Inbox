@@ -37,6 +37,10 @@ class Api::V1::Accounts::QuickMenusController < Api::V1::Accounts::BaseControlle
   end
 
   def quick_menu_params
-    params.require(:quick_menu).permit(:name, :body, items: [:title])
+    menu_params = params.require(:quick_menu)
+    attributes = menu_params.permit(:name, :body)
+    # Preserve the item shape so model validation rejects unexpected keys and types.
+    attributes[:items] = menu_params[:items].as_json if menu_params.key?(:items)
+    attributes
   end
 end

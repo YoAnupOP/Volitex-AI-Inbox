@@ -68,4 +68,56 @@ describe('QuickMenuPicker', () => {
     await flushPromises();
     expect(useAlert).toHaveBeenCalledWith('The window is closed.');
   });
+
+  it('shows loading and prevents duplicate sends until the request completes', async () => {
+    let resolveLoad;
+    quickMenuAPI.get.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveLoad = resolve;
+        })
+    );
+    const wrapper = mountPicker(true);
+    await wrapper.find('button').trigger('click');
+    expect(wrapper.text()).toContain('QUICK_MENUS.LOADING');
+    resolveLoad({
+      data: [{ id: 3, name: 'Support', body: 'Choose', items: [] }],
+    });
+    await flushPromises();
+    let resolveSend;
+    quickMenuAPI.send.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSend = resolve;
+        })
+    );
+    await wrapper.get('button[type="button"]').trigger('click');
+    expect(wrapper.text()).toContain('QUICK_MENUS.COMPOSER.SENDING');
+    expect(wrapper.get('button[type="button"]').element.disabled).toBe(true);
+    await wrapper.get('button[type="button"]').trigger('click');
+    expect(quickMenuAPI.send).toHaveBeenCalledOnce();
+    resolveSend({});
+    await flushPromises();
+    expect(wrapper.find('button').element.disabled).toBe(false);
+  });
+
+  it('disables an open picker when the window closes and handles server rejection', async () => {
+    const wrapper = mountPicker(true);
+    await wrapper.find('button').trigger('click');
+    await flushPromises();
+    await wrapper.setProps({ canReply: false });
+    expect(wrapper.get('button[type="button"]').element.disabled).toBe(true);
+    await wrapper.get('button[type="button"]').trigger('click');
+    expect(quickMenuAPI.send).not.toHaveBeenCalled();
+    await wrapper.setProps({ canReply: true });
+    quickMenuAPI.send.mockRejectedValueOnce({
+      response: {
+        data: { error: { code: 'window_closed', message: 'Window closed' } },
+      },
+    });
+    await wrapper.get('button[type="button"]').trigger('click');
+    await flushPromises();
+    expect(useAlert).toHaveBeenCalledWith('Window closed');
+    expect(wrapper.get('button[type="button"]').element.disabled).toBe(false);
+  });
 });

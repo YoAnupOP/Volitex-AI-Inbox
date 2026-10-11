@@ -17,6 +17,7 @@ const sendingId = ref(null);
 const menus = ref([]);
 
 const open = async () => {
+  menus.value = [];
   show.value = true;
   loading.value = true;
   try {
@@ -34,7 +35,7 @@ const open = async () => {
 };
 
 const send = async menu => {
-  if (sendingId.value) return;
+  if (sendingId.value || !props.canReply) return;
   sendingId.value = menu.id;
   try {
     await quickMenuAPI.send(props.conversationId, menu.id);
@@ -87,7 +88,7 @@ const send = async menu => {
           :key="menu.id"
           type="button"
           class="flex flex-col gap-1 rounded-lg border border-n-weak p-3 text-left hover:bg-n-alpha-2 disabled:opacity-50"
-          :disabled="Boolean(sendingId)"
+          :disabled="!canReply || Boolean(sendingId)"
           @click="send(menu)"
         >
           <span class="font-medium text-n-slate-12">{{ menu.name }}</span>
