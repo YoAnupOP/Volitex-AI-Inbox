@@ -35,6 +35,11 @@ commits existed at the start of this audit.
   window implementation was left unchanged after verifying this behavior.
 - Newly introduced Ruby files use LF, resolving their introduced EndOfLine
   offenses. Existing source line endings and lint rules were retained.
+- The required list section label has an explicit English default when the
+  current locale lacks its translation. A Spanish-locale serialization regression
+  checks the section label, open-button limit, and exact row IDs/titles. This late
+  check is distinguished from the completed 102-example local batch below; its
+  final verification result is recorded in the execution's final response.
 
 CRUD uses account-scoped queries and the existing Pundit context. Agents can read
 their account's menus; administrators can mutate them. Conversation lookup uses
@@ -56,8 +61,8 @@ strict title-only objects, normalized unique nonblank string titles, and limits
 of 20 characters for 1–3 reply buttons or 24 for 4–10 list rows. Values are
 `qm<menu-id>_<one-based-index>`; titles remain exact. Lists use the English
 `Options` section label and existing localized open-button label capped at 20
-characters. Production/staging locale fallback provides the English section
-label for locales without the new key. No inbound processing, webhook, n8n,
+characters. The explicit default supplies the English section label even when
+locale fallback is not configured. No inbound processing, webhook, n8n,
 ownership, website-widget, attachment, or ordinary-text code was changed.
 
 The current message Form bubble is the agent renderer for input_select; no
@@ -168,8 +173,13 @@ at c737d593 was inspected through gh, including all 16 RSpec JSON artifacts:
 **6014 backend examples, 68 failures, 2 pending**; frontend **3798 passed,
 20 failed / 392 files**; backend lint **2099 files, 2110 offenses**; frontend
 lint and dependency-security failed. Three backend shards passed, thirteen failed.
-The other backend failures have not all been compared with base and remain
-unresolved release blockers. Full suites were not rerun locally; existing CI
+An additional base run of all 27 files containing CI failures completed **345
+examples / 70 failures**. All 68 original CI failures reproduced by file/example
+name with the same exception classes; 58 had identical messages. The remaining
+messages differed in generated IDs/names, rendered markup, or edition metadata,
+while retaining the same failing assertions. Two additional base-batch failures
+concern super-admin user forms. These baseline codebase defects remain unresolved
+release blockers. Full suites were not rerun locally; existing CI
 provides full-suite evidence at the starting commit, not at the final fix commit.
 
 ## Migration
@@ -238,7 +248,14 @@ workflow was triggered. The branch's test_docker_build.yml exists locally but is
 not registered in the repository's active GitHub workflows (API 404), so its
 nonpublishing dispatch was unavailable. Final fix CI/push and any local image
 build outcome are reported in the execution's final response; no release image
-or production image reference was published or replaced.
+or production image reference was published or replaced. A local exact-git-archive
+build from 741230468880d2582ac293788298cab6f0e238ce was attempted with GIT_SHA set
+to that revision. During native dependency compilation, Docker/WSL commands became
+unresponsive and the task's build clients were stopped. No successful image build,
+asset precompile, runtime image boot, or artifact digest is claimed. Existing
+application services and the Docker daemon were not stopped or reset. Subsequent
+local Docker checks, including the late locale regression, were blocked by that
+runtime condition; GitHub verification proceeds independently.
 
 ## Live WhatsApp and operational blockers
 
