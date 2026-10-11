@@ -36,3 +36,18 @@ jobs:
           docker image inspect "volitex-candidate:$GITHUB_SHA" --format 'Local image ID: {{.Id}}' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify isolated production boot
         run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA"
+      - name: Audit candidate image runtime packages
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          mkdir -p "$RUNNER_TEMP/candidate-audit"
+          docker run --rm \
+            --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+            --volume "$RUNNER_TEMP/candidate-audit:/out" \
+            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+            image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+            --format json --output /out/candidate-vulnerabilities.json "volitex-candidate:$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.build.outcome == 'success'
+        with:
+          name: candidate-image-vulnerabilities
+          path: ${{ runner.temp }}/candidate-audit/candidate-vulnerabilities.json
