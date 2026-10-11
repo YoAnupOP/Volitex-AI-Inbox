@@ -30,4 +30,10 @@ RSpec.describe VolitexProductionConfiguration do
       expect { described_class.validate_encryption!(environment: 'test') }.not_to raise_error
     end
   end
+
+  it 'loads the initializer when a dependency defines only the Rake namespace' do
+    stub_const('Rake', Module.new)
+
+    expect { load Rails.root.join('config/initializers/volitex_production_configuration.rb') }.not_to raise_error
+  end
 end
