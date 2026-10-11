@@ -587,6 +587,10 @@ Review CPU/RAM/disk trends, PostgreSQL connections/locks/slow queries, Redis mem
 
 For an app-only regression, redeploy the previous known-good digest. Do not roll back across migration or credential-encryption boundaries without matching backup and keys.
 
+The Quick Menu candidate also includes `20261011000000`, which repairs the n8n delivery uniqueness index in databases initialized from a schema that omitted it. Back up before upgrade. The concurrent index migration stops on duplicate deliveries or an invalid existing index without deleting data; inspect and resolve intentionally before retrying. Its down migration is deliberately irreversible so rollback cannot remove idempotency protection. Preserve the compatible schema during an app-only rollback, or use a separately approved restore/forward-fix plan. Quick Menu rollback itself deletes saved menus.
+
+The candidate requires all three Active Record encryption variables during production startup and runs `bundle check` without installing dependencies. A missing key or missing gem is a deployment failure to correct in configuration/build; do not bypass these checks. The actual asset-precompile task has a narrowly scoped key exemption and is not a runtime readiness check.
+
 # Phase 8 — Additional clients on shared infrastructure
 
 ## A. Done once globally

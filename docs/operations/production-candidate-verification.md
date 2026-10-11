@@ -15,7 +15,7 @@ The target remains one shared multi-tenant KVM 4 with Coolify, private self-host
 - PASS: narrow dependency resolution, webhook logging fixes and clipboard regression implemented.
 - PASS: disposable PostgreSQL 16 fresh migrations, prior-schema upgrade, Quick Menu rollback/reapplication and 208 production-critical examples at `56c45ab1299d8d76bd135523185b88476333fe8b`.
 - IN PROGRESS: final full CI and exact-candidate image/boot gate. An earlier image built successfully and booted web/Sidekiq, but failed the fixed-delay restart check; this is not a passed smoke test.
-- BLOCKED locally: Docker daemon and Ubuntu WSL execution time out; neither daemon reset nor unrelated service termination performed.
+- PASS recovery: Docker/WSL later responded without restart. Docker client/server are both 29.8.0. The operator authorized maintenance restart if needed, but no unrelated workload was interrupted.
 - BLOCKED externally: no explicitly identified authorized test number/account and non-production Meta/n8n environment.
 - NOT RUN: production deployment, image publication, live migrations, KVM reboot, backup restore and monitoring alert drills.
 
@@ -24,6 +24,8 @@ The target remains one shared multi-tenant KVM 4 with Coolify, private self-host
 Host Node `22.14.0`, pnpm `10.2.0`; repository requires Node 24 and hosted CI uses 24. Host Ruby/Bundler are absent. Docker client `29.8.0`, Compose `5.5.1`, WSL `2.6.1.0`, kernel `6.6.87.2-1`. Docker server version probe timed out after 20 seconds; Ubuntu Ruby probe also timed out after 20 seconds. Windows had approximately 180 GB free disk and 8.7 GB free physical memory during diagnostics. These observations do not establish an OOM or disk-exhaustion cause.
 
 Safe recovery requires a maintenance window for local development services: stop their active work, quit Docker Desktop, run `wsl --shutdown`, reopen Docker Desktop, and verify `docker version`/container health. This interrupts every WSL distribution and Docker workload; it was not performed because unrelated Inbox/n8n services could be affected. Do not prune volumes, factory-reset Docker or delete WSL distributions. Hosted non-production CI avoids requiring extra infrastructure.
+
+At 19:08 IST, Docker and Ubuntu WSL recovered without a restart. Docker client/server 29.8.0 and Ubuntu Python/Docker execution responded. Existing Inbox/n8n services remained running. The private local n8n probe passed using the pinned images, disposable credentials, separate project/volumes and no published ports; worker absence caused the expected webhook timeout, and starting the worker produced the expected response and successful execution. This is queue/component integration evidence, not the production HMAC workflow or full Inbox API round trip.
 
 ## Changes and reasons
 
@@ -41,6 +43,8 @@ Safe recovery requires a maintenance window for local development services: stop
 - HairTrigger 1.3.1 fixes Rails 7.2 schema dumping. The schema was regenerated from the disposable prior-schema upgrade, rather than hand-edited.
 - Production startup requires all three Active Record encryption keys and checks installed gems without installing dependencies or logging shell arguments. Asset compilation has a task-specific exemption; runtime has none. Five guard specs and three mocked entrypoint checks pass.
 - Added migration `20261011000000` to repair the missing n8n delivery unique index in schema-loaded databases. It refuses duplicates or invalid existing indexes without deleting data. A database uniqueness regression passes. Its down migration deliberately refuses to remove the idempotency protection.
+- Reply creation and Quick Menu sending now hold the conversation row lock while checking current ownership and creating the message. This uses the same lock as handoff, preventing stale loaded ownership from authorizing a new reply after takeover. Both new stale-conversation regressions passed at `d2dd1bfbd19c919d726acef3d33c1c6b0159230e`: 201 production-critical / 5 guard / 4 n8n API examples, zero failures. Already accepted/in-flight provider deliveries are not canceled by this change.
+- Moved the Docker revision argument immediately before its stamp; no earlier source reads it. Changing Git SHA no longer invalidates native dependency installation. The earlier hosted bundle installation took 2,118 seconds, including native gRPC compilation; this was a completed slow build, not evidence of an unresponsive CI daemon.
 - Runbook identifies its existing immutable master image as historical, removes the stale clean-Ruby-audit claim, and explicitly requires encryption backfill/key retention.
 - Added a non-publishing candidate CI gate and disposable verification script. It records exact Git SHA and local image identity, verifies assets/no node_modules/no RSpec gems, uses ephemeral credentials, runs the actual production prepare task, checks web/Sidekiq/DB/Redis, restarts services and stops them. It does not push an image or contact Meta.
 
@@ -64,6 +68,8 @@ GitHub default branch still has 161 open alerts: 4 critical, 87 high, 60 moderat
 | Vue server-renderer                                                            | Transitive Vue SSR package; application is Rails plus browser Vue                         | Server-side rendering path not identified; final artifact inventory and explicit disposition still needed                                                                                       |
 
 Security is not cleared. Counts alone are neither exploitability proof nor an acceptance decision. No risks were silently accepted.
+
+The [remaining high/critical advisory inventory](production-candidate-advisories.csv) records exact installed versions, advisory IDs, fixed-version ranges and dependency paths. Build-only reachability is distinguished from browser/runtime exposure; artifact inventory and an explicit release disposition remain required. Gitleaks scanned the nine new committed changes through `46708d08c1` with redaction enabled and found no leaks; this is not a whole-history credential audit.
 
 ## Executed commands and results
 
@@ -100,8 +106,11 @@ Source and result links:
 - Passing migration/security/focused verification: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876926.
 - Final source full CI: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876845.
 - Final source candidate build: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876893.
+- Passing atomic ownership/migration verification: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38143374380.
 
-The initial security-change full run completed 6,024 examples / 77 failures / 2 pending. All 77 failed example identities occur in actual base-run artifacts: the fresh base run completed 5,997 examples / 62 failures / 2 pending, and the earlier base full run adds order/environment-dependent failures. This establishes baseline reproduction, not release acceptance. The corresponding frontend run completed 3,802 passed / 20 failed tests. Final-source totals remain pending until every shard completes. Superseded runs were canceled rather than treated as passing.
+The initial security-change full run completed 6,024 examples / 77 failures / 2 pending. All 77 failed example identities occur in actual base-run artifacts: the fresh base run completed 5,997 examples / 62 failures / 2 pending, and the earlier base full run adds order/environment-dependent failures. This establishes baseline reproduction, not release acceptance. At `56c45ab`, the full RSpec run completed **6,032 examples / 76 failures / 2 pending**, with zero failed identities absent from those base artifacts. The full frontend run completed **3,803 passed / 20 failed tests**; all 20 failure headings match the fresh base exactly after ANSI normalization. Failed files concern theme/appearance helpers and ActionCable. Superseded runs were canceled rather than treated as passing. Verification of the later atomic-ownership fix is tracked separately.
+
+Normal repository-wide RuboCop inspected 2,104 files and reported 2,099 offenses after the new migration/Instagram formatting fixes; inherited CRLF remains on existing changed Ruby files. ESLint reported 260,070 problems (259,654 errors / 416 warnings). No blanket rule disable was added. The new clipboard spec passed its focused ESLint check. No separate application type-check script was found. `git diff --check`, shell syntax and three mocked entrypoint checks passed.
 
 The earlier image at `d84b5cf818b3aeb9e1d849ac2b7445bed5885bf6` built with manifest digest `sha256:cdb29bd5efc5860eff3c3796b80c9f2f83c4d2ad9626d6f978d7b8c67755a460`; it is not the final candidate. Its isolated migration, DB/Redis and Sidekiq checks passed, but restart readiness returned curl exit 7 after a fixed 15-second delay. The smoke script now polls readiness with a bounded timeout; successful final execution is still required. No image was published.
 
@@ -118,5 +127,7 @@ Migration commands: first setup/upgrade uses `RAILS_ENV=production bundle exec r
 ## External acceptance still required
 
 An authorized non-production account, test phone, legitimate signed Meta webhook ingress, protected Inbox AgentBot/HMAC credentials and a queue-mode n8n workflow are needed. The operator must initiate the test inbound message. Verify buttons (1–3 items), list (4–10), each inbound visible title, n8n reply, normal text, duplicate replay, closed window, cross-account rejection and human takeover. No real customer may be used.
+
+The operator clarified that `inbox.volitexai.tech` is the unchanged Heroku App Review deployment and the old token is compromised. No callback or connected inbox was changed, and no token was reused. Graph DNS/TLS connectivity passed with an unauthenticated HTTP 400 response; authenticated prerequisites remain blocked. The [isolated live-test proposal](isolated-whatsapp-verification.md) requires a separate app/test resources, protected replacement token and explicit approval before either direct or full-flow live sends.
 
 Before purchasing: candidate build/boot, security disposition and production-critical tests must pass. After the actual server exists: Coolify networking/TLS, storage/SMTP, reboot recovery, encrypted off-server backup and isolated restore, alert delivery, load/headroom and first-client acceptance must be measured. Local disposable testing is not KVM validation and the single-VPS topology does not provide zero-downtime failover.

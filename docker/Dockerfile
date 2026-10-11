@@ -19,10 +19,6 @@ ENV RAILS_SERVE_STATIC_FILES ${RAILS_SERVE_STATIC_FILES}
 ARG RAILS_ENV=production
 ENV RAILS_ENV ${RAILS_ENV}
 
-# Supplied by the Volitex image workflow. This works both in normal clones and
-# in Git worktrees, where `.git` is a pointer unavailable inside Docker builds.
-ARG GIT_SHA=unknown
-
 ARG NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider"
 ENV NODE_OPTIONS ${NODE_OPTIONS}
 
@@ -92,6 +88,8 @@ RUN if [ "$RAILS_ENV" = "production" ]; then \
 
 # Keep the source revision visible to the running application without relying
 # on a copied Git directory.
+# Declare this after dependency installation so a new revision preserves its cache.
+ARG GIT_SHA=unknown
 RUN printf '%s\n' "$GIT_SHA" > /app/.git_sha
 
 # Remove unnecessary files
