@@ -139,6 +139,8 @@ jobs:
         run: bundle exec rake db:schema:load
 
       - name: Compile assets for rendered-view specs
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: bundle exec rake assets:precompile
 
       - name: Run backend tests (parallelized)
