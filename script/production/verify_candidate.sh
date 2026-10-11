@@ -36,6 +36,7 @@ VOLITEX_IMAGE="$image" docker compose --project-directory "$scratch" --env-file 
 # This image is local to the disposable runner; no registry push occurs.
 test "$(docker run --rm "$image" cat /app/.git_sha)" = "$commit"
 docker run --rm "$image" sh -ec 'test ! -d /app/node_modules; test -f /app/public/vite/.vite/manifest.json; ! find /gems/ruby/3.4.0/gems -maxdepth 1 -name "rspec-*" | grep -q .'
+docker run --rm "$image" ruby -rzlib -rrubygems -e 'raise "Vulnerable zlib runtime" if Gem::Version.new(Zlib::VERSION) < Gem::Version.new("3.2.3"); puts "Ruby #{RUBY_VERSION}, zlib #{Zlib::VERSION} verified"'
 docker network create "$prefix" >/dev/null
 docker run -d --name "$prefix-db" --network "$prefix" --env-file "$scratch/.env" pgvector/pgvector:pg16 >/dev/null
 docker run -d --name "$prefix-redis" --network "$prefix" redis:7-alpine >/dev/null
