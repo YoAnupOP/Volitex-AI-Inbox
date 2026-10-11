@@ -232,7 +232,9 @@ RSpec.describe 'Conversation Messages API', type: :request do
       end
 
       it 'rejects a reply when handoff occurs after the conversation is loaded' do
-        allow_any_instance_of(Api::V1::Accounts::Conversations::MessagesController).to receive(:conversation).and_wrap_original do |method|
+        messages_controller = Api::V1::Accounts::Conversations::MessagesController.new
+        allow(Api::V1::Accounts::Conversations::MessagesController).to receive(:new).and_return(messages_controller)
+        allow(messages_controller).to receive(:conversation).and_wrap_original do |method|
           method.call
           Conversations::AutomationOwnershipService.new(conversation: conversation, actor: agent).handoff_to_human!
         end

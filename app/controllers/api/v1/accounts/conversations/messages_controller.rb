@@ -109,7 +109,8 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   end
 
   def message_params_for_actor
-    return params unless Current.user.is_a?(AgentBot) && automation_ownership.n8n_bot?(Current.user)
+    actor = Current.user
+    return params unless actor.is_a?(AgentBot) && automation_ownership.n8n_bot?(actor)
 
     raise ArgumentError, 'automation_delivery_id is required for n8n replies' if automation_delivery_id.blank?
 
@@ -119,7 +120,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
       content_attributes = content_attributes.to_h.merge('automation_delivery_id' => automation_delivery_id)
       message_params[:content_attributes] = content_attributes
       message_params[:sender_type] = 'AgentBot'
-      message_params[:sender_id] = Current.user.id
+      message_params[:sender_id] = actor.id
       message_params[:source_id] = automation_delivery_source_id
     end
   end
