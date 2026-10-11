@@ -24,8 +24,8 @@ class EnsureAutomationDeliveryIndex < ActiveRecord::Migration[7.1]
             "Resolve #{duplicate_count} duplicate n8n delivery groups intentionally before retrying; no data was deleted."
     end
 
-    add_index :messages, %i[sender_type sender_id source_id], unique: true,
-              where: PREDICATE, name: INDEX_NAME, algorithm: :concurrently
+    add_index :messages, %i[sender_type sender_id source_id],
+              unique: true, where: PREDICATE, name: INDEX_NAME, algorithm: :concurrently
   end
 
   def down

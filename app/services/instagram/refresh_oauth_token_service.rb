@@ -65,9 +65,7 @@ class Instagram::RefreshOauthTokenService
       timeout: HTTP_READ_TIMEOUT
     )
 
-    unless response.success?
-      raise "Failed to refresh Instagram token: HTTP #{response.code}"
-    end
+    raise "Failed to refresh Instagram token: HTTP #{response.code}" unless response.success?
 
     JSON.parse(response.body)
   end

@@ -13,7 +13,8 @@ The target remains one shared multi-tenant KVM 4 with Coolify, private self-host
 - PASS: read the first-client runbook, WhatsApp encryption recovery and n8n control-plane documentation; inspected production Compose, example environment contract, Dockerfile, publish/build/test workflows and application security paths.
 - PASS: current GitHub alerts and local JavaScript audits retrieved; hosted Ruby audit executed.
 - PASS: narrow dependency resolution, webhook logging fixes and clipboard regression implemented.
-- IN PROGRESS: full candidate/base CI comparison and non-publishing build/boot gate. Completed outcomes must be read from the run links or final verification report, not inferred from this label.
+- PASS: disposable PostgreSQL 16 fresh migrations, prior-schema upgrade, Quick Menu rollback/reapplication and 208 production-critical examples at `56c45ab1299d8d76bd135523185b88476333fe8b`.
+- IN PROGRESS: final full CI and exact-candidate image/boot gate. An earlier image built successfully and booted web/Sidekiq, but failed the fixed-delay restart check; this is not a passed smoke test.
 - BLOCKED locally: Docker daemon and Ubuntu WSL execution time out; neither daemon reset nor unrelated service termination performed.
 - BLOCKED externally: no explicitly identified authorized test number/account and non-production Meta/n8n environment.
 - NOT RUN: production deployment, image publication, live migrations, KVM reboot, backup restore and monitoring alert drills.
@@ -36,6 +37,10 @@ Safe recovery requires a maintenance window for local development services: stop
 - Active Job argument logging disabled: arguments include signing credentials and customer messages. Job IDs, timings and execution metadata remain available.
 - Webhook failure logs retain job/type/error class, omitting customer payloads, credential-bearing destination URLs and provider response bodies. Instagram refresh errors likewise omit raw bodies/tokens.
 - Docker build context excludes Git/worktree metadata and Rails plaintext master/encryption key files.
+- Updated vite_ruby to 3.11.1 with its compatible vite-plugin-ruby 5.2.5 and rack-proxy 1.0.3 using Bundler/pnpm resolution. The first unpaired update failed compatibility validation and was corrected.
+- HairTrigger 1.3.1 fixes Rails 7.2 schema dumping. The schema was regenerated from the disposable prior-schema upgrade, rather than hand-edited.
+- Production startup requires all three Active Record encryption keys and checks installed gems without installing dependencies or logging shell arguments. Asset compilation has a task-specific exemption; runtime has none. Five guard specs and three mocked entrypoint checks pass.
+- Added migration `20261011000000` to repair the missing n8n delivery unique index in schema-loaded databases. It refuses duplicates or invalid existing indexes without deleting data. A database uniqueness regression passes. Its down migration deliberately refuses to remove the idempotency protection.
 - Runbook identifies its existing immutable master image as historical, removes the stale clean-Ruby-audit claim, and explicitly requires encryption backfill/key retention.
 - Added a non-publishing candidate CI gate and disposable verification script. It records exact Git SHA and local image identity, verifies assets/no node_modules/no RSpec gems, uses ephemeral credentials, runs the actual production prepare task, checks web/Sidekiq/DB/Redis, restarts services and stops them. It does not push an image or contact Meta.
 
@@ -43,20 +48,20 @@ Safe recovery requires a maintenance window for local development services: stop
 
 GitHub default branch still has 161 open alerts: 4 critical, 87 high, 60 moderate and 10 low. Those are default-branch findings, not the candidate's resolved graph. No exposed secret values were printed or committed during this execution.
 
-| Package/advisory | Exposure and reachability | Disposition / verification |
-| --- | --- | --- |
-| ProseMirror / GHSA-c8x8-7fp4-3x9w, high | Agent browser editor processes pasted HTML | Fixed; explicit malicious clipboard context regression and editor tests pass |
-| Axios, multiple high/moderate advisories | Browser API/authentication client; Node HTTP-only advisories have different reachability | Same-major update resolved by pnpm; message API tests pass; full frontend suite remains a gate |
-| shell-quote / GHSA-w7jw-789q-3m8p and GHSA-pqg4-j6r4-53mv, critical | Histoire launch-editor; build/development, not a Rails request path | Updated to 1.11.0; audit rerun; final image absence must be checked |
-| Vitest / GHSA-5xrq-8626-4rwp, critical | Test/UI server; normal CI runs no public Vitest UI | Updated to 3.2.6; focused tests pass |
-| Tinypool / GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr, critical | Vitest worker options; no production Node server or untrusted test configuration intended | Unresolved; 1.x has no published patched version. 2.x override/framework major upgrade requires compatibility testing; not forced. Image excludes node_modules, pending actual build inspection |
-| js-cookie / GHSA-qjx8-664m-686j, high | Browser authentication/cookie helpers | Patched to 3.0.7; API/editor regressions executed |
-| linkify-it / GHSA-22p9-wv53-3rq4 and GHSA-v245-v573-v5vm, high | Customer markdown rendered in agent browser | 5.x patched to 5.0.2; no cross-major override of Histoire dependency |
-| xmldom, multiple high advisories | video.js → mpd-parser XML manifests; browser media path | 0.8.x patched to 0.8.15; full browser media/live smoke still required |
-| ActiveStorage critical default-branch alert | Rails runtime attachment handling | Candidate already resolves 7.2.3.2; no new Rails upgrade necessary for that alert |
-| rack-proxy / GHSA-42qh-8mx8-7wqm | vite_ruby → rack-proxy 0.7.7 is installed by Ruby production bundle; dev proxy exposure must be assessed | Hosted bundle-audit fails. Advisory says rack-proxy 1.x but scanner flags 0.7.7; upstream vite_ruby constraint `~> 0.6` prevents a narrow 1.0.3 resolution. No ignored advisory or forced incompatible upgrade |
-| glob, picomatch, braces, brace-expansion, postcss, source-map-js, nanoid, Vite | Predominantly build/watch/CSS tooling despite some production-manifest classification | Reachability/image inventory assessment incomplete; braces advisory has no patched release. Trusted builds alone do not clear all advisories |
-| Vue server-renderer | Transitive Vue SSR package; application is Rails plus browser Vue | Server-side rendering path not identified; final artifact inventory and explicit disposition still needed |
+| Package/advisory                                                               | Exposure and reachability                                                                 | Disposition / verification                                                                                                                                                                      |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ProseMirror / GHSA-c8x8-7fp4-3x9w, high                                        | Agent browser editor processes pasted HTML                                                | Fixed; explicit malicious clipboard context regression and editor tests pass                                                                                                                    |
+| Axios, multiple high/moderate advisories                                       | Browser API/authentication client; Node HTTP-only advisories have different reachability  | Same-major update resolved by pnpm; message API tests pass; full frontend suite remains a gate                                                                                                  |
+| shell-quote / GHSA-w7jw-789q-3m8p and GHSA-pqg4-j6r4-53mv, critical            | Histoire launch-editor; build/development, not a Rails request path                       | Updated to 1.11.0; audit rerun; final image absence must be checked                                                                                                                             |
+| Vitest / GHSA-5xrq-8626-4rwp, critical                                         | Test/UI server; normal CI runs no public Vitest UI                                        | Updated to 3.2.6; focused tests pass                                                                                                                                                            |
+| Tinypool / GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr, critical               | Vitest worker options; no production Node server or untrusted test configuration intended | Unresolved; 1.x has no published patched version. 2.x override/framework major upgrade requires compatibility testing; not forced. Image excludes node_modules, pending actual build inspection |
+| js-cookie / GHSA-qjx8-664m-686j, high                                          | Browser authentication/cookie helpers                                                     | Patched to 3.0.7; API/editor regressions executed                                                                                                                                               |
+| linkify-it / GHSA-22p9-wv53-3rq4 and GHSA-v245-v573-v5vm, high                 | Customer markdown rendered in agent browser                                               | 5.x patched to 5.0.2; no cross-major override of Histoire dependency                                                                                                                            |
+| xmldom, multiple high advisories                                               | video.js → mpd-parser XML manifests; browser media path                                   | 0.8.x patched to 0.8.15; full browser media/live smoke still required                                                                                                                           |
+| ActiveStorage critical default-branch alert                                    | Rails runtime attachment handling                                                         | Candidate already resolves 7.2.3.2; no new Rails upgrade necessary for that alert                                                                                                               |
+| rack-proxy / GHSA-42qh-8mx8-7wqm                                               | Ruby bundle includes the Vite development proxy                                           | Fixed to 1.0.3 through compatible vite_ruby 3.11.1/plugin 5.2.5; hosted bundle-audit passes, no ignored advisory                                                                                |
+| glob, picomatch, braces, brace-expansion, postcss, source-map-js, nanoid, Vite | Predominantly build/watch/CSS tooling despite some production-manifest classification     | Reachability/image inventory assessment incomplete; braces advisory has no patched release. Trusted builds alone do not clear all advisories                                                    |
+| Vue server-renderer                                                            | Transitive Vue SSR package; application is Rails plus browser Vue                         | Server-side rendering path not identified; final artifact inventory and explicit disposition still needed                                                                                       |
 
 Security is not cleared. Counts alone are neither exploitability proof nor an acceptance decision. No risks were silently accepted.
 
@@ -82,7 +87,9 @@ gh workflow run run_foss_spec.yml --ref codex/quick-menu-base-verification-20261
 
 Focused feature/widget run after the initial updates: **10 files, 27 tests passed**. Corrected clipboard/editor/API run: **4 files, 132 tests passed**. Initial clipboard test attempts failed (missing jsdom ClipboardEvent, duplicate ProseMirror model, incompatible view/model validation); these were corrected before the passing run. Formatting and new-spec ESLint passed. Missing upstream ProseMirror source-map and outdated Browserslist warnings remain.
 
-Current hosted Ruby audit: `bundle exec bundle-audit check --update` **FAIL**, rack-proxy 0.7.7 advisory. The CI job exits before its JavaScript audit; local JavaScript audits were executed separately.
+Current hosted Ruby audit: `bundle exec bundle-audit check --update` **PASS**, no vulnerabilities found. JavaScript audits remain **FAIL**: production graph 0 critical / 23 high / 17 moderate / 5 low; complete graph 2 critical / 54 high / 37 moderate / 8 low. These are advisory findings, not unique exploitable package counts.
+
+Additional local focused runs passed 9 files / 147 tests, then 4 files / 11 tests after the paired Vite plugin update. The hosted unseeded production-critical batch passed 200 examples, runtime configuration 5 examples, and n8n API 3 examples. The first 200-example run had one new Instagram logging fixture failure; registering the provider error before a validation-triggered token refresh fixed setup ordering without weakening the assertion.
 
 Source and result links:
 
@@ -90,6 +97,13 @@ Source and result links:
 - Initial security-change full CI: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38139086522.
 - Initial non-publishing candidate build: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38139086426.
 - Fresh base comparison: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38139478412 at `452f849bc5d2c45b682dcc1e1e4d44ca43c102a9`.
+- Passing migration/security/focused verification: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876926.
+- Final source full CI: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876845.
+- Final source candidate build: https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38141876893.
+
+The initial security-change full run completed 6,024 examples / 77 failures / 2 pending. All 77 failed example identities occur in actual base-run artifacts: the fresh base run completed 5,997 examples / 62 failures / 2 pending, and the earlier base full run adds order/environment-dependent failures. This establishes baseline reproduction, not release acceptance. The corresponding frontend run completed 3,802 passed / 20 failed tests. Final-source totals remain pending until every shard completes. Superseded runs were canceled rather than treated as passing.
+
+The earlier image at `d84b5cf818b3aeb9e1d849ac2b7445bed5885bf6` built with manifest digest `sha256:cdb29bd5efc5860eff3c3796b80c9f2f83c4d2ad9626d6f978d7b8c67755a460`; it is not the final candidate. Its isolated migration, DB/Redis and Sidekiq checks passed, but restart readiness returned curl exit 7 after a fixed 15-second delay. The smoke script now polls readiness with a bounded timeout; successful final execution is still required. No image was published.
 
 Do not equate an in-progress run or one successful shard with a passed suite. Detailed final outcomes are recorded after completion.
 
@@ -99,7 +113,7 @@ Existing WhatsApp signature verification requires Cloud/unknown channels to be s
 
 Production Compose uses the required image variable, a one-shot migration service and web/Sidekiq dependents. n8n Compose defines separate PostgreSQL/Valkey/main/worker, shared encryption and queue variables, persistent volumes and authenticated readiness. The example specifies queue mode; rendered values must also be checked. Only main receives a public route. Inbox database/Valkey remain separate private Coolify resources on the same VPS.
 
-Migration commands: first setup/upgrade uses `RAILS_ENV=production bundle exec rails db:chatwoot_prepare`; explicit upgrade is `RAILS_ENV=production bundle exec rails db:migrate`. Retain verified backups and keys before migration/backfill. Quick Menu rollback drops saved menus. Prior disposable PostgreSQL 16.14 fresh/existing/reversal checks are historical evidence; the new isolated candidate check must execute before build/boot is marked passed. Test-only schema dumping has the previously reproduced HairTrigger/Rails API failure; production disables automatic dump. No production database was touched.
+Migration commands: first setup/upgrade uses `RAILS_ENV=production bundle exec rails db:chatwoot_prepare`; explicit upgrade is `RAILS_ENV=production bundle exec rails db:migrate`. Retain verified backups and keys before migration/backfill. Quick Menu rollback drops saved menus. The n8n repair migration is intentionally irreversible; use an application rollback that preserves compatible schema or an explicitly planned restore/forward fix. Current disposable PostgreSQL 16 fresh/upgrade/schema-dump and Quick Menu reversal checks passed. HairTrigger schema dumping is fixed. No production database was touched.
 
 ## External acceptance still required
 

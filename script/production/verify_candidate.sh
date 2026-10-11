@@ -61,7 +61,12 @@ docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/api >/dev/n
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/app/login >/dev/null
 docker exec "$prefix-web" bundle exec rails runner 'require "sidekiq/api"; raise unless ActiveRecord::Base.connection.active?; raise unless Redis.new(url: ENV.fetch("REDIS_URL")).ping == "PONG"; raise unless ActiveRecord::Base.connection.table_exists?(:quick_menus); raise unless Sidekiq::ProcessSet.new.size.positive?; puts "Database, Redis, Quick Menus schema and Sidekiq verified"'
 docker restart "$prefix-web" "$prefix-worker" >/dev/null
-sleep 15
+ready=false
+for attempt in $(seq 1 90); do
+  if docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health >/dev/null; then ready=true; break; fi
+  sleep 2
+done
+test "$ready" = true
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health >/dev/null
 test "$(docker inspect --format '{{.State.Running}}' "$prefix-worker")" = true
 docker stop --time 30 "$prefix-web" "$prefix-worker" >/dev/null
