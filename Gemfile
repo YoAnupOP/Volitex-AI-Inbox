@@ -80,6 +80,9 @@ gem 'dotenv-rails', '>= 3.0.0'
 gem 'foreman'
 gem 'puma', '~> 7.2', '>= 7.2.1'
 gem 'vite_rails'
+# Vite Ruby 3.11 permits the patched rack-proxy without a framework upgrade.
+gem 'vite_ruby', '>= 3.11.1', require: false
+gem 'rack-proxy', '~> 1.0.3', require: false
 # metrics on heroku
 gem 'barnes'
 
