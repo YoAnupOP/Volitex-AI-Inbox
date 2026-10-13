@@ -4,7 +4,7 @@ set -euo pipefail
 prefix="volitex-n8n-probe-${GITHUB_RUN_ID:-$$}"
 scratch=$(mktemp -d)
 umask 077
-python3 - "$scratch" <<'PY'
+python3 - "$scratch" "${1:-}" <<'PY'
 import pathlib
 import secrets
 import shlex
@@ -22,6 +22,8 @@ values.update({
     'N8N_SMTP_SENDER': 'Synthetic <synthetic@example.invalid>',
     'EXECUTIONS_DATA_SAVE_ON_SUCCESS': 'all',
 })
+if sys.argv[2]:
+    values['N8N_IMAGE'] = sys.argv[2]
 (scratch / '.env').write_text(''.join(f'{key}={shlex.quote(value)}\n' for key, value in values.items()))
 fixture = pathlib.Path('script/production/specs/n8n_queue_probe.json').resolve()
 (scratch / 'overlay.yaml').write_text(f'services:\n  n8n-main:\n    volumes:\n      - "{fixture}:/fixtures/probe.json:ro"\n')
@@ -32,7 +34,8 @@ source "$scratch/.env"
 set +a
 compose=(docker compose -p "$prefix" --env-file "$scratch/.env" -f deployment/n8n-queue.compose.yaml -f "$scratch/overlay.yaml")
 cleanup() {
-  "${compose[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
+  # Retain this probe's named volumes; existing deployment data is never removed.
+  "${compose[@]}" down >/dev/null 2>&1 || true
   rm -rf "$scratch"
 }
 trap cleanup EXIT

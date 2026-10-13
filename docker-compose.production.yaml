@@ -3,9 +3,10 @@ x-base: &base
   # especially not `latest`, for a paying-client deployment.
   image: ${VOLITEX_IMAGE:?Set VOLITEX_IMAGE to a Volitex image digest}
   env_file: .env
+  volumes:
+    - volitex_storage:/app/storage
 
 services:
-
   migrate:
     <<: *base
     environment:
@@ -31,7 +32,11 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ['CMD-SHELL', 'curl --fail --silent http://127.0.0.1:3000/api >/dev/null']
+      test:
+        [
+          'CMD-SHELL',
+          'curl --fail --silent http://127.0.0.1:3000/api >/dev/null',
+        ]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -47,3 +52,6 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+
+volumes:
+  volitex_storage:

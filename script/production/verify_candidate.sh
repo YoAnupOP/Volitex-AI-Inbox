@@ -38,6 +38,11 @@ test "$(docker run --rm "$image" cat /app/.git_sha)" = "$commit"
 docker run --rm "$image" sh -ec 'test ! -d /app/node_modules; test ! -d /usr/local/lib/node_modules; test ! -d /app/tests; ! find /gems -type d -name node_modules -print -quit | grep -q .; test -f /app/public/vite/.vite/manifest.json; ! find /gems/ruby/3.4.0/gems -maxdepth 1 -name "rspec-*" | grep -q .'
 docker run --rm "$image" ruby -rzlib -rrubygems -e 'raise "Vulnerable zlib runtime" if Gem::Version.new(Zlib::VERSION) < Gem::Version.new("3.2.3"); puts "Ruby #{RUBY_VERSION}, zlib #{Zlib::VERSION} verified"'
 docker network create "$prefix" >/dev/null
+if docker volume inspect "$prefix-storage" >/dev/null 2>&1; then
+  echo 'Verification storage volume already exists; refusing to reuse data.' >&2
+  exit 1
+fi
+docker volume create "$prefix-storage" >/dev/null
 docker run -d --name "$prefix-db" --network "$prefix" --env-file "$scratch/.env" pgvector/pgvector:pg16 >/dev/null
 docker run -d --name "$prefix-redis" --network "$prefix" redis:7-alpine >/dev/null
 for attempt in $(seq 1 60); do
@@ -45,8 +50,8 @@ for attempt in $(seq 1 60); do
   sleep 2
 done
 docker run --rm --network "$prefix" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails db:chatwoot_prepare
-docker run -d --name "$prefix-web" --network "$prefix" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails s -p 3000 -b 0.0.0.0 >/dev/null
-docker run -d --name "$prefix-worker" --network "$prefix" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq.yml >/dev/null
+docker run -d --name "$prefix-web" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails s -p 3000 -b 0.0.0.0 >/dev/null
+docker run -d --name "$prefix-worker" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq.yml >/dev/null
 ready=false
 for attempt in $(seq 1 90); do
   if docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health > "$scratch/health.json"; then ready=true; break; fi
@@ -61,6 +66,13 @@ PY
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/api >/dev/null
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/app/login >/dev/null
 docker exec "$prefix-web" bundle exec rails runner 'require "sidekiq/api"; raise unless ActiveRecord::Base.connection.active?; raise unless Redis.new(url: ENV.fetch("REDIS_URL")).ping == "PONG"; raise unless ActiveRecord::Base.connection.table_exists?(:quick_menus); raise unless Sidekiq::ProcessSet.new.size.positive?; puts "Database, Redis, Quick Menus schema and Sidekiq verified"'
+docker exec "$prefix-web" sh -ec 'printf verified > /app/storage/.volitex-verification'
+docker run --rm --volume "$prefix-storage:/app/storage:ro" "$image" sh -ec 'test "$(cat /app/storage/.volitex-verification)" = verified'
+docker exec "$prefix-db" pg_dump -U postgres -d candidate --format custom > "$scratch/database.dump"
+docker exec "$prefix-db" createdb -U postgres candidate_restore
+docker exec -i "$prefix-db" pg_restore -U postgres -d candidate_restore --exit-on-error < "$scratch/database.dump"
+test "$(docker exec "$prefix-db" psql -U postgres -d candidate_restore -tAc "SELECT count(*) FROM information_schema.tables WHERE table_name = 'quick_menus'")" = 1
+echo 'Shared attachment storage and disposable PostgreSQL dump/restore verified.'
 docker restart "$prefix-web" "$prefix-worker" >/dev/null
 ready=false
 for attempt in $(seq 1 90); do
@@ -68,6 +80,7 @@ for attempt in $(seq 1 90); do
   sleep 2
 done
 test "$ready" = true
+docker exec "$prefix-web" sh -ec 'test "$(cat /app/storage/.volitex-verification)" = verified'
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health >/dev/null
 test "$(docker inspect --format '{{.State.Running}}' "$prefix-worker")" = true
 docker stop --time 30 "$prefix-web" "$prefix-worker" >/dev/null
