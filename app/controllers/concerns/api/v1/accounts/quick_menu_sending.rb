@@ -2,7 +2,8 @@ module Api::V1::Accounts::QuickMenuSending
   extend ActiveSupport::Concern
 
   def send_quick_menu
-    quick_menu = Current.account.quick_menus.find(params.permit(:quick_menu_id).require(:quick_menu_id))
+    positive_id_param!(:id)
+    quick_menu = Current.account.quick_menus.find(positive_id_param!(:quick_menu_id))
     authorize quick_menu, :show?
     message = QuickMenus::SendService.new(conversation: @conversation, quick_menu: quick_menu, user: Current.user).perform
     render json: message.attributes.slice('id', 'content', 'content_type', 'content_attributes', 'status'),
@@ -16,6 +17,13 @@ module Api::V1::Accounts::QuickMenuSending
   end
 
   private
+
+  def positive_id_param!(key)
+    id = params.permit(key).require(key)
+    raise ActionController::ParameterMissing, key unless id.to_s.match?(/\A[1-9]\d*\z/)
+
+    id
+  end
 
   def render_quick_menu_error(code, message, status)
     render json: { error: { code: code, message: message } }, status: status

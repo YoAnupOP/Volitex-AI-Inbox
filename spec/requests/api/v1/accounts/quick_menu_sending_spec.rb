@@ -93,6 +93,26 @@ RSpec.describe 'Quick Menu sending API', type: :request do
     expect(response).to have_http_status(:unauthorized)
   end
 
+  it 'rejects menu IDs with a valid numeric prefix without creating a message' do
+    ["#{menu.id}_unexpected", "#{menu.id}.5"].each do |menu_id|
+      expect do
+        post path, params: { quick_menu_id: menu_id }, headers: agent.create_new_auth_token, as: :json
+      end.not_to change(conversation.messages.outgoing, :count)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body.dig('error', 'code')).to eq('invalid_request')
+    end
+  end
+
+  it 'rejects a conversation ID with a valid numeric prefix without creating a message' do
+    invalid_path = "/api/v1/accounts/#{account.id}/conversations/#{conversation.display_id}_unexpected/send_quick_menu"
+
+    expect do
+      post invalid_path, params: { quick_menu_id: menu.id }, headers: agent.create_new_auth_token, as: :json
+    end.not_to change(conversation.messages.outgoing, :count)
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.parsed_body.dig('error', 'code')).to eq('invalid_request')
+  end
+
   it 'rejects missing menu IDs and invalid saved menus without creating a message' do
     [{}, { quick_menu_id: [menu.id] }, { quick_menu_id: { id: menu.id } }].each do |payload|
       post path, params: payload, headers: agent.create_new_auth_token, as: :json
