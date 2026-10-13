@@ -407,13 +407,10 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 **Type:** [MANUAL] [PER CLIENT]
 
 1. Keep ENABLE_ACCOUNT_SIGNUP=false.
-2. Create account/admin through the authenticated dashboard if available. The repository task is:
-
-```bash
-bundle exec rails 'volitex:create_account[Client Name,admin@example.com,<temporary-password>]'
-```
-
-Protect terminal history, use a temporary password, and complete password reset immediately. 3. Record ACCOUNT_ID privately. 4. Create only purchased inboxes, agents, and least-privilege roles. 5. Store approved tier/features/niche rules in the client record or approved configuration.
+2. In the authenticated Super Admin dashboard, open Accounts > New account and save the tenant name and locale. New accounts use `ACCOUNT_LEVEL_FEATURE_DEFAULTS`; when that record is absent, they use the enabled defaults in `config/features.yml`. An explicitly configured empty/disabled default list remains authoritative. Existing accounts are not backfilled or changed.
+3. Create the customer user under Users (or select the existing verified user), then create an Account user membership with the new account, that user and the `administrator` role. Super Admin access does not automatically grant customer-account membership. Use the authenticated password reset/invitation flow and protected credentials, never passwords pasted in chat or shell arguments.
+4. Record ACCOUNT_ID privately. Create only purchased inboxes, agents and least-privilege roles. Verify the new administrator can access only assigned accounts and an ordinary agent cannot mutate Quick Menus.
+5. Store approved tier/features/niche rules in the client record or approved configuration. Defaults do not enable premium Captain features or provide Meta assets, AgentBot credentials or a working n8n workflow. Configure those separately; routine account creation does not require the legacy Rake task.
 
 ## 4.2 n8n machine identity and routing
 
