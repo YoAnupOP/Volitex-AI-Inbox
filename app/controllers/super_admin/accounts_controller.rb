@@ -40,8 +40,7 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     permitted_params.extract!(:suspension_category, :suspension_reason)
     permitted_params[:limits] = permitted_params[:limits].to_h.compact if permitted_params.key?(:limits)
     permitted_params[:captain_models] = permitted_params[:captain_models].to_h.compact_blank.presence if permitted_params.key?(:captain_models)
-    permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
-    permitted_params
+    permitted_params.merge(feature_params)
   end
 
   def update
@@ -76,6 +75,14 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   end
 
   private
+
+  def feature_params
+    return { selected_feature_flags: params[:enabled_features].keys.map(&:to_sym) } if params[:enabled_features].present?
+    return {} unless action_name == 'create' && !InstallationConfig.exists?(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS')
+
+    defaults = Featurable::FEATURE_LIST.select { |feature| feature['enabled'] }.pluck('name')
+    { selected_feature_flags: defaults.map { |name| "feature_#{name}" } }
+  end
 
   def validate_suspension_metadata
     return unless suspension_metadata_required?
