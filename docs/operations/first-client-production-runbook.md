@@ -8,7 +8,7 @@ It is not another readiness audit. It describes the manual work that remains aft
 
 Volitex AI Inbox is a shared multi-tenant service:
 
-~~~text
+```text
 Meta WhatsApp + Instagram
         |
         v
@@ -25,7 +25,7 @@ Volitex AI Inbox REST API
         |
         v
 Meta
-~~~
+```
 
 The first KVM 4 is shared by Client 1, Client 2, and later clients until measured production indicators justify a larger or separated deployment. One VPS per client is not the default design.
 
@@ -51,12 +51,12 @@ Codex can automate repository changes, CI/test execution, image/digest verificat
 
 The artifact below is a historical master release, **not the Quick Menu candidate**. Do not deploy it expecting Quick Menus. The current candidate must pass non-publishing image build, isolated web/Sidekiq boot, security triage, and authorized Meta/n8n smoke verification before a new release is selected. See [production candidate verification](production-candidate-verification.md) for executed checks and blockers. Never treat historical audit or image claims as evidence for a newer commit.
 
-| Item | Value |
-|---|---|
-| Git branch | master |
-| Git commit | 3e1cc0089c2e0685f348e7000429ecc36ea46b66 |
-| Volitex image | ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df |
-| Coolify variable | VOLITEX_IMAGE set to the full image reference above |
+| Item             | Value                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| Git branch       | master                                                                                                    |
+| Git commit       | 3e1cc0089c2e0685f348e7000429ecc36ea46b66                                                                  |
+| Volitex image    | ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df |
+| Coolify variable | VOLITEX_IMAGE set to the full image reference above                                                       |
 
 The image was published from the final commit and its embedded /app/.git_sha matches that commit. Do not use latest, a mutable branch tag, or a Chatwoot image.
 
@@ -89,7 +89,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 ## 0.3 Required before the first client is declared live
 
 - [MANUAL] Remediate the Meta App Secret exposure in Meta. Revoke or regenerate the affected secret as appropriate. Never reuse the exposed value. Codex must not rotate or revoke external credentials.
-- [MANUAL] Keep SECRET_KEY_BASE, the three ACTIVE_RECORD_ENCRYPTION_* values, Meta/OAuth/SMTP secrets, database passwords, Redis passwords, object-storage credentials, N8N_ENCRYPTION_KEY, the backup age identity, and alert-webhook credentials only in a password manager and provider secret stores.
+- [MANUAL] Keep SECRET*KEY_BASE, the three ACTIVE_RECORD_ENCRYPTION*\* values, Meta/OAuth/SMTP secrets, database passwords, Redis passwords, object-storage credentials, N8N_ENCRYPTION_KEY, the backup age identity, and alert-webhook credentials only in a password manager and provider secret stores.
 - [MANUAL] Confirm GitHub/GHCR ownership and that Coolify can pull the exact image. If GHCR is private, use a read-only package credential stored only in Coolify.
 - [MANUAL] Own DNS for inbox.volitexai.tech and automation.volitexai.tech.
 - [MANUAL] Prepare the Meta Developer App, Business/Tech Provider setup, WhatsApp Embedded Signup configuration, Instagram product, privacy/terms/data-deletion URLs, and required review permissions.
@@ -131,7 +131,7 @@ The trigger is client signed -> payment received. Do not connect live client Met
 
 The topology is one Hostinger KVM 4 with Coolify-managed private services:
 
-~~~text
+```text
 Public 80/443 -> Coolify proxy
        |                         |
 inbox.volitexai.tech     automation.volitexai.tech
@@ -139,7 +139,7 @@ inbox.volitexai.tech     automation.volitexai.tech
 Volitex Rails/Sidekiq          n8n main
        |                         |
 Volitex PostgreSQL/Valkey      n8n worker/PostgreSQL/Valkey
-~~~
+```
 
 docker-compose.production.yaml intentionally does not create Volitex PostgreSQL or Volitex Redis/Valkey; create them as separate private Coolify resources. deployment/n8n-queue.compose.yaml creates the n8n database, n8n Valkey, main, and worker.
 
@@ -151,11 +151,11 @@ docker-compose.production.yaml intentionally does not create Volitex PostgreSQL 
 2. Open a second SSH session as that operator before disabling root/password login.
 3. Update the OS and set the operating timezone if that is the policy:
 
-~~~bash
+```bash
 sudo apt update
 sudo apt -y full-upgrade
 sudo timedatectl set-timezone Asia/Kolkata
-~~~
+```
 
 4. Allow only SSH, HTTP, and HTTPS. Restrict SSH to an administration IP/VPN when possible. Do not expose 3000, 5432, 6379, or 5678.
 5. Enable unattended security updates and provider monitoring.
@@ -177,9 +177,9 @@ Install Coolify using its current official installer, protect its administrator 
 
 Create:
 
-| Name | Type | Value | Use |
-|---|---|---|---|
-| inbox.volitexai.tech | A/AAAA | KVM 4 public IP | Volitex proxy |
+| Name                      | Type   | Value           | Use            |
+| ------------------------- | ------ | --------------- | -------------- |
+| inbox.volitexai.tech      | A/AAAA | KVM 4 public IP | Volitex proxy  |
 | automation.volitexai.tech | A/AAAA | KVM 4 public IP | n8n-main proxy |
 
 Attach inbox to Rails port 3000 and automation to n8n-main port 5678. Enable Coolify TLS. Never create public routes for either PostgreSQL, either Redis/Valkey service, or n8n-worker.
@@ -194,16 +194,16 @@ Attach inbox to Rails port 3000 and automation to n8n-main port 5678. Enable Coo
 2. Use a pgvector-capable immutable image. The reviewed baseline records pgvector/pgvector@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f; record the actual deployed digest.
 3. Configure shared_preload_libraries=pg_stat_statements and private readiness equivalent to:
 
-~~~bash
+```bash
 pg_isready -U <volitex-role> -d volitex_inbox_production
-~~~
+```
 
 4. Keep port 5432 private and do not reuse n8n's database or role.
 5. Set VOLITEX_DATABASE_URL only in a protected operator environment and run:
 
-~~~bash
+```bash
 deployment/production/check_postgres_extensions.sh
-~~~
+```
 
 The preflight must find pgcrypto, pg_trgm, vector, and pg_stat_statements, and must find pg_stat_statements in shared_preload_libraries. A plain PostgreSQL image or missing preload is a stop condition; correct it and rerun before migration.
 
@@ -213,11 +213,13 @@ The preflight must find pgcrypto, pg_trgm, vector, and pg_stat_statements, and m
 
 Create a separate private persistent service with a generated password and authenticated readiness:
 
-~~~bash
-valkey-cli --no-auth-warning -a "$REDIS_PASSWORD" ping
-~~~
+```bash
+REDISCLI_AUTH="$REDIS_PASSWORD" valkey-cli ping
+```
 
 Do not share container, password, database, or namespace with n8n. Start with noeviction unless measured operation justifies a documented alternative. Keep port 6379 private.
+
+Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox Valkey resource. Verify these settings and its persistent data volume before accepting traffic. Abrupt power loss can still lose the latest unflushed writes; backups, idempotency and reboot validation remain necessary.
 
 **Already handled by Volitex:** REDIS_URL consumption and Sidekiq priority configuration. **Manual validation:** hostname, password, persistence, memory policy, and restart behavior.
 
@@ -227,7 +229,7 @@ Do not share container, password, database, or namespace with n8n. Start with no
 
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
-~~~dotenv
+```dotenv
 VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df
 RAILS_ENV=production
 NODE_ENV=production
@@ -268,11 +270,11 @@ SMTP_USERNAME=<smtp-user>
 SMTP_PASSWORD=<smtp-secret>
 SMTP_AUTHENTICATION=login
 SMTP_ENABLE_STARTTLS_AUTO=true
-~~~
+```
 
 Configure these Meta variable names when applicable; definitions are in config/installation_config.yml:
 
-~~~dotenv
+```dotenv
 META_APP_SECRET=<current-nonexposed-secret>
 FB_APP_ID=<meta-app-id>
 FB_APP_SECRET=<current-nonexposed-secret>
@@ -284,18 +286,20 @@ WHATSAPP_APP_ID=<whatsapp-app-id>
 WHATSAPP_APP_SECRET=<current-nonexposed-secret>
 WHATSAPP_CONFIGURATION_ID=<embedded-signup-configuration-id>
 WHATSAPP_API_VERSION=v24.0
-~~~
+```
 
 Never create a populated .env in Git. Deploy and let the migrate service run bundle exec rails db:chatwoot_prepare. Rails and Sidekiq depend on migration success.
+
+The application services share the Compose `volitex_storage` volume at `/app/storage`. This prevents local attachments from disappearing during container replacement when `ACTIVE_STORAGE_SERVICE=local`. Record and back up the actual Coolify volume name if using local storage. The intended S3-compatible configuration still requires its own object-store backup and restore verification; the local volume test does not validate S3 credentials or availability.
 
 For an upgrade containing the WhatsApp credential encryption migration, retain a verified pre-migration backup and all three encryption keys, then run `bundle exec rails volitex:encrypt_whatsapp_provider_configs` from the migrated release. Verify the backfill and channel delivery before accepting the release; see [credential encryption recovery](whatsapp-credential-encryption.md). Keep the original keys with retained encrypted backups. Do not roll back across this boundary without matching data and keys.
 
 Verify:
 
-~~~bash
+```bash
 curl --fail --silent --show-error https://inbox.volitexai.tech/health
 curl --fail --silent --show-error https://inbox.volitexai.tech/api >/dev/null
-~~~
+```
 
 The first response is the unauthenticated Rails health JSON containing status woot. Inspect migrate, rails, and sidekiq logs; migration, encryption-key, database, Redis, or repeated Sidekiq connection errors are stop conditions.
 
@@ -306,6 +310,8 @@ The first response is the unauthenticated Rails health JSON containing status wo
 Create a second Coolify Docker Compose application from deployment/n8n-queue.compose.yaml. Copy the complete sanitized key set from deployment/.env.n8n.example into Coolify and replace placeholders. Do not create or commit deployment/.env.n8n.
 
 The reviewed example pins n8n 2.40.3, PostgreSQL 17.11, and Valkey 8.1 by immutable digest; record actual deployed digests. Both main and worker receive the same DB, queue, N8N_ENCRYPTION_KEY, security, SMTP, and EXECUTIONS_MODE=queue settings. Start one worker at N8N_WORKER_CONCURRENCY=5.
+
+**Release stop:** the 2026-10-13 scans found critical/high runtime advisories in the pinned n8n 2.40.3 image and the newer stable 2.42.7 candidate. Queue-probe success does not clear these findings. Do not deploy either image for the first client until a compatible remediated artifact and its regression/security checks are accepted. The existing image reference has not been promoted or replaced.
 
 Required topology:
 
@@ -318,9 +324,9 @@ Required topology:
 
 Verify:
 
-~~~bash
+```bash
 curl --fail --silent --show-error https://automation.volitexai.tech/healthz >/dev/null
-~~~
+```
 
 Set the n8n owner password and MFA, confirm SMTP recovery, create no public test workflows, and run n8n audit. The Compose healthcheck uses /healthz/readiness internally.
 
@@ -335,21 +341,17 @@ Set the n8n owner password and MFA, confirm SMTP recovery, create no public test
 3. Configure Instagram Login/Business Login. This repository requests instagram_business_basic, instagram_business_manage_messages, and instagram_business_manage_comments.
 4. Add this exact OAuth redirect:
 
-~~~text
+```text
 https://inbox.volitexai.tech/instagram/callback
-~~~
+```
 
-The callback signs/verifies state with INSTAGRAM_APP_SECRET and uses the account ID in state.
-5. Configure WhatsApp Embedded Signup and create its configuration ID. The dashboard receives WHATSAPP_APP_ID, WHATSAPP_API_VERSION, and WHATSAPP_CONFIGURATION_ID.
-6. Complete current Meta App Review/business-verification requirements for the actual WhatsApp and Instagram capabilities. Meta permission names can change; verify the live dashboard.
-7. Configure the remediated App Secret without exposing it.
-8. Configure these data-deletion/deauthorization routes if required:
+The callback signs/verifies state with INSTAGRAM_APP_SECRET and uses the account ID in state. 5. Configure WhatsApp Embedded Signup and create its configuration ID. The dashboard receives WHATSAPP_APP_ID, WHATSAPP_API_VERSION, and WHATSAPP_CONFIGURATION_ID. 6. Complete current Meta App Review/business-verification requirements for the actual WhatsApp and Instagram capabilities. Meta permission names can change; verify the live dashboard. 7. Configure the remediated App Secret without exposing it. 8. Configure these data-deletion/deauthorization routes if required:
 
-~~~text
+```text
 https://inbox.volitexai.tech/webhooks/meta/deauthorize
 https://inbox.volitexai.tech/webhooks/meta/data_deletion
 https://inbox.volitexai.tech/data-deletion/<confirmation_code>
-~~~
+```
 
 **Already handled by Volitex:** OAuth callback routes, state signing, channel create/update, token encryption when configured, and webhook signature code. **Manual:** Meta approvals, app settings, domains, permissions, and external secrets.
 
@@ -364,9 +366,9 @@ Use WhatsApp Embedded Signup through the authenticated Inbox dashboard:
 3. The authenticated Volitex endpoint exchanges the code, fetches phone information, creates/reauthorizes the channel, encrypts the token, and sets up webhooks.
 4. The callback is:
 
-~~~text
+```text
 https://inbox.volitexai.tech/webhooks/whatsapp/<client-phone-number>
-~~~
+```
 
 5. Confirm phone registration and WABA billing/payment.
 6. If an approved manual Cloud API path is required, enter token, phone number ID, and business account ID only in the authenticated Inbox UI. Never put client tokens in n8n.
@@ -407,14 +409,11 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 1. Keep ENABLE_ACCOUNT_SIGNUP=false.
 2. Create account/admin through the authenticated dashboard if available. The repository task is:
 
-~~~bash
+```bash
 bundle exec rails 'volitex:create_account[Client Name,admin@example.com,<temporary-password>]'
-~~~
+```
 
-Protect terminal history, use a temporary password, and complete password reset immediately.
-3. Record ACCOUNT_ID privately.
-4. Create only purchased inboxes, agents, and least-privilege roles.
-5. Store approved tier/features/niche rules in the client record or approved configuration.
+Protect terminal history, use a temporary password, and complete password reset immediately. 3. Record ACCOUNT_ID privately. 4. Create only purchased inboxes, agents, and least-privilege roles. 5. Store approved tier/features/niche rules in the client record or approved configuration.
 
 ## 4.2 n8n machine identity and routing
 
@@ -422,9 +421,9 @@ Protect terminal history, use a temporary password, and complete password reset 
 
 From the running Volitex release container:
 
-~~~bash
+```bash
 bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,https://automation.volitexai.tech/webhook/volitex-inbox-<AGENT_BOT_ID>]'
-~~~
+```
 
 Retrieve token and signing secret from the authenticated Inbox dashboard and enter them directly into dedicated n8n credentials. Do not print them in a shell or put them in a workflow node.
 
@@ -504,14 +503,14 @@ Record timestamp, operator, release commit, image digest, and evidence. Do not d
 
 Create a root-owned environment file outside Git:
 
-~~~dotenv
+```dotenv
 VOLITEX_DATABASE_URL=postgresql://<volitex-role>:<password>@<private-host>:5432/volitex_inbox_production
 N8N_DATABASE_URL=postgresql://<n8n-role>:<password>@<private-host>:5432/volitex_n8n
 BACKUP_S3_URI=s3://<off-server-bucket>/volitex
 AWS_ENDPOINT_URL=https://<s3-compatible-endpoint>
 AGE_RECIPIENT=<age-public-recipient>
 AGE_IDENTITY=/etc/volitex/backup-age-key.txt
-~~~
+```
 
 Run deployment/production/backup_postgres.sh daily and before every migration/risky data change. It dumps both databases, validates with pg_restore --list, encrypts with age, uploads, downloads, decrypts, and validates again.
 
@@ -525,12 +524,12 @@ Retain the age identity, three Active Record keys, SECRET_KEY_BASE, N8N_ENCRYPTI
 
 Use an isolated database, never production:
 
-~~~bash
+```bash
 export RESTORE_DATABASE_URL='postgresql://<restore-admin>:<password>@<isolated-host>:5432/volitex_inbox_restore_test'
 export BACKUP_S3_URI='s3://<off-server-bucket>/volitex'
 export AGE_IDENTITY='/etc/volitex/backup-age-key.txt'
 deployment/production/restore_postgres_backup.sh '<UTC-timestamp>/volitex.dump.age' '<latest-schema-version>'
-~~~
+```
 
 The script decrypts, validates, restores with pg_restore --clean --if-exists, and checks schema_migrations. For n8n restore its dump into an isolated n8n database and verify workflows/credentials with retained N8N_ENCRYPTION_KEY; do not apply the Volitex schema-version argument to n8n. Destroy the isolated restore DB after evidence is recorded.
 
@@ -540,7 +539,7 @@ The script decrypts, validates, restores with pg_restore --clean --if-exists, an
 
 Run deployment/production/monitor.sh every minute from the VPS or trusted monitoring host:
 
-~~~dotenv
+```dotenv
 INBOX_HEALTH_URL=https://inbox.volitexai.tech/health
 N8N_HEALTH_URL=https://automation.volitexai.tech/healthz
 ALERT_WEBHOOK_URL=<private-alert-webhook>
@@ -550,7 +549,7 @@ VOLITEX_REDIS_URL=<private-url>
 N8N_REDIS_URL=<private-url>
 MONITOR_DISK_PATH=/
 SIDEKIQ_QUEUE_NAMES=critical high medium default mailers
-~~~
+```
 
 The script checks public health, DB connection headroom, Redis/Valkey connectivity/evictions, Sidekiq backlog, memory, unhealthy containers, and disk.
 
@@ -627,14 +626,14 @@ Watch CPU saturation, RAM/OOM, PostgreSQL CPU/storage/locks/slow queries/connect
 
 **Establish baseline during initial production/load test.** Scale when the same customer-facing signal remains degraded after ordinary queue/workflow tuning.
 
-~~~text
+```text
 KVM 4
   -> larger VPS when host is bottleneck
   -> more Sidekiq/n8n workers when worker backlog is bottleneck
   -> DB or Redis separation when shared-state pressure is bottleneck
   -> multiple Rails/Sidekiq instances when app concurrency is bottleneck
   -> additional VPS/regions when capacity or failure domain requires it
-~~~
+```
 
 Do not split one client per VPS unless a concrete security, compliance, contractual, or measured scaling requirement makes shared tenancy inappropriate.
 
@@ -642,24 +641,24 @@ Do not split one client per VPS unless a concrete security, compliance, contract
 
 The single-KVM architecture can take every tenant down during a VPS/Hostinger outage. Persistent volumes improve restart recovery but do not provide HA. Off-server backups limit data loss but do not create zero-downtime failover.
 
-| Scenario | Automatic behavior | Operator action | Verification |
-|---|---|---|---|
-| Volitex Rails crash | Coolify/Docker restarts; health fails while unavailable | Inspect logs/health/DB/Redis; restore old image only for app-only regression | Health, login, inbound/outbound |
-| Sidekiq crash | Restart; accepted Redis jobs remain queued | Restart, inspect queue/retry/dead sets | One webhook -> one message |
-| n8n main crash | Restart; public n8n temporarily unavailable | Restart and inspect queue/logs | Health and one workflow |
-| n8n worker crash | Restart; Bull jobs remain stored | Restart and inspect failed executions | One workflow completes once |
-| Redis/Valkey crash | Restart may recover persisted state | Recover, ping, inspect backlog/retries | Queue drain and duplicate check |
-| Volitex PostgreSQL crash | Restart/recovery if volume intact | Verify extensions; use approved restore plan if needed | Health, records, channel test |
-| n8n PostgreSQL crash | n8n unavailable or workflows fail | Recover and verify encryption key | Owner login, workflow, execution |
-| VPS reboot | Coolify/services should restart | Controlled reboot; inspect every service | Full reboot checklist |
-| Disk pressure | Alerts; writes/backups may fail at exhaustion | Preserve evidence, clean approved data, expand disk | Disk, backup, message |
-| VPS/Hostinger outage | No cross-host failover | Provider recovery or replacement host, restore, DNS, smoke | Full go-live checklist |
-| Bad deployment | Selected digest runs; migration may block dependents | Redeploy old digest for app-only issue; forward-fix data changes | Smoke, queues, Meta, n8n |
-| Migration failure | Rails/Sidekiq remain blocked behind migrate | Stop, preserve backup, fix forward or approved restore | Migration/readiness/smoke |
-| Corrupt DB | No automatic logical repair | Preserve original, isolated restore, approved recovery | Counts, health, acceptance |
-| Lost encryption keys | Encrypted values cannot decrypt | Retrieve exact keys; otherwise reauthorize assets | Reauth and message |
-| Expired Meta token | Provider calls/webhooks fail | Reauthorize and verify permissions/status | Inbound/outbound |
-| Meta webhook failure | Meta retries according to Meta behavior | Check signature, token, subscription, TLS, health, Sidekiq, Meta logs | Signed webhook/duplicate |
+| Scenario                 | Automatic behavior                                      | Operator action                                                              | Verification                     |
+| ------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------- |
+| Volitex Rails crash      | Coolify/Docker restarts; health fails while unavailable | Inspect logs/health/DB/Redis; restore old image only for app-only regression | Health, login, inbound/outbound  |
+| Sidekiq crash            | Restart; accepted Redis jobs remain queued              | Restart, inspect queue/retry/dead sets                                       | One webhook -> one message       |
+| n8n main crash           | Restart; public n8n temporarily unavailable             | Restart and inspect queue/logs                                               | Health and one workflow          |
+| n8n worker crash         | Restart; Bull jobs remain stored                        | Restart and inspect failed executions                                        | One workflow completes once      |
+| Redis/Valkey crash       | Restart may recover persisted state                     | Recover, ping, inspect backlog/retries                                       | Queue drain and duplicate check  |
+| Volitex PostgreSQL crash | Restart/recovery if volume intact                       | Verify extensions; use approved restore plan if needed                       | Health, records, channel test    |
+| n8n PostgreSQL crash     | n8n unavailable or workflows fail                       | Recover and verify encryption key                                            | Owner login, workflow, execution |
+| VPS reboot               | Coolify/services should restart                         | Controlled reboot; inspect every service                                     | Full reboot checklist            |
+| Disk pressure            | Alerts; writes/backups may fail at exhaustion           | Preserve evidence, clean approved data, expand disk                          | Disk, backup, message            |
+| VPS/Hostinger outage     | No cross-host failover                                  | Provider recovery or replacement host, restore, DNS, smoke                   | Full go-live checklist           |
+| Bad deployment           | Selected digest runs; migration may block dependents    | Redeploy old digest for app-only issue; forward-fix data changes             | Smoke, queues, Meta, n8n         |
+| Migration failure        | Rails/Sidekiq remain blocked behind migrate             | Stop, preserve backup, fix forward or approved restore                       | Migration/readiness/smoke        |
+| Corrupt DB               | No automatic logical repair                             | Preserve original, isolated restore, approved recovery                       | Counts, health, acceptance       |
+| Lost encryption keys     | Encrypted values cannot decrypt                         | Retrieve exact keys; otherwise reauthorize assets                            | Reauth and message               |
+| Expired Meta token       | Provider calls/webhooks fail                            | Reauthorize and verify permissions/status                                    | Inbound/outbound                 |
+| Meta webhook failure     | Meta retries according to Meta behavior                 | Check signature, token, subscription, TLS, health, Sidekiq, Meta logs        | Signed webhook/duplicate         |
 
 Recovery time and recovery-point objectives are not promises until restore and VPS-replacement drills are measured. Record measured durations.
 
