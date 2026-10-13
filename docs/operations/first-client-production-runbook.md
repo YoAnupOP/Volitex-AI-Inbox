@@ -412,6 +412,8 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 4. Record ACCOUNT_ID privately. Create only purchased inboxes, agents and least-privilege roles. Verify the new administrator can access only assigned accounts and an ordinary agent cannot mutate Quick Menus.
 5. Store approved tier/features/niche rules in the client record or approved configuration. Defaults do not enable premium Captain features or provide Meta assets, AgentBot credentials or a working n8n workflow. Configure those separately; routine account creation does not require the legacy Rake task.
 
+**Bulk campaign gate:** WhatsApp campaigns are disabled in the shipped feature defaults. The 2026-10-13 synthetic 1k/2k/5k/10k benchmark verifies batched audience processing with a mocked provider, not Meta capacity or safe recipient retry/recovery. The current sender uses one job and has no durable recipient delivery ledger; failed sends can still result in campaign completion and a crash can leave processing status. Do not sell/enable reliable bulk campaigns until that separate reliability gap, provider template/opt-in eligibility and actual worker/load acceptance are resolved. See the [latest verification evidence](production-candidate-2026-10-13.md).
+
 ## 4.2 n8n machine identity and routing
 
 **Type:** [MANUAL + CODEX AUTOMATABLE] [PER CLIENT] [SECURITY]

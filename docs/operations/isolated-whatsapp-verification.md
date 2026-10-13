@@ -4,6 +4,17 @@ The Heroku/buildpack App Review deployment at `inbox.volitexai.tech` is outside 
 
 ## Current evidence
 
+### Local continuation, 2026-10-13
+
+- Exact source `38229d6009cac43c86066296275ae629fd5b0d9e` is running on `http://127.0.0.1:3400`; Super Admin sign-in and authenticated account form verified. Separate n8n main/worker at `http://127.0.0.1:5679` is experimental: its runtime scan blocks production approval.
+- Operator started ngrok after automatic tool approval rejected launching it. Verified public HTTPS ingress: `https://e2f2-2402-a00-400-2bc3-bc60-7acd-62d8-cd71.ngrok-free.app`. Only `/webhooks/whatsapp/+15556686289` forwards to the isolated app. `/app/login` returns 404 and an unsigned synthetic callback POST returns 401. Inspection/access logging disabled. The tunnel is ephemeral; recheck its URL after restart.
+- The operator confirmed revocation of the exposed Meta token. No token was used; issuer-side verification was not performed. Configure fresh credentials privately, not in chat. No real WhatsApp channel has been created.
+- Local Super Admin credentials are in the protected WSL directory `/home/anup/.codex/runtimes/volitex-local-staging-20261013/super-admin-credentials.json`. The earlier demo account remains; its independently generated credential is in `demo-credentials.json`. Do not publish these files or their contents.
+- Configure the matching app secret through the protected staging environment before restarting the isolated web/worker. Enter the fresh access token through authenticated localhost channel settings; it is encrypted using this staging environment's independent keys.
+- **Before saving a manual Cloud channel:** the existing backend subscribes the app to the WABA and writes a phone-specific callback override. Confirm the phone is exclusively the authorized test resource and may be redirected. Do not switch the global Tech Provider App Review callback. A separate test app/WABA remains safest; the supplied resources belong to the approved app, so actual current routing and permissions still require read-only checks with protected fresh access.
+- Callback URL, once that scope is approved: `https://e2f2-2402-a00-400-2bc3-bc60-7acd-62d8-cd71.ngrok-free.app/webhooks/whatsapp/+15556686289`. Retrieve the verify token from the authenticated inbox, subscribe to `messages` and only the necessary coexistence fields, and verify the challenge/signed events. Existing code also requests `smb_message_echoes`; calling subscriptions are conditional.
+- No callback update or live send was performed. Recipient confirmation and explicit approval for the proposed bounded text/button/list test remain required. A configured channel alone does not authorize sending. n8n's production HMAC/replay/ownership workflow is not proven by the synthetic queue probe.
+
 - PASS: Windows resolved `graph.facebook.com` and completed an unauthenticated TLS request to `/v24.0/`, receiving HTTP 400 / GraphMethodException code 100. This proves basic connectivity only.
 - BLOCKED: authenticated app/WABA/phone-number access, recipient allowlist, fresh token validity/scopes and current delivery eligibility have not been checked.
 - NOT RUN: direct Graph sends, actual WhatsApp receipt, live inbound selections or the complete Inbox/n8n reply path.
