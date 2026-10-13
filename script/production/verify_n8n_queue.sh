@@ -68,5 +68,19 @@ test "$status" = 28
 executions=$("${compose[@]}" exec -T n8n-postgres psql -U "$DB_POSTGRESDB_USER" -d "$DB_POSTGRESDB_DATABASE" -tAc "SELECT count(*) FROM execution_entity WHERE \"workflowId\" = 'VolitexSyntheticProbe' AND status = 'success'")
 test "$executions" -ge 1
 "${compose[@]}" exec -T n8n-worker wget -qO- http://127.0.0.1:5678/healthz/readiness >/dev/null
+# Persisted execution history must survive a graceful full stack restart.
+"${compose[@]}" stop -t 30 n8n-worker n8n-main >/dev/null
+"${compose[@]}" restart n8n-postgres n8n-valkey >/dev/null
+"${compose[@]}" up -d n8n-main n8n-worker >/dev/null
+ready=false
+for attempt in $(seq 1 90); do
+  if "${compose[@]}" exec -T n8n-main wget -qO- http://127.0.0.1:5678/healthz/readiness >/dev/null 2>&1; then ready=true; break; fi
+  sleep 2
+done
+test "$ready" = true
+"${compose[@]}" exec -T n8n-main node -e "$probe" 60000
+recovered=$("${compose[@]}" exec -T n8n-postgres psql -U "$DB_POSTGRESDB_USER" -d "$DB_POSTGRESDB_DATABASE" -tAc "SELECT count(*) FROM execution_entity WHERE \"workflowId\" = 'VolitexSyntheticProbe' AND status = 'success'")
+test "$recovered" -gt "$executions"
+echo 'Execution persistence and graceful main/worker/PostgreSQL/Valkey restart verified.'
 echo 'Pinned n8n main/worker, PostgreSQL/Valkey, queue-only execution and synthetic response checks passed.'
 echo 'This does not verify Meta delivery, the production HMAC workflow, or an Inbox API reply.'
