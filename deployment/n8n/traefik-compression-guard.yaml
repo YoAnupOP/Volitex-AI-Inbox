@@ -1,0 +1,9 @@
+# Load through Coolify's Traefik file provider. The n8n-main Compose service
+# attaches volitex-n8n-identity@file to its generated routers. Keep n8n off
+# direct public host ports so all untrusted traffic passes through this guard.
+http:
+  middlewares:
+    volitex-n8n-identity:
+      headers:
+        customRequestHeaders:
+          Accept-Encoding: identity

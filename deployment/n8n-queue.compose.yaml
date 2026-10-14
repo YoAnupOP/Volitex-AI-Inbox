@@ -101,6 +101,8 @@ services:
   n8n-main:
     <<: *n8n
     command: ['start']
+    labels:
+      - coolify.traefik.middlewares=volitex-n8n-identity@file
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n/custom:/opt/volitex/n8n-custom:ro
