@@ -122,12 +122,7 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
       message_params[:content_attributes] = content_attributes
       message_params[:sender_type] = 'AgentBot'
       message_params[:sender_id] = actor.id
-      message_params[:source_id] = automation_delivery_source_id
     end
-  end
-
-  def automation_delivery_source_id
-    "volitex:n8n:#{Current.user.id}:#{automation_delivery_id}"
   end
 
   def instagram_comment?

@@ -199,7 +199,7 @@ RSpec.describe 'Conversation Messages API', type: :request do
         message_id = response.parsed_body['id']
         expect(response.parsed_body['content_attributes']).to include('automation_delivery_id' => 'delivery-123')
         expect(Message.find(message_id).content_attributes).to include('automation_delivery_id' => 'delivery-123')
-        expect(Message.find(message_id).source_id).to eq("volitex:n8n:#{n8n_bot.id}:delivery-123")
+        expect(Message.find(message_id).source_id).to be_nil
 
         Message.find(message_id).update!(source_id: 'wamid.provider-delivery-id')
 
