@@ -54,8 +54,10 @@ jobs:
             --volume /var/run/docker.sock:/var/run/docker.sock:ro \
             --volume "$RUNNER_TEMP/candidate-audit:/out" \
             aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
-            image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+            image --scanners vuln --exit-code 0 \
             --format json --output /out/candidate-vulnerabilities.json "volitex-candidate:$GITHUB_SHA"
+          jq '[.Results[]?.Vulnerabilities[]?] | group_by(.Severity) | map({severity: .[0].Severity, count: length})' "$RUNNER_TEMP/candidate-audit/candidate-vulnerabilities.json" >> "$GITHUB_STEP_SUMMARY"
+          jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$RUNNER_TEMP/candidate-audit/candidate-vulnerabilities.json"
       - uses: actions/upload-artifact@v4
         if: always() && steps.build.outcome == 'success'
         with:
