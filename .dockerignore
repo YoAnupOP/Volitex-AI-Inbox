@@ -20,3 +20,5 @@ vendor/bundle
 .DS_Store
 *.swp
 *~
+# Rejected security-assessment recipe; not part of the Inbox runtime.
+deployment/n8n/npm-candidate

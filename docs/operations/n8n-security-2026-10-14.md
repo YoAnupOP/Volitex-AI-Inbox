@@ -2,7 +2,7 @@
 
 ## Release decision
 
-**BLOCKED. No assessed n8n artifact is approved for production.** The working local integration is preserved. No production image was published, no production deployment or callback was changed, and no live messages were sent during this assessment. Do not deploy the rejected npm assessment images. The production environment example now requires an explicit N8N_IMAGE rather than presenting the older 2.40.3 digest as reviewed; Compose already rejects an empty value. Existing protected local configuration is unaffected.
+**BLOCKED. No assessed n8n artifact is approved for production.** The working local integration is preserved. No production image was published, no production deployment or callback was changed, and no live messages were sent during this assessment. Do not deploy the rejected npm assessment images. The production environment example now requires an explicit N8N_IMAGE rather than presenting the older 2.40.3 digest as reviewed; Compose already rejects an empty value. Existing protected local configuration is unaffected. Compose parse verification rejected the unset image (exit 1) and succeeded with an explicit assessment digest (exit 0); this was configuration parsing, not deployment.
 
 ## Baseline and reproducible comparison
 
@@ -65,7 +65,7 @@ The official upstream Dockerfile references a public `n8nio/base` runtime and de
 
 ## Rejected artifact provenance
 
-Assessment recipe/lock are retained under `deployment/n8n/npm-candidate`, explicitly not referenced by production Compose. Public base: `node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20`.
+Assessment recipe/lock are retained under `deployment/n8n/npm-candidate`, explicitly not referenced by production Compose and excluded from the Inbox Docker build context. Public base: `node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20`.
 
 - Plain npm local OCI identity: `sha256:83f3802cf22456263d2f0f2e0de7f1c0ae889bd7b5424dd40e6791610cc9d4ad`.
 - Security-updated assessment local OCI identity: `sha256:b72111881d34d9b98275fd65825a127d2ad1e3f029b2c07c5823c8bb71e06f52`.
