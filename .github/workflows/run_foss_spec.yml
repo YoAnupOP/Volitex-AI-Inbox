@@ -45,7 +45,9 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm i
       - name: Run frontend tests
-        run: pnpm run test:coverage
+        run: |
+          node --test script/production/specs/vue_ssr_security.test.cjs
+          pnpm run test:coverage
 
   dependency-security:
     runs-on: ubuntu-latest
