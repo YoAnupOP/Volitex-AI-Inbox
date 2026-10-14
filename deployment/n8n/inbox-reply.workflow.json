@@ -1,0 +1,115 @@
+{
+  "id": "VolitexStagingReply",
+  "name": "Volitex staging authenticated reply",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "volitex-staging-account-1",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "inbox-webhook",
+      "name": "Inbox webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "e8c3f573-cec7-493f-a033-de54be1d31ab"
+    },
+    {
+      "parameters": {
+        "operation": "validate"
+      },
+      "id": "authenticated-reply",
+      "name": "Validate webhook",
+      "type": "CUSTOM.volitexReply",
+      "typeVersion": 1,
+      "position": [240, 0],
+      "credentials": {
+        "volitexInbox": {
+          "id": "VolitexStagingAgentBot",
+          "name": "Volitex staging account AgentBot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.verification }}",
+        "options": {
+          "responseCode": "={{ $json.verification.statusCode }}"
+        }
+      },
+      "id": "webhook-result",
+      "name": "Webhook result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "operation": "reply"
+      },
+      "id": "send-reply",
+      "name": "Send reply",
+      "type": "CUSTOM.volitexReply",
+      "typeVersion": 1,
+      "position": [720, 0],
+      "credentials": {
+        "volitexInbox": {
+          "id": "VolitexStagingAgentBot",
+          "name": "Volitex staging account AgentBot"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    }
+  ],
+  "connections": {
+    "Inbox webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate webhook": {
+      "main": [
+        [
+          {
+            "node": "Webhook result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook result": {
+      "main": [
+        [
+          {
+            "node": "Send reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 20
+  }
+}

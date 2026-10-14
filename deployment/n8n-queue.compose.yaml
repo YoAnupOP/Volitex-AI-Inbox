@@ -4,6 +4,7 @@ x-n8n: &n8n
   image: ${N8N_IMAGE:?Set N8N_IMAGE to an immutable n8n image digest}
   restart: unless-stopped
   environment:
+    N8N_CUSTOM_EXTENSIONS: /opt/volitex/n8n-custom
     DB_TYPE: ${DB_TYPE:?Set DB_TYPE}
     DB_POSTGRESDB_HOST: ${DB_POSTGRESDB_HOST:?Set DB_POSTGRESDB_HOST}
     DB_POSTGRESDB_PORT: ${DB_POSTGRESDB_PORT:?Set DB_POSTGRESDB_PORT}
@@ -42,6 +43,7 @@ x-n8n: &n8n
     N8N_RESTRICT_FILE_ACCESS_TO: ${N8N_RESTRICT_FILE_ACCESS_TO:?Set N8N_RESTRICT_FILE_ACCESS_TO}
     N8N_SSRF_PROTECTION_ENABLED: ${N8N_SSRF_PROTECTION_ENABLED:?Set N8N_SSRF_PROTECTION_ENABLED}
     N8N_SSRF_BLOCKED_IP_RANGES: ${N8N_SSRF_BLOCKED_IP_RANGES:?Set N8N_SSRF_BLOCKED_IP_RANGES}
+    N8N_SSRF_ALLOWED_HOSTNAMES: ${N8N_SSRF_ALLOWED_HOSTNAMES:-}
     OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: ${OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS:?Set OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS}
     QUEUE_HEALTH_CHECK_ACTIVE: ${QUEUE_HEALTH_CHECK_ACTIVE:?Set QUEUE_HEALTH_CHECK_ACTIVE}
     QUEUE_HEALTH_CHECK_PORT: ${QUEUE_HEALTH_CHECK_PORT:?Set QUEUE_HEALTH_CHECK_PORT}
@@ -101,6 +103,7 @@ services:
     command: ['start']
     volumes:
       - n8n_data:/home/node/.n8n
+      - ./n8n/custom:/opt/volitex/n8n-custom:ro
     depends_on:
       n8n-postgres:
         condition: service_healthy
@@ -117,6 +120,8 @@ services:
   n8n-worker:
     <<: *n8n
     command: ['worker', '--concurrency=${N8N_WORKER_CONCURRENCY:?Set N8N_WORKER_CONCURRENCY}']
+    volumes:
+      - ./n8n/custom:/opt/volitex/n8n-custom:ro
     depends_on:
       n8n-postgres:
         condition: service_healthy

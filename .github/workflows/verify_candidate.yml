@@ -9,6 +9,16 @@ permissions:
   contents: read
 
 jobs:
+  n8n-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify authenticated Inbox reply contract
+        run: node --test script/production/specs/n8n_reply.test.cjs
+
   candidate:
     runs-on: ubuntu-latest
     timeout-minutes: 90
