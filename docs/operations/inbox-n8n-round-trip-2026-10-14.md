@@ -69,7 +69,7 @@ Only the exact phrase `Volitex round trip` triggers this deterministic test repl
 
 Initial native test attempt was blocked because the disposable PostgreSQL socket was stopped; starting its existing data directory resolved that environment error. An intermediate JSON lookup was corrected after a focused regression showed the store's double-encoded representation. A concurrent scanner cache-lock failure was rerun sequentially and the n8n scan completed. None of these failed attempts is counted as a pass.
 
-Full backend/frontend suites were not rerun in this narrowly scoped task; historical baseline failures remain documented in the preceding production-candidate report. A focused n8n contract job was added to the existing candidate CI workflow; CI completion must be assessed from the actual run, not inferred from local checks.
+GitHub completed the full backend/frontend suites at code/config candidate `a1d982b71662a401f0f517734f983ecec5b44b34`. All 16 RSpec JSON artifacts were compared with predecessor `0535f8f9603fcc56de0013190eaa20b22c7b41aa`: both have 6,042 examples, 34 failed identities and 2 pending; zero added/removed failure identities. Frontend job logs likewise match all 19 failure lines, with 3,804 passed and 19 failed tests (390 passed/3 failed files). These verified baseline failures are not fixed or concealed by this task.
 
 ## Security disposition
 
@@ -96,3 +96,11 @@ These are installed runtime findings, not development-only dependencies. Functio
 ## GitHub CI execution checkpoint
 
 Run 38541834832 at implementation commit `de51edaa35dabc1019ee1743f44bdf59f455344c` actually executed the new `n8n-contract` job: **PASS**. The candidate build/boot job and full CE specs were still running at this checkpoint; neither is recorded as passed. Source delivery includes commits `b7fc80a704` and `f0a3f1c6ca` for the verified API fixes and `de51edaa35` for the workflow. Deployment text files were subsequently normalized to the original LF convention; this changes no workflow or application behavior.
+
+## Final CI result and baseline comparison
+
+Code/config candidate: `a1d982b71662a401f0f517734f983ecec5b44b34`. [Candidate run 38542126495](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38542126495) **PASS**: exact candidate build, isolated production boot, runtime package audit, and n8n contract tests. [Broader run 38542126548](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/38542126548) **FAIL**: full-suite results above and baseline lint/dependency debt.
+
+Ruby lint: all 2,086 offense identities exactly match predecessor CI, with zero new/removed offenses. Frontend lint: 260,063 problems on both revisions (259,647 errors/416 warnings); extracted normalized lint identity sequences match. The production JavaScript audit reports 18 vulnerabilities (3 high/10 moderate/5 low); the two reported high-advisory references match the predecessor. No application manifest or lockfile was changed. This audit remains a failing gate even though the shipped application image scan has zero critical/high findings; dependency-audit and image-runtime exposure are separate checks.
+
+The final delivery commit adds this evidence only; the tested application image remains the exact `f0a3f1c6ca` artifact above, and the CI-verified code/config candidate remains `a1d982b716`. No docs-only commit is claimed to have been rebuilt locally.
