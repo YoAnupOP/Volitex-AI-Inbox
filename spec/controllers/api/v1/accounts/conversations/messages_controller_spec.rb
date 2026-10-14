@@ -201,11 +201,13 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(Message.find(message_id).content_attributes).to include('automation_delivery_id' => 'delivery-123')
         expect(Message.find(message_id).source_id).to eq("volitex:n8n:#{n8n_bot.id}:delivery-123")
 
+        Message.find(message_id).update!(source_id: 'wamid.provider-delivery-id')
+
         post path, params: params, headers: headers, as: :json
 
         expect(response).to have_http_status(:success)
         expect(response.parsed_body['id']).to eq(message_id)
-        expect(conversation.messages.where(source_id: "volitex:n8n:#{n8n_bot.id}:delivery-123").count).to eq(1)
+        expect(conversation.messages.where(sender: n8n_bot).count).to eq(1)
       end
 
       it 'rejects the n8n bot after a human takes over' do

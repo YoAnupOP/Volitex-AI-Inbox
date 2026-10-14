@@ -100,7 +100,8 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   def existing_automation_delivery
     return unless automation_delivery_id
 
-    @conversation.messages.find_by(source_id: automation_delivery_source_id)
+    @conversation.messages.where(sender: Current.user)
+                 .where("(content_attributes #>> '{}')::jsonb ->> 'automation_delivery_id' = ?", automation_delivery_id).first
   end
 
   def render_existing_automation_delivery
