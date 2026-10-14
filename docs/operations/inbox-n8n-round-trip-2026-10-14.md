@@ -92,3 +92,7 @@ These are installed runtime findings, not development-only dependencies. Functio
 2. Review actual CI results for the delivered commits; repository-wide baseline debt is unchanged.
 3. Replace the staging phrase workflow with each client's reviewed business automation and configure production failure alerts, keeping account-scoped credentials and the same ownership/idempotency contract.
 4. Execute server-specific TLS, backup/restore, monitoring and reboot/rollback acceptance on the intended KVM 4. No service is declared production-ready from this localhost test.
+
+## GitHub CI execution checkpoint
+
+Run 38541834832 at implementation commit `de51edaa35dabc1019ee1743f44bdf59f455344c` actually executed the new `n8n-contract` job: **PASS**. The candidate build/boot job and full CE specs were still running at this checkpoint; neither is recorded as passed. Source delivery includes commits `b7fc80a704` and `f0a3f1c6ca` for the verified API fixes and `de51edaa35` for the workflow. Deployment text files were subsequently normalized to the original LF convention; this changes no workflow or application behavior.
