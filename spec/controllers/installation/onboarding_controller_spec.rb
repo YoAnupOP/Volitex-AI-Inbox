@@ -17,6 +17,12 @@ RSpec.describe 'Installation::Onboarding API', type: :request do
         Redis::Alfred.set(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING, true)
         get '/installation/onboarding'
         expect(response).to have_http_status(:success)
+        page = Nokogiri::HTML(response.body)
+        expect(page.at_css('html')['class']).to include('admin-auth')
+        %w[user_name user_company user_email user_password].each do |id|
+          expect(page.at_css("label[for='#{id}']")).to be_present
+          expect(page.at_css("input##{id}")).to be_present
+        end
         Redis::Alfred.delete(Redis::Alfred::CHATWOOT_INSTALLATION_ONBOARDING)
       end
     end

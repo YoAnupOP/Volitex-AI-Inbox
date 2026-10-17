@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="<%= I18n.locale %>" class="admin-auth">
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Super Admin | Volitex AI Inbox</title>
     <script>
       (function() {
@@ -12,10 +13,8 @@
           }
           if (theme === 'dark') {
             document.documentElement.classList.add('dark');
-            document.body.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
-            document.body.classList.remove('dark');
           }
         } catch (e) {}
       })();
@@ -33,66 +32,66 @@
   </head>
   <body>
     <div class="h-full w-full antialiased">
-      <main class="flex flex-col bg-woot-25 min-h-screen w-full py-20 sm:px-6 lg:px-8 dark:bg-slate-900">
-        <section class="max-w-5xl mx-auto">
+      <main class="flex min-h-screen w-full flex-col bg-n-background px-4 py-12 text-n-slate-12 sm:px-6 sm:py-20 lg:px-8">
+        <section class="mx-auto w-full max-w-lg">
           <img src="/brand-assets/logo.svg?v=2" alt="Volitex AI Inbox" class="mx-auto h-8 w-auto block dark:hidden">
           <img src="/brand-assets/logo_dark.svg?v=2" alt="Volitex AI Inbox" class="mx-auto h-8 w-auto hidden dark:block">
-          <h2 class="mt-6 text-center text-3xl font-medium text-slate-900 dark:text-woot-50">
+          <h2 class="mt-6 text-center text-3xl font-medium text-n-slate-12">
             Welcome to Volitex AI Inbox 👋
           </h2>
         </section>
-        <section class="bg-white shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-slate-800 p-11 sm:shadow-lg sm:rounded-lg mb-8 mt-15">
+        <section class="mx-auto mb-8 mt-10 w-full max-w-lg rounded-xl border border-n-weak bg-n-solid-1 p-6 shadow-sm sm:p-10">
           <div>
             <%= form_tag('/installation/onboarding') do %>
             <div class="space-y-5">
               <% if flash[:error].present? %>
-                <div class="rounded-md bg-red-500 p-4 text-white text-sm mb-5"><%= flash[:error] %></div>
+                <div role="alert" class="mb-5 rounded-md border border-n-ruby-6 bg-n-ruby-3 p-4 text-sm text-n-ruby-11"><%= flash[:error] %></div>
               <% end %>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                <label for="user_name" class="block text-sm font-medium leading-6 text-n-slate-12">
                   Name
                 </label>
                 <div class="mt-1">
-                  <%= text_field :user, :name, placeholder: "Enter your full name. eg: Bruce Wayne", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= text_field :user, :name, placeholder: "Enter your full name. eg: Bruce Wayne", required: true, class: "block w-full appearance-none rounded-md border border-n-strong bg-n-solid-2 px-3 py-3 text-n-slate-12 shadow-sm placeholder:text-n-slate-11 focus:border-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-slate-9 sm:text-sm sm:leading-6" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                <label for="user_company" class="block text-sm font-medium leading-6 text-n-slate-12">
                   Company Name
                 </label>
                 <div class="mt-1">
-                  <%= text_field :user, :company, placeholder: "Enter your company name. eg: Wayne Enterprises", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= text_field :user, :company, placeholder: "Enter your company name. eg: Wayne Enterprises", required: true, class: "block w-full appearance-none rounded-md border border-n-strong bg-n-solid-2 px-3 py-3 text-n-slate-12 shadow-sm placeholder:text-n-slate-11 focus:border-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-slate-9 sm:text-sm sm:leading-6" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                <label for="user_email" class="block text-sm font-medium leading-6 text-n-slate-12">
                   Work Email
                 </label>
                 <div class="mt-1">
-                  <%= email_field :user, :email, placeholder: "Enter your work email address. eg: bruce@wayne.enterprises", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= email_field :user, :email, placeholder: "Enter your work email address. eg: bruce@wayne.enterprises", required: true, class: "block w-full appearance-none rounded-md border border-n-strong bg-n-solid-2 px-3 py-3 text-n-slate-12 shadow-sm placeholder:text-n-slate-11 focus:border-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-slate-9 sm:text-sm sm:leading-6" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                <label for="user_password" class="block text-sm font-medium leading-6 text-n-slate-12">
                   Password
                 </label>
                 <div class="mt-1">
-                  <%= password_field :user, :password, placeholder: "Enter a password with 6 characters or more.", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= password_field :user, :password, placeholder: "Enter a password with 6 characters or more.", required: true, class: "block w-full appearance-none rounded-md border border-n-strong bg-n-solid-2 px-3 py-3 text-n-slate-12 shadow-sm placeholder:text-n-slate-11 focus:border-n-slate-9 focus:outline-none focus:ring-2 focus:ring-n-slate-9 sm:text-sm sm:leading-6" %>
                 </div>
               </div>
 
-              <div class="text-sm text-slate-900">
+              <div class="text-sm text-n-slate-11">
                 <%= check_box_tag "subscribe_to_updates", 'true', true %>
                 <label class="ml-2" for="subscribe_to_updates">
                   Subscribe to release notes, newsletters & product feedback surveys.
                 </label>
               </div>
 
-              <button type="submit" class="flex items-center w-full justify-center rounded-md bg-woot-500 py-3 px-3 text-base font-medium text-white shadow-sm hover:bg-woot-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-woot-500 cursor-pointer">
+              <button type="submit" class="flex w-full cursor-pointer items-center justify-center rounded-md bg-n-slate-12 px-3 py-3 text-base font-medium text-n-slate-1 shadow-sm hover:bg-n-slate-11 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-n-slate-9">
                 Finish Setup
               </button>
             </div>
