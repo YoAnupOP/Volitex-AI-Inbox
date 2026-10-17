@@ -47,8 +47,19 @@ gh api repos/chatwoot/chatwoot/security-advisories --jq '.[]|{ghsa_id,severity,v
 git fetch --no-tags upstream refs/tags/<reviewed-stable-tag>:refs/remotes/upstream/<reviewed-stable-tag>
 ```
 
-Review version ranges **and actual patched code**: this fork already carries some later fixes and misses others. Inventory relevant security/provider/migration changes, backport in a dedicated branch, preserve local tenant/webhook/credential/campaign behavior, run focused regressions and build/scan/boot the exact new image. No automatic production updates. Pin the accepted artifact, test backup/restore and deploy with rollback evidence.
+Review version ranges **and actual patched code**: this fork already carries some later fixes and misses others. Inventory relevant security/provider/migration changes, backport in a dedicated branch, preserve local tenant/webhook/credential/campaign behavior, run focused regressions and build/scan/boot the exact new image. No automatic production updates. Upstream 4.18 also changes campaign analytics and BSUID-only handling; these are not claimed ported here. Compare against the Volitex recipient ledger and sending lifecycle before adoption; current marketing eligibility requires a phone destination. Pin the accepted artifact, test backup/restore and deploy with rollback evidence.
 
 ## Launch impact
 
 This check found concrete missing patches, not a need to rebuild the platform. The original campaign candidate remains preserved. Review and integrate this maintenance branch before freezing the next release; do not silently replace its tested artifact with these changes. Immutable artifact availability, actual KVM Traefik/backup/reboot/alert acceptance and the approved small live campaign gates remain as documented. No calendar date or zero-downtime claim is justified without that infrastructure acceptance.
+## Delivered checkpoint
+
+Implementation source: `cc1c06d0c76108c710edbd0da39049c991402dde`, pushed on the separate maintenance branch. The original campaign branch remains at `c67001496e145154882869f9a03d137a61d2f1bc`.
+
+[Full CE CI 39024066329](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39024066329) completed red: **6,088 backend examples, the same 34 baseline failure identities** as the predecessor across all 16 RSpec artifacts, with no new/absent failed identities. Frontend's 19 normalized failed headings also exactly match the predecessor. Existing broad lint and dependency-audit failures are not marked passed.
+
+[Non-publishing candidate CI 39024066315](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39024066315): authenticated n8n contract passed; image build was still in progress when this checkpoint was written. **New image digest, boot/recovery and scan are pending; no pass is claimed.** The previously verified application image is not evidence for these new source changes. Review this run's completed result before accepting the maintenance source as a release artifact.
+
+The first import run additionally found an upstream trusted-video fixture expectation differing from this fork's existing embed markup; its no-preload expectation was adapted without changing embed behavior. The two remaining local failures were matched individually to baseline artifacts. An automatic approval check rejected deletion of a newly created dependency junction, so it was preserved under the worktree's ignored `.codex/` directory and an isolated offline/frozen install was used. No shared dependencies or user data were removed. Local hooks lacked generated Husky helper setup initially; setup was restored and the commit used HUSKY=0 after the explicit checks above. No test assertion or security rule was disabled to claim a pass.
+
+Do not change the GitHub default branch until the intended release history and publishing guards are decided. No default-branch setting, production publisher, upstream code merge, live callback, production service or live customer conversation was modified. The new upstream remote and explicit `gh --repo YoAnupOP/Volitex-AI-Inbox` routing support independent maintenance without restoring GitHub fork membership.
