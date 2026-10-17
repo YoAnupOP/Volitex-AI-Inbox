@@ -7,9 +7,11 @@ describe ContactInboxWithContactBuilder do
   let(:existing_contact_inbox) { create(:contact_inbox, contact: contact, inbox: inbox) }
 
   it 'does not accept a marketing consent grant through public contact creation' do
-    result = described_class.new(inbox: inbox, source_id: 'consent-test', contact_attributes: {
-                                   name: 'Test', custom_attributes: { whatsapp_marketing_consent: { status: 'granted' }, public_attribute: 'allowed' }
-                                 }).perform
+    attributes = ActionController::Parameters.new(
+      whatsapp_marketing_consent: { status: 'granted' }, public_attribute: 'allowed'
+    ).permit!
+    result = described_class.new(inbox: inbox, source_id: 'consent-test',
+                                 contact_attributes: { name: 'Test', custom_attributes: attributes }).perform
     expect(result.contact.custom_attributes).to eq('public_attribute' => 'allowed')
   end
 
