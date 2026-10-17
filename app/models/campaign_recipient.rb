@@ -18,7 +18,7 @@ class CampaignRecipient < ApplicationRecord
   def consent_granted?
     consent = contact.custom_attributes['whatsapp_marketing_consent']
     return false unless consent.is_a?(Hash) && consent['status'] == 'granted'
-    return false unless consent['source'].present? && consent['inbox_id'].to_s == campaign.inbox_id.to_s
+    return false unless consent['source'].is_a?(String) && consent['source'].present? && consent['inbox_id'].to_s == campaign.inbox_id.to_s
 
     Time.iso8601(consent['recorded_at'].to_s) <= Time.current
   rescue ArgumentError

@@ -11,6 +11,14 @@ describe ContactIdentifyAction do
       custom_attributes: { test: 'new test', test2: 'test2' } }
   end
 
+  it 'does not allow public identification to grant or overwrite marketing consent' do
+    contact.update!(custom_attributes: { whatsapp_marketing_consent: { status: 'revoked' } })
+    params[:custom_attributes] = { whatsapp_marketing_consent: { status: 'granted' }, public_attribute: 'allowed' }
+    contact_identify
+    expect(contact.reload.custom_attributes['whatsapp_marketing_consent']).to eq('status' => 'revoked')
+    expect(contact.custom_attributes['public_attribute']).to eq('allowed')
+  end
+
   describe '#perform' do
     it 'updates the contact' do
       expect(Avatar::AvatarFromUrlJob).not_to receive(:perform_later).with(contact, params[:avatar_url])

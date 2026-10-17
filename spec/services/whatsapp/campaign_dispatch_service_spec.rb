@@ -179,4 +179,9 @@ describe Whatsapp::CampaignDispatchService do
     recipient.reconcile!(status: 'delivered')
     expect(recipient.reload.state).to eq('delivered')
   end
+  it 'requires consent again after changing the contact destination' do
+    contact.update!(phone_number: '+15550009876')
+    expect(contact.reload.custom_attributes).not_to have_key('whatsapp_marketing_consent')
+  end
+
 end

@@ -6,6 +6,13 @@ describe ContactInboxWithContactBuilder do
   let(:contact) { create(:contact, email: 'xyc@example.com', phone_number: '+23423424123', account: account, identifier: '123') }
   let(:existing_contact_inbox) { create(:contact_inbox, contact: contact, inbox: inbox) }
 
+  it 'does not accept a marketing consent grant through public contact creation' do
+    result = described_class.new(inbox: inbox, source_id: 'consent-test', contact_attributes: {
+                                   name: 'Test', custom_attributes: { whatsapp_marketing_consent: { status: 'granted' }, public_attribute: 'allowed' }
+                                 }).perform
+    expect(result.contact.custom_attributes).to eq('public_attribute' => 'allowed')
+  end
+
   describe '#perform' do
     it 'doesnot create contact if it already exist with source id' do
       contact_inbox = described_class.new(

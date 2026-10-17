@@ -64,6 +64,7 @@ class Contact < ApplicationRecord
   has_many :notes, dependent: :destroy_async
   before_validation :prepare_contact_attributes
   before_save :sync_contact_attributes
+  before_save :revoke_marketing_consent_on_phone_change, if: -> { persisted? && will_save_change_to_phone_number? }
   before_destroy :redact_campaign_recipients
   after_create_commit :dispatch_create_event, :ip_lookup
   after_update_commit :dispatch_update_event
@@ -197,6 +198,10 @@ class Contact < ApplicationRecord
   end
 
   private
+
+  def revoke_marketing_consent_on_phone_change
+    self.custom_attributes = (custom_attributes || {}).except('whatsapp_marketing_consent')
+  end
 
   def redact_campaign_recipients
     # Retain delivery outcomes without retaining a deleted contact's destination or consent evidence.

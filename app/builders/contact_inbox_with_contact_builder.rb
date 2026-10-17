@@ -55,7 +55,7 @@ class ContactInboxWithContactBuilder
       email: contact_attributes[:email],
       identifier: contact_attributes[:identifier],
       additional_attributes: contact_attributes[:additional_attributes],
-      custom_attributes: contact_attributes[:custom_attributes]
+      custom_attributes: contact_attributes[:custom_attributes]&.stringify_keys&.except('whatsapp_marketing_consent')
     )
   end
 

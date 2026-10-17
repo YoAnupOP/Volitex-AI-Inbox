@@ -128,7 +128,7 @@ class ContactIdentifyAction
   def custom_attributes
     return @contact.custom_attributes if params[:custom_attributes].blank?
 
-    (@contact.custom_attributes || {}).deep_merge(params[:custom_attributes].stringify_keys)
+    (@contact.custom_attributes || {}).deep_merge(params[:custom_attributes].stringify_keys.except('whatsapp_marketing_consent'))
   end
 
   def additional_attributes
