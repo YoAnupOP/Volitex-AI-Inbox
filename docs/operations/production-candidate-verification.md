@@ -1,5 +1,7 @@
 # Production candidate verification — 2026-10-11
 
+**Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
+
 ## Release decision
 
 **NOT READY — SPECIFIC BLOCKERS REMAIN.** This record does not authorize production deployment, image publication, DNS changes, purchases, or customer messaging.
