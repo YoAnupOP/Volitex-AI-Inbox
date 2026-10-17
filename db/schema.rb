@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_14_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_17_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -315,6 +315,37 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_000000) do
     t.index ["provider", "provider_call_id"], name: "index_calls_on_provider_and_provider_call_id", unique: true
   end
 
+  create_table "campaign_dispatch_slots", force: :cascade do |t|
+    t.bigint "inbox_id", null: false
+    t.datetime "available_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["inbox_id"], name: "index_campaign_dispatch_slots_on_inbox_id", unique: true
+  end
+
+  create_table "campaign_recipients", force: :cascade do |t|
+    t.bigint "campaign_id", null: false
+    t.bigint "contact_id"
+    t.string "phone_number", null: false
+    t.string "state", default: "pending", null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "next_attempt_at"
+    t.datetime "claimed_at"
+    t.string "provider_message_id"
+    t.jsonb "consent_snapshot", default: {}, null: false
+    t.string "error_code"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["campaign_id", "contact_id"], name: "index_campaign_recipients_on_campaign_id_and_contact_id", unique: true
+    t.index ["campaign_id", "phone_number"], name: "index_campaign_recipients_destination", unique: true, where: "((phone_number)::text <> ''::text)"
+    t.index ["campaign_id", "state", "next_attempt_at"], name: "index_campaign_recipients_dispatch"
+    t.index ["campaign_id"], name: "index_campaign_recipients_on_campaign_id"
+    t.index ["contact_id"], name: "index_campaign_recipients_on_contact_id"
+    t.index ["provider_message_id"], name: "index_campaign_recipients_on_provider_message_id", unique: true, where: "(provider_message_id IS NOT NULL)"
+    t.check_constraint "attempts >= 0 AND attempts <= 3", name: "campaign_recipient_attempts"
+    t.check_constraint "state::text = ANY (ARRAY['pending'::character varying, 'sending'::character varying, 'retryable'::character varying, 'accepted'::character varying, 'sent'::character varying, 'delivered'::character varying, 'read'::character varying, 'failed'::character varying, 'unknown'::character varying, 'suppressed'::character varying, 'cancelled'::character varying]::text[])", name: "campaign_recipient_state"
+  end
+
   create_table "campaigns", force: :cascade do |t|
     t.integer "display_id", null: false
     t.string "title", null: false
@@ -333,6 +364,10 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_000000) do
     t.datetime "scheduled_at", precision: nil
     t.boolean "trigger_only_during_business_hours", default: false
     t.jsonb "template_params"
+    t.datetime "audience_snapshotted_at"
+    t.string "delivery_error"
+    t.string "dispatch_token"
+    t.datetime "dispatch_scheduled_at"
     t.index ["account_id"], name: "index_campaigns_on_account_id"
     t.index ["campaign_status"], name: "index_campaigns_on_campaign_status"
     t.index ["campaign_type"], name: "index_campaigns_on_campaign_type"
@@ -1530,6 +1565,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_14_000000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "campaign_dispatch_slots", "inboxes", on_delete: :cascade
+  add_foreign_key "campaign_recipients", "campaigns", on_delete: :cascade
+  add_foreign_key "campaign_recipients", "contacts", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
   add_foreign_key "quick_menus", "accounts", on_delete: :cascade
   add_foreign_key "user_sessions", "users"

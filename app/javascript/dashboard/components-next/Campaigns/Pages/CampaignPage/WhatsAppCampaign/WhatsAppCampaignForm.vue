@@ -71,18 +71,20 @@ const inboxOptions = computed(() =>
 const templateOptions = computed(() => {
   if (!state.inboxId) return [];
   const templates = formState.getFilteredWhatsAppTemplates.value(state.inboxId);
-  return templates.map(template => {
-    // Create a more user-friendly label from template name
-    const friendlyName = template.name
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
+  return templates
+    .filter(template => template.category?.toUpperCase() === 'MARKETING')
+    .map(template => {
+      // Create a more user-friendly label from template name
+      const friendlyName = template.name
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
 
-    return {
-      value: template.id,
-      label: `${friendlyName} (${template.language || 'en'})`,
-      template: template,
-    };
-  });
+      return {
+        value: template.id,
+        label: `${friendlyName} (${template.language || 'en'})`,
+        template: template,
+      };
+    });
 });
 
 const selectedTemplate = computed(() => {

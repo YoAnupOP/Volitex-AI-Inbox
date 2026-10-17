@@ -1,110 +1,56 @@
 class Whatsapp::OneoffCampaignService
+  class InvalidAudience < StandardError; end
+
   pattr_initialize [:campaign!]
 
   def perform
-    validate_campaign!
-    process_audience(extract_audience_labels)
-    campaign.completed!
+    campaign.with_lock do
+      return unless campaign.active? && campaign.enabled?
+
+      validate!
+      snapshot_audience
+      campaign.update!(campaign_status: :processing, audience_snapshotted_at: Time.current)
+    end
+    campaign.enqueue_dispatch if campaign.processing?
+  rescue Whatsapp::CampaignTemplateService::InvalidTemplate, InvalidAudience
+    campaign.update!(campaign_status: :failed, delivery_error: 'invalid_template_or_audience')
   end
 
   private
 
-  delegate :inbox, to: :campaign
-  delegate :channel, to: :inbox
-
-  def validate_campaign_type!
-    raise "Invalid campaign #{campaign.id}" unless whatsapp_campaign? && campaign.one_off?
-  end
-
-  def whatsapp_campaign?
-    campaign.inbox.inbox_type == 'Whatsapp'
-  end
-
-  def validate_campaign_status!
-    raise 'Completed Campaign' if campaign.completed?
-  end
-
-  def validate_provider!
-    raise 'WhatsApp Cloud provider required' if channel.provider != 'whatsapp_cloud'
-  end
-
-  def validate_feature_flag!
+  def validate!
     raise 'WhatsApp campaigns feature not enabled' unless campaign.account.feature_enabled?(:whatsapp_campaign)
+    raise 'WhatsApp Cloud provider required' unless campaign.inbox.channel.try(:provider) == 'whatsapp_cloud'
+    raise 'Invalid campaign' unless campaign.one_off? && campaign.inbox.inbox_type == 'Whatsapp'
+
+    Whatsapp::CampaignTemplateService.new(campaign: campaign).validate!
   end
 
-  def validate_campaign!
-    validate_campaign_type!
-    validate_campaign_status!
-    validate_provider!
-    validate_feature_flag!
-  end
+  def snapshot_audience
+    labels = audience_labels
 
-  def extract_audience_labels
-    audience_label_ids = campaign.audience.select { |audience| audience['type'] == 'Label' }.pluck('id')
-    campaign.account.labels.where(id: audience_label_ids).pluck(:title)
-  end
-
-  def process_contact(contact)
-    Rails.logger.info "Processing contact: #{contact.name} (#{contact.phone_number})"
-
-    if contact.phone_number.blank?
-      Rails.logger.info "Skipping contact #{contact.name} - no phone number"
-      return
+    campaign.account.contacts.tagged_with(labels, any: true).select(:id, :phone_number, :account_id, :custom_attributes,
+                                                                    :blocked).find_in_batches(batch_size: 500) do |contacts|
+      # Bounded inserts from an account-scoped query. Database constraints enforce delivery identity/state.
+      CampaignRecipient.insert_all(contacts.map { |contact| snapshot_row(contact) }, unique_by: :index_campaign_recipients_destination) # rubocop:disable Rails/SkipsModelValidations
     end
-
-    if campaign.template_params.blank?
-      Rails.logger.error "Skipping contact #{contact.name} - no template_params found for WhatsApp campaign"
-      return
-    end
-
-    processed_template_params = process_liquid_template_params(contact)
-    return if processed_template_params.nil?
-
-    send_whatsapp_template_message(to: contact.phone_number, template_params: processed_template_params)
   end
 
-  def process_audience(audience_labels)
-    contacts = campaign.account.contacts.tagged_with(audience_labels, any: true)
-    Rails.logger.info "Processing #{contacts.count} contacts for campaign #{campaign.id}"
+  def audience_labels
+    audience = Array(campaign.audience)
+    raise InvalidAudience, 'Label audience required' unless audience.all? { |item| item.is_a?(Hash) && item['type'] == 'Label' }
 
-    contacts.find_each { |contact| process_contact(contact) }
+    ids = audience.pluck('id').map(&:to_s).uniq
+    labels = campaign.account.labels.where(id: ids).pluck(:title)
+    raise InvalidAudience, 'Account labels required' if ids.empty? || labels.length != ids.length
 
-    Rails.logger.info "Campaign #{campaign.id} processing completed"
+    labels
   end
 
-  def process_liquid_template_params(contact)
-    liquid_processor = Whatsapp::LiquidTemplateProcessorService.new(campaign: campaign, contact: contact)
-    processed_template_params = liquid_processor.process_template_params(campaign.template_params)
-
-    Rails.logger.info "Skipping contact #{contact.name} - liquid variables resolved to blank values" if processed_template_params.nil?
-
-    processed_template_params
-  rescue StandardError => e
-    Rails.logger.error "Failed to process liquid template params for contact #{contact.name}: #{e.message}"
-    nil
-  end
-
-  def send_whatsapp_template_message(to:, template_params:)
-    processor = Whatsapp::TemplateProcessorService.new(
-      channel: channel,
-      template_params: template_params
-    )
-
-    name, namespace, lang_code, processed_parameters = processor.call
-
-    return if name.blank?
-
-    channel.send_template(to, {
-                            name: name,
-                            namespace: namespace,
-                            lang_code: lang_code,
-                            parameters: processed_parameters
-                          }, nil)
-
-  rescue StandardError => e
-    Rails.logger.error "Failed to send WhatsApp template message to #{to}: #{e.message}"
-    Rails.logger.error "Backtrace: #{e.backtrace.first(5).join('\n')}"
-    # continue processing remaining contacts
-    nil
+  def snapshot_row(contact)
+    eligible = CampaignRecipient.new(campaign: campaign, contact: contact, phone_number: contact.phone_number.to_s).eligible?
+    { campaign_id: campaign.id, contact_id: contact.id, phone_number: contact.phone_number.to_s,
+      state: eligible ? 'pending' : 'suppressed', error_code: eligible ? nil : 'consent_or_contact_ineligible',
+      created_at: Time.current, updated_at: Time.current }
   end
 end

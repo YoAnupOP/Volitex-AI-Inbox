@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useToggle } from '@vueuse/core';
 import { useStoreGetters, useMapGetter } from 'dashboard/composables/store';
 
+import CampaignDeliveryControls from 'dashboard/components-next/Campaigns/CampaignDeliveryControls.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CampaignLayout from 'dashboard/components-next/Campaigns/CampaignLayout.vue';
 import CampaignList from 'dashboard/components-next/Campaigns/Pages/CampaignPage/CampaignList.vue';
@@ -49,6 +50,9 @@ const handleDelete = campaign => {
         @close="toggleWhatsAppCampaignDialog(false)"
       />
     </template>
+    <p class="mb-3 text-sm text-n-slate-11">
+      {{ t('CAMPAIGN.DELIVERY.CONSENT') }}
+    </p>
     <div
       v-if="isFetchingCampaigns"
       class="flex items-center justify-center py-10 text-n-slate-11"
@@ -65,6 +69,12 @@ const handleDelete = campaign => {
       :title="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.TITLE')"
       :subtitle="t('CAMPAIGN.WHATSAPP.EMPTY_STATE.SUBTITLE')"
       class="pt-14"
+    />
+    <CampaignDeliveryControls
+      v-for="campaign in WhatsAppCampaigns"
+      :key="campaign.id"
+      :campaign="campaign"
+      class="mt-3"
     />
     <ConfirmDeleteCampaignDialog
       ref="confirmDeleteCampaignDialogRef"

@@ -211,6 +211,36 @@
         "SUCCESS_MESSAGE": "Campaign deleted successfully",
         "ERROR_MESSAGE": "There was an error. Please try again."
       }
+    },
+    "DELIVERY": {
+      "WARNING": "Pause/cancel stops new claims. A request already in flight may finish. Unknown outcomes are never automatically resent. Completion means dispatch finished, not delivery confirmed.",
+      "REFRESH": "Refresh progress",
+      "RECIPIENTS": "Load recipients",
+      "CANCEL": "Cancel",
+      "RESUME": "Resume",
+      "ERROR": "Could not update campaign. Refresh and try again.",
+      "PAUSE": "Pause",
+      "PREPARATION_ERROR": "Campaign needs operator review. Check the Cloud inbox, approved marketing template and account audience labels.",
+      "CONSENT": "Only contacts with recorded WhatsApp marketing consent for this inbox are eligible. Missing or revoked consent and blocked contacts are suppressed.",
+      "RECIPIENT": "Contact {id}: {state}, attempts {attempts}. {error}",
+      "STATES": {
+        "accepted": "Accepted by Meta",
+        "cancelled": "Cancelled",
+        "read": "Read",
+        "unknown": "Delivery uncertain",
+        "completed_with_errors": "Dispatch finished with errors",
+        "failed": "Failed",
+        "sent": "Sent",
+        "paused": "Paused",
+        "retryable": "Waiting to retry",
+        "suppressed": "Suppressed",
+        "completed": "Dispatch finished",
+        "active": "Scheduled",
+        "delivered": "Delivered",
+        "processing": "Processing",
+        "pending": "Pending",
+        "sending": "Sending"
+      }
     }
   }
 }

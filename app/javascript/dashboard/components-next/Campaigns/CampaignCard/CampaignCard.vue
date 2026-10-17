@@ -54,7 +54,11 @@ const STATUS_PROCESSING = 'processing';
 const { formatMessage } = useMessageFormatter();
 
 const isActive = computed(() =>
-  props.isLiveChatType ? props.isEnabled : props.status !== STATUS_COMPLETED
+  props.isLiveChatType
+    ? props.isEnabled
+    : !['completed', 'completed_with_errors', 'cancelled', 'failed'].includes(
+        props.status
+      )
 );
 
 const statusTextColor = computed(() => ({
@@ -67,6 +71,14 @@ const campaignStatus = computed(() => {
     return props.isEnabled
       ? t('CAMPAIGN.LIVE_CHAT.CARD.STATUS.ENABLED')
       : t('CAMPAIGN.LIVE_CHAT.CARD.STATUS.DISABLED');
+  }
+
+  if (
+    ['paused', 'cancelled', 'completed_with_errors', 'failed'].includes(
+      props.status
+    )
+  ) {
+    return t(`CAMPAIGN.DELIVERY.STATES.${props.status}`);
   }
 
   if (props.status === STATUS_COMPLETED) {

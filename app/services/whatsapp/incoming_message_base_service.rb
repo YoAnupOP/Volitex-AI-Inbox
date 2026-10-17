@@ -48,6 +48,7 @@ class Whatsapp::IncomingMessageBaseService
 
   def process_statuses
     status = @processed_params[:statuses].first
+    Whatsapp::CampaignStatusService.new(inbox: inbox).perform(@processed_params[:statuses])
     return unless find_message_by_source_id(status[:id])
 
     update_whatsapp_identifiers_from_status(status)

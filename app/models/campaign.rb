@@ -40,6 +40,7 @@ class Campaign < ApplicationRecord
   validate :prevent_completed_campaign_from_update, on: :update
   validate :sender_must_belong_to_account
   validate :inbox_must_belong_to_account
+  validate :freeze_campaign_delivery_definition
 
   belongs_to :account
   belongs_to :inbox
@@ -47,9 +48,10 @@ class Campaign < ApplicationRecord
 
   enum campaign_type: { ongoing: 0, one_off: 1 }
   # TODO : enabled attribute is unneccessary . lets move that to the campaign status with additional statuses like draft, disabled etc.
-  enum campaign_status: { active: 0, completed: 1, processing: 2 }
+  enum campaign_status: { active: 0, completed: 1, processing: 2, paused: 3, cancelled: 4, completed_with_errors: 5, failed: 6 }
 
   has_many :conversations, dependent: :nullify, autosave: true
+  has_many :campaign_recipients, dependent: :delete_all
 
   before_validation :ensure_correct_campaign_attributes
   after_commit :set_display_id, unless: :display_id?
@@ -58,9 +60,30 @@ class Campaign < ApplicationRecord
   def trigger!
     return unless one_off?
     return unless feature_enabled?
+
+    if inbox.inbox_type == 'Whatsapp'
+      Whatsapp::OneoffCampaignService.new(campaign: self).perform
+      return
+    end
     return unless mark_processing!
 
     execute_campaign
+  end
+
+  def campaign_dispatch_enabled?
+    processing? && enabled? && account.feature_enabled?(:whatsapp_campaign)
+  end
+
+  def enqueue_dispatch
+    token = with_lock do
+      next unless campaign_dispatch_enabled?
+      next if dispatch_token.present? && dispatch_scheduled_at && dispatch_scheduled_at > 2.minutes.ago
+
+      value = SecureRandom.uuid
+      update!(dispatch_token: value, dispatch_scheduled_at: Time.current)
+      value
+    end
+    Campaigns::DispatchJob.perform_later(self, token) if token
   end
 
   private
@@ -142,6 +165,13 @@ class Campaign < ApplicationRecord
     return if account.users.exists?(id: sender.id)
 
     errors.add(:sender_id, 'must belong to the same account as the campaign')
+  end
+
+  def freeze_campaign_delivery_definition
+    return unless audience_snapshotted_at_was
+    return unless changed.intersect?(%w[inbox_id account_id audience template_params sender_id message])
+
+    errors.add(:base, 'Snapshotted campaign delivery settings cannot be changed')
   end
 
   def prevent_completed_campaign_from_update

@@ -1,0 +1,7 @@
+---
+:concurrency: 2
+:timeout: 30
+:max_retries: 3
+:queues:
+  - campaigns
+:average_scheduled_poll_interval: 1

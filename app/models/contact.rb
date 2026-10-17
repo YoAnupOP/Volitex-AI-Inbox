@@ -63,10 +63,11 @@ class Contact < ApplicationRecord
   has_many :messages, as: :sender, dependent: :destroy_async
   has_many :notes, dependent: :destroy_async
   before_validation :prepare_contact_attributes
+  before_save :sync_contact_attributes
+  before_destroy :redact_campaign_recipients
   after_create_commit :dispatch_create_event, :ip_lookup
   after_update_commit :dispatch_update_event
   after_destroy_commit :dispatch_destroy_event
-  before_save :sync_contact_attributes
 
   enum contact_type: { visitor: 0, lead: 1, customer: 2 }
 
@@ -196,6 +197,11 @@ class Contact < ApplicationRecord
   end
 
   private
+
+  def redact_campaign_recipients
+    # Retain delivery outcomes without retaining a deleted contact's destination or consent evidence.
+    CampaignRecipient.where(contact_id: id).update_all(phone_number: '', consent_snapshot: {}, updated_at: Time.current) # rubocop:disable Rails/SkipsModelValidations
+  end
 
   def ip_lookup
     return unless account.feature_enabled?('ip_lookup')

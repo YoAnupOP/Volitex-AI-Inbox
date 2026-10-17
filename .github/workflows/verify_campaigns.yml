@@ -1,0 +1,63 @@
+name: Verify campaign lifecycle
+on:
+  push:
+    branches: [codex/whatsapp-interactive-quick-menus]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  campaigns:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+      valkey:
+        image: valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3
+        ports: ['6379:6379']
+    env:
+      RAILS_ENV: test
+      POSTGRES_HOST: localhost
+      POSTGRES_USERNAME: postgres
+      REDIS_URL: redis://127.0.0.1:6379/0
+      CAMPAIGN_VERIFY_REDIS_URL: redis://127.0.0.1:6379/13
+      ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY: test_key_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY: test_key_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+      ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT: test_salt_cccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      VITE_RUBY_AUTO_BUILD: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: sudo apt-get update && sudo apt-get install -y libvips-dev
+      - name: Fresh schema and reversible upgrade
+        run: |
+          bundle exec rails db:create db:schema:load db:migrate
+          bundle exec rails db:migrate:down VERSION=20261017000000
+          bundle exec rails db:migrate:up VERSION=20261017000000
+      - name: Campaign and messaging regressions
+        run: >-
+          bundle exec rspec spec/services/whatsapp/campaign_dispatch_service_spec.rb
+          spec/services/whatsapp/campaign_status_service_spec.rb spec/script/production/campaign_worker_health_spec.rb
+          spec/services/whatsapp/oneoff_campaign_service_spec.rb
+          spec/controllers/api/v1/accounts/campaign_delivery_controls_spec.rb
+          spec/models/campaign_spec.rb spec/models/contact_spec.rb spec/controllers/api/v1/accounts/campaigns_controller_spec.rb
+          spec/services/whatsapp/providers/whatsapp_cloud_service_spec.rb
+      - name: Real queue crash and overlapping jobs
+        run: bundle exec ruby script/production/specs/campaign_worker_recovery.rb
+      - name: Synthetic ledger load with mocked provider
+        run: bundle exec rspec script/production/specs/campaign_capacity_spec.rb
+  ingress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test script/production/specs/n8n_compression_ingress.test.cjs

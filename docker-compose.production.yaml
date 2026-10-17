@@ -53,5 +53,25 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  campaign-worker:
+    <<: *base
+    environment:
+      NODE_ENV: production
+      RAILS_ENV: production
+      INSTALLATION_ENV: docker
+    command: ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq_campaigns.yml']
+    cpus: '1.0'
+    mem_limit: 1536m
+    healthcheck:
+      test: ['CMD', 'bundle', 'exec', 'ruby', 'script/production/campaign_worker_health.rb']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
 volumes:
   volitex_storage:

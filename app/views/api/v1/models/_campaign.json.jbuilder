@@ -21,3 +21,6 @@ json.trigger_rules resource.trigger_rules
 json.trigger_only_during_business_hours resource.trigger_only_during_business_hours
 json.created_at resource.created_at
 json.updated_at resource.updated_at
+json.delivery_error resource.delivery_error
+
+json.recipient_counts resource.campaign_recipients.group(:state).count if resource.audience_snapshotted_at?
