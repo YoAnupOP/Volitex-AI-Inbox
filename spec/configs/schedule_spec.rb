@@ -6,18 +6,8 @@ require 'rails_helper'
 RSpec.context 'with valid schedule.yml' do
   it 'does not have duplicates' do
     file = Rails.root.join('config/schedule.yml')
-    schedule_keys = []
-    invalid_line_starts = [' ', '#', "\n"]
-    # couldn't figure out a proper solution with yaml.parse
-    # so the rudementary solution is to read the file and parse it
-    # check for duplicates in the array
-    File.open(file).each do |f|
-      f.each_line do |line|
-        next if invalid_line_starts.include?(line[0])
-
-        schedule_keys << line.split(':')[0]
-      end
-    end
+    # Read the syntax tree: loading a Hash would silently discard duplicate keys.
+    schedule_keys = Psych.parse_file(file).root.children.each_slice(2).map { |key, _value| key.value }
     # ensure that no duplicates exist
     expect(schedule_keys.count).to eq(schedule_keys.uniq.count)
   end

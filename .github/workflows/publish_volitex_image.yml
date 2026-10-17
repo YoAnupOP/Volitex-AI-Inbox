@@ -1,40 +1,94 @@
 name: Publish Volitex Inbox image
 
+# Publication is a separate, explicitly authorized action. Candidate CI never pushes.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full verified integrated commit SHA
+        required: true
+        type: string
+      authorization:
+        description: Enter PUBLISH_CANDIDATE to authorize GHCR publication
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
   packages: write
 
 jobs:
   publish:
+    if: inputs.authorization == 'PUBLISH_CANDIDATE'
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+      - name: Require exact source and completed candidate gates
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          gh run list --repo "$GITHUB_REPOSITORY" --commit "$SOURCE_SHA" --limit 100 \
+            --json workflowName,conclusion,status > "$RUNNER_TEMP/gates.json"
+          for workflow in 'Verify non-production candidate' 'Verify campaign lifecycle' 'Verify migration compatibility'; do
+            jq -e --arg workflow "$workflow" 'any(.[]; .workflowName == $workflow and .status == "completed" and .conclusion == "success")' "$RUNNER_TEMP/gates.json"
+          done
       - uses: docker/setup-buildx-action@v3
       - id: image-name
-        shell: bash
         run: |
           owner="$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "name=ghcr.io/${owner}/volitex-ai-inbox" >> "$GITHUB_OUTPUT"
+      - name: Build locally before publication
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: false
+          load: true
+          platforms: linux/amd64
+          tags: ${{ steps.image-name.outputs.name }}:${{ inputs.source_sha }}
+          build-args: GIT_SHA=${{ inputs.source_sha }}
+          cache-from: type=gha,scope=candidate-amd64
+      - name: Boot and recover the exact image
+        env:
+          IMAGE: ${{ steps.image-name.outputs.name }}:${{ inputs.source_sha }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: bash script/production/verify_candidate.sh "$IMAGE" "$SOURCE_SHA"
+      - name: Scan the same image before publication
+        env:
+          IMAGE: ${{ steps.image-name.outputs.name }}:${{ inputs.source_sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/publication-audit"
+          docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+            --volume "$RUNNER_TEMP/publication-audit:/out" \
+            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+            image --scanners vuln --exit-code 0 --format json --output /out/image.json "$IMAGE"
+          jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$RUNNER_TEMP/publication-audit/image.json"
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          platforms: linux/amd64
-          tags: ${{ steps.image-name.outputs.name }}:${{ github.sha }}
-          build-args: |
-            GIT_SHA=${{ github.sha }}
-      - name: Publish immutable deployment reference
+      - name: Publish the tested image without rebuilding
+        env:
+          IMAGE: ${{ steps.image-name.outputs.name }}:${{ inputs.source_sha }}
+          NAME: ${{ steps.image-name.outputs.name }}
         run: |
-          echo "${{ steps.image-name.outputs.name }}@${{ steps.image.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+          docker push "$IMAGE"
+          digest="$(docker buildx imagetools inspect "$IMAGE" --format '{{.Manifest.Digest}}')"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          echo "$NAME@$digest" | tee "$RUNNER_TEMP/publication-audit/immutable-reference.txt"
+          echo "Source: ${{ inputs.source_sha }}" >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/publication-audit/immutable-reference.txt" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publication-evidence
+          path: ${{ runner.temp }}/publication-audit

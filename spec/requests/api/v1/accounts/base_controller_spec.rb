@@ -13,7 +13,18 @@ RSpec.describe 'Api::V1::Accounts::BaseController', type: :request do
   context 'when agent bot belongs to the account' do
     let(:agent_bot) { create(:agent_bot, account: account) }
 
+    it 'rejects assignments without an inbox mapping even within the account' do
+      post api_v1_account_conversation_assignments_url(account_id: account.id, conversation_id: conversation.display_id),
+           headers: { api_access_token: agent_bot.access_token.token },
+           params: { assignee_id: agent.id },
+           as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+
     it 'allows assignments via API' do
+      create(:agent_bot_inbox, agent_bot: agent_bot, inbox: inbox)
+
       post api_v1_account_conversation_assignments_url(account_id: account.id, conversation_id: conversation.display_id),
            headers: { api_access_token: agent_bot.access_token.token },
            params: { assignee_id: agent.id },

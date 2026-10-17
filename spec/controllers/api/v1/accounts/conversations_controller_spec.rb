@@ -642,7 +642,7 @@ RSpec.describe 'Conversations API', type: :request do
       # this test will basically ensure that the status actually changes
       # regardless of the value to be done
       it 'returns authorized for arbritrary status' do
-        create(:agent_bot_inbox, inbox: inbox, agent_bot: agent_bot)
+        create(:agent_bot_inbox, inbox: conversation.inbox, agent_bot: agent_bot)
 
         conversation.update!(status: 'open')
         expect(conversation.reload.status).to eq('open')
@@ -725,7 +725,7 @@ RSpec.describe 'Conversations API', type: :request do
 
     context 'when it is an authenticated bot' do
       it 'toggle the priority of the bot agent conversation' do
-        create(:agent_bot_inbox, inbox: inbox, agent_bot: agent_bot)
+        create(:agent_bot_inbox, inbox: conversation.inbox, agent_bot: agent_bot)
 
         conversation.update!(priority: 'low')
         expect(conversation.reload.priority).to eq('low')

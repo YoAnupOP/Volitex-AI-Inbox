@@ -196,7 +196,9 @@ RSpec.describe Whatsapp::CsatTemplateService do
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
         },
-        body: expected_body.to_json
+        body: expected_body.to_json,
+        open_timeout: 5,
+        timeout: 15
       )
 
       service.create_template(template_config)
@@ -257,7 +259,9 @@ RSpec.describe Whatsapp::CsatTemplateService do
         headers: {
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
-        }
+        },
+        open_timeout: 5,
+        timeout: 15
       ).and_return(mock_response)
 
       result = service.delete_template('test_template')
@@ -305,7 +309,9 @@ RSpec.describe Whatsapp::CsatTemplateService do
         headers: {
           'Authorization' => "Bearer #{whatsapp_channel.provider_config['api_key']}",
           'Content-Type' => 'application/json'
-        }
+        },
+        open_timeout: 5,
+        timeout: 15
       ).and_return(mock_response)
 
       service.get_template_status('test_template')

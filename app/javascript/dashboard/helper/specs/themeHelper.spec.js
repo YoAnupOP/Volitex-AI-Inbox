@@ -4,39 +4,46 @@ import { LocalStorage } from 'shared/helpers/localStorage';
 vi.mock('shared/helpers/localStorage');
 
 describe('setColorTheme', () => {
+  beforeEach(() => {
+    document.body.className = '';
+    document.documentElement.className = '';
+    document.documentElement.removeAttribute('style');
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+  });
   it('should set body class to dark if selectedColorScheme is dark', () => {
     LocalStorage.get.mockReturnValue('dark');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
   it('should set body class to dark if selectedColorScheme is auto and isOSOnDarkMode is true', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
   it('should not set body class to dark if selectedColorScheme is auto and isOSOnDarkMode is false', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(false);
+    window.matchMedia.mockReturnValue({ matches: false });
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(false);
   });
 
   it('should not set body class to dark if selectedColorScheme is light', () => {
     LocalStorage.get.mockReturnValue('light');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(false);
   });
 
   it('should not set body class to dark if selectedColorScheme is undefined', () => {
     LocalStorage.get.mockReturnValue(undefined);
-    setColorTheme(true);
+    setColorTheme();
     expect(document.body.classList.contains('dark')).toBe(true);
   });
 
   it('should set documentElement style to dark if selectedColorScheme is dark', () => {
     LocalStorage.get.mockReturnValue('dark');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );
@@ -44,7 +51,7 @@ describe('setColorTheme', () => {
 
   it('should set documentElement style to dark if selectedColorScheme is auto and isOSOnDarkMode is true', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );
@@ -52,7 +59,8 @@ describe('setColorTheme', () => {
 
   it('should set documentElement style to light if selectedColorScheme is auto and isOSOnDarkMode is false', () => {
     LocalStorage.get.mockReturnValue('auto');
-    setColorTheme(false);
+    window.matchMedia.mockReturnValue({ matches: false });
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: light;'
     );
@@ -60,7 +68,7 @@ describe('setColorTheme', () => {
 
   it('should set documentElement style to light if selectedColorScheme is light', () => {
     LocalStorage.get.mockReturnValue('light');
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: light;'
     );
@@ -68,7 +76,7 @@ describe('setColorTheme', () => {
 
   it('should set documentElement style to light if selectedColorScheme is undefined', () => {
     LocalStorage.get.mockReturnValue(undefined);
-    setColorTheme(true);
+    setColorTheme();
     expect(document.documentElement.getAttribute('style')).toBe(
       'color-scheme: dark;'
     );

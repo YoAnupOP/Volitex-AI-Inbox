@@ -35,5 +35,10 @@ RSpec.describe Instagram::CommentsService do
       service.perform
       service.perform
     end.to change { inbox.messages.where(source_id: comment_id).count }.from(0).to(1)
+
+    message = inbox.messages.find_by!(source_id: comment_id)
+    expect(message.content).to eq('A customer comment')
+    expect(message.conversation.display_id).to be_present
+    expect(message.conversation.account_id).to eq(inbox.account_id)
   end
 end

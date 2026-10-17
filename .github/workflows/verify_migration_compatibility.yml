@@ -2,8 +2,7 @@ name: Verify migration compatibility
 
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus]
-    paths: [.github/workflows/verify_migration_compatibility.yml]
+    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*']
   workflow_dispatch:
 
 permissions:
@@ -47,6 +46,8 @@ jobs:
       - name: Fresh migration and schema dump
         run: |
           POSTGRES_DATABASE=candidate_fresh bundle exec rails db:create db:migrate db:schema:dump
+          POSTGRES_DATABASE=candidate_fresh bundle exec rails db:migrate:down VERSION=20261017000000
+          POSTGRES_DATABASE=candidate_fresh bundle exec rails db:migrate:up VERSION=20261017000000
           POSTGRES_DATABASE=candidate_fresh bundle exec rails db:migrate:down VERSION=20261010000000
           POSTGRES_DATABASE=candidate_fresh bundle exec rails runner 'raise if ActiveRecord::Base.connection.table_exists?(:quick_menus)'
           POSTGRES_DATABASE=candidate_fresh bundle exec rails db:migrate:up VERSION=20261010000000
@@ -56,7 +57,7 @@ jobs:
           git show 452f849bc5d2c45b682dcc1e1e4d44ca43c102a9:db/schema.rb > /tmp/prior-schema.rb
           POSTGRES_DATABASE=candidate_upgrade SCHEMA=/tmp/prior-schema.rb bundle exec rails db:create db:schema:load
           POSTGRES_DATABASE=candidate_upgrade bundle exec rails db:migrate db:schema:dump
-          POSTGRES_DATABASE=candidate_upgrade bundle exec rails runner 'connection=ActiveRecord::Base.connection; raise unless connection.table_exists?(:quick_menus); raise unless connection.foreign_keys(:quick_menus).any? { |key| key.to_table == "accounts" }; raise unless connection.indexes(:quick_menus).any? { |index| index.columns == ["account_id"] }; raise unless connection.check_constraints(:quick_menus).size == 2; puts "Quick Menu schema constraints verified"'
+          POSTGRES_DATABASE=candidate_upgrade bundle exec rails runner 'connection=ActiveRecord::Base.connection; raise unless connection.table_exists?(:quick_menus); raise unless connection.table_exists?(:campaign_recipients); raise unless connection.table_exists?(:campaign_dispatch_slots); raise unless connection.foreign_keys(:quick_menus).any? { |key| key.to_table == "accounts" }; raise unless connection.indexes(:quick_menus).any? { |index| index.columns == ["account_id"] }; raise unless connection.check_constraints(:quick_menus).size == 2; puts "Quick Menu schema constraints verified"'
       - name: Security and production-critical specs on unseeded database
         run: |
           bundle exec bundle-audit check --update

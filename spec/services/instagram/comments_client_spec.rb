@@ -25,7 +25,8 @@ RSpec.describe Instagram::CommentsClient do
   before do
     allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_API_VERSION', 'v22.0').and_return('v22.0')
     stub_request(:get, 'https://graph.instagram.com/v22.0/123/comments')
-      .to_return(status: 200, body: response.to_json, headers: { 'Content-Type' => 'application/json' })
+      .with(query: { access_token: 'access-token', fields: described_class::COMMENT_FIELDS, limit: '100' })
+      .to_return { { status: 200, body: response.to_json, headers: { 'Content-Type' => 'application/json' } } }
   end
 
   it 'preserves Meta usernames and uses the connected inbox identity only for self-authored records without one' do

@@ -73,6 +73,7 @@ docker exec "$prefix-db" pg_dump -U postgres -d candidate --format custom > "$sc
 docker exec "$prefix-db" createdb -U postgres candidate_restore
 docker exec -i "$prefix-db" pg_restore -U postgres -d candidate_restore --exit-on-error < "$scratch/database.dump"
 test "$(docker exec "$prefix-db" psql -U postgres -d candidate_restore -tAc "SELECT count(*) FROM information_schema.tables WHERE table_name = 'quick_menus'")" = 1
+test "$(docker exec "$prefix-db" psql -U postgres -d candidate_restore -tAc "SELECT count(*) FROM information_schema.tables WHERE table_name IN ('campaign_recipients', 'campaign_dispatch_slots')")" = 2
 echo 'Shared attachment storage and disposable PostgreSQL dump/restore verified.'
 docker restart "$prefix-web" "$prefix-worker" "$prefix-campaign-worker" >/dev/null
 ready=false
@@ -84,5 +85,7 @@ test "$ready" = true
 docker exec "$prefix-web" sh -ec 'test "$(cat /app/storage/.volitex-verification)" = verified'
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health >/dev/null
 test "$(docker inspect --format '{{.State.Running}}' "$prefix-worker")" = true
+test "$(docker inspect --format '{{.State.Running}}' "$prefix-campaign-worker")" = true
+docker exec "$prefix-campaign-worker" bundle exec ruby script/production/campaign_worker_health.rb
 docker stop --time 30 "$prefix-web" "$prefix-worker" "$prefix-campaign-worker" >/dev/null
 echo 'Candidate migration, web/worker boot, connectivity, restart and graceful stop checks passed.'

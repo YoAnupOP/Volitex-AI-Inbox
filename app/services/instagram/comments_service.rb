@@ -89,7 +89,7 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
   end
 
   def create_comment_message
-    conversation = find_or_create_conversation
+    conversation = find_or_create_conversation.reload
 
     conversation.with_lock do
       return if comment_already_processed?
