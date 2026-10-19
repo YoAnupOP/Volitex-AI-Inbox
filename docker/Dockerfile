@@ -134,7 +134,7 @@ RUN apk update && apk add --no-cache \
   imagemagick \
   git \
   vips \
-  && apk upgrade --no-cache zlib \
+  && apk upgrade --no-cache zlib libexpat \
   && gem install bundler -v "$BUNDLER_VERSION"
 
 COPY --from=node /usr/local/bin/node /usr/local/bin/
