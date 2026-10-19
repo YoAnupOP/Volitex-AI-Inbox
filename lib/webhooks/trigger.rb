@@ -40,7 +40,8 @@ class Webhooks::Trigger
 
   def perform_request
     body = @payload.to_json
-    SafeFetch.fetch(
+    transport = Webhooks::PrivateAgentBotTransport.for(url: @url, payload: @payload, secret: @secret) if @webhook_type == :agent_bot_webhook
+    (transport || SafeFetch).fetch(
       @url,
       method: :post,
       body: body,
