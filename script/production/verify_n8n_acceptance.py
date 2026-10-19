@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+"""Disposable, provider-stubbed acceptance. Never accepts an operator env/DB URL.
+
+Uses the published Inbox image with ONLY this branch's transport files mounted.
+This verifies the code overlay, not a newly built/published immutable app image.
+No ports are published. Network is --internal. Existing staging is never read.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import secrets
+import subprocess
+import tempfile
+import time
+
+ROOT = Path(__file__).resolve().parents[2]
+FIXTURES = ROOT / 'script/production/specs/n8n_acceptance'
+APP = 'ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4'
+OLD = 'n8nio/n8n@sha256:c34ee9107a42b837e25cec0c8a927ab90a45b776aa2ccbf15e5b9cda466fad2c'
+NEW = 'n8nio/n8n@sha256:3db21366be1d3c77c1708963129c051948573019659e8873e0294be035ffc1b2'
+PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
+APP_PG = 'pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2'
+REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
+FAKE_NODE = 'node@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20'
+PREFIX = f'volitex-acceptance-{os.getpid()}'
+SCRATCH = Path(tempfile.mkdtemp(prefix=PREFIX + '-'))
+os.chmod(SCRATCH, 0o700)
+(SCRATCH / 'post.cjs').write_bytes((FIXTURES / 'post.cjs').read_bytes())
+CONTAINERS = []
+NETWORK_CREATED = False
+RESULTS = {}
+
+
+def command(*args, check=True, timeout=300):
+    result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+    with (SCRATCH / 'commands.log').open('a') as stream:
+        stream.write('COMMAND: ' + ' '.join(args[:3]) + '\n')
+        # Seed output is a protected IPC channel, not diagnostic log material.
+        output = '\n'.join('SYNTHETIC_FIXTURE=[redacted]' if line.startswith('SYNTHETIC_FIXTURE=') else line
+                           for line in result.stdout.splitlines())
+        stream.write(output + '\n' + result.stderr)
+    if check and result.returncode:
+        raise RuntimeError(f'Command failed (exit {result.returncode}); protected evidence: {SCRATCH}')
+    return result.stdout.strip()
+
+
+def write_json(name, value):
+    path = SCRATCH / name
+    path.write_text(json.dumps(value))
+    os.chmod(path, 0o600)
+
+
+def write_env(name, values):
+    path = SCRATCH / name
+    path.write_text(''.join(f'{k}={v}\n' for k, v in values.items()))
+    os.chmod(path, 0o600)
+    return str(path)
+
+
+def start(role, image, ip, env=None, mounts=(), args=(), alias=None, entrypoint=None):
+    name = PREFIX + '-' + role
+    CONTAINERS.append(name)
+    options = ['docker', 'run', '-d', '--name', name, '--network', PREFIX, '--ip', ip]
+    if alias:
+        options += ['--network-alias', alias]
+    if env:
+        options += ['--env-file', env]
+    for mount in mounts:
+        options += ['-v', mount]
+    if entrypoint:
+        options += ['--entrypoint', entrypoint]
+    command(*options, image, *args)
+    return name
+
+
+def wait_for(predicate, label, timeout=180, interval=2):
+    until = time.monotonic() + timeout
+    while time.monotonic() < until:
+        try:
+            if predicate():
+                RESULTS[label] = 'PASS'
+                return
+        except (RuntimeError, ValueError, json.JSONDecodeError):
+            pass
+        time.sleep(interval)
+    raise RuntimeError(f'Timeout: {label}; protected evidence: {SCRATCH}')
+
+
+def sql(database, statement):
+    return command('docker', 'exec', n8n_db, 'psql', '-U', 'postgres', '-d', database, '-Atc', statement)
+
+
+def rails(code):
+    return command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'runner', code)
+
+
+def fake_state():
+    code = 'fetch("http://probe-fake:8080/state").then(r=>r.text()).then(console.log)'
+    return json.loads(command('docker', 'exec', fake, 'node', '-e', code))
+
+
+def emit_event():
+    output = rails('c=Conversation.first; m=c.messages.create!(account:c.account,inbox:c.inbox,sender:c.contact,message_type: :incoming,content:"Volitex round trip"); puts "EVENT="+m.webhook_data.merge(event:"message_created").to_json')
+    event = json.loads(next(line[6:] for line in output.splitlines() if line.startswith('EVENT=')))
+    write_json('event.json', event)
+    return event
+
+
+def n8n_start(image, database='n8n', suffix=''):
+    global n8n_main, n8n_worker
+    config = dict(n8n_env, DB_POSTGRESDB_DATABASE=database)
+    env = write_env('n8n.env', config)
+    mounts = [f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', f'{SCRATCH}:/fixtures:ro',
+              f'{PREFIX}-n8n-data{suffix}:/home/node/.n8n']
+    n8n_main = start('n8n-main', image, '172.30.248.10', env, mounts, ['start'], 'probe-n8n')
+    wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'n8n_readiness')
+    n8n_worker = start('n8n-worker', image, '172.30.248.11', env, mounts[:2], ['worker', '--concurrency=2'])
+    wait_for(lambda: command('docker', 'exec', n8n_worker, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'worker_readiness')
+
+
+def stop_n8n():
+    command('docker', 'stop', '--time', '30', n8n_worker, n8n_main)
+    command('docker', 'rm', n8n_worker, n8n_main)
+    CONTAINERS.remove(n8n_worker)
+    CONTAINERS.remove(n8n_main)
+
+
+try:
+    command('docker', 'network', 'create', '--internal', '--subnet', '172.30.248.0/24', PREFIX)
+    NETWORK_CREATED = True
+    for name in ('app-db', 'n8n-db', 'redis', 'app-redis', 'app-storage', 'n8n-data', 'n8n-data-restore'):
+        command('docker', 'volume', 'create', PREFIX + '-' + name)
+    password = secrets.token_hex(24)
+    db_env = write_env('db.env', {'POSTGRES_PASSWORD': password})
+    n8n_db = start('n8n-db', PG, '172.30.248.5', db_env, [f'{PREFIX}-n8n-db:/var/lib/postgresql/data'], alias='probe-n8n-db')
+    app_db = start('app-db', APP_PG, '172.30.248.6', db_env, [f'{PREFIX}-app-db:/var/lib/postgresql/data'], alias='probe-app-db')
+    redis = start('redis', REDIS, '172.30.248.7', mounts=[f'{PREFIX}-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-redis')
+    start('app-redis', REDIS, '172.30.248.8', mounts=[f'{PREFIX}-app-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-app-redis')
+    fake = start('fake', FAKE_NODE, '172.30.248.30', mounts=[f'{FIXTURES}:/code:ro', f'{SCRATCH}:/state'], args=['node', '/code/fake.cjs'], alias='probe-fake')
+    for db in (app_db, n8n_db):
+        wait_for(lambda db=db: 'accepting connections' in command('docker', 'exec', db, 'pg_isready', '-U', 'postgres', check=False), 'postgres_ready')
+    sql('postgres', 'CREATE DATABASE n8n')
+    binding = [{'account_id': 1, 'agent_bot_id': 1, 'url': 'http://probe-n8n:5678/webhook/volitex-staging-account-1', 'ip_addresses': ['172.30.248.10']}]
+    app_values = {'RAILS_ENV': 'production', 'NODE_ENV': 'production', 'INSTALLATION_ENV': 'docker',
+                  'FRONTEND_URL': 'http://probe-inbox:3000', 'FORCE_SSL': 'false', 'SECRET_KEY_BASE': secrets.token_hex(64),
+                  'POSTGRES_HOST': 'probe-app-db', 'POSTGRES_DATABASE': 'n8n_acceptance', 'POSTGRES_USERNAME': 'postgres',
+                  'POSTGRES_PASSWORD': password, 'REDIS_URL': 'redis://probe-app-redis:6379/0', 'SIDEKIQ_CONCURRENCY': '2',
+                  'RAILS_LOG_TO_STDOUT': 'true', 'ACTIVE_STORAGE_SERVICE': 'local', 'WHATSAPP_CLOUD_BASE_URL': 'http://probe-fake:8080/meta',
+                  'SAFE_FETCH_ALLOW_PRIVATE_NETWORK': 'false', 'N8N_AGENT_BOT_TRANSPORTS': json.dumps(binding, separators=(',', ':'))}
+    for key in ('PRIMARY_KEY', 'DETERMINISTIC_KEY', 'KEY_DERIVATION_SALT'):
+        app_values['ACTIVE_RECORD_ENCRYPTION_' + key] = secrets.token_hex(32)
+    app_env = write_env('app.env', app_values)
+    app_mounts = [f'{ROOT}/lib/webhooks/trigger.rb:/app/lib/webhooks/trigger.rb:ro',
+                  f'{ROOT}/lib/webhooks/private_agent_bot_transport.rb:/app/lib/webhooks/private_agent_bot_transport.rb:ro',
+                  f'{ROOT}/lib/webhooks/private_agent_bot_transport:/app/lib/webhooks/private_agent_bot_transport:ro',
+                  f'{FIXTURES}:/probe:ro', f'{PREFIX}-app-storage:/app/storage']
+    inbox = start('inbox', APP, '172.30.248.20', app_env, app_mounts, ['-c', 'sleep infinity'], 'probe-inbox', 'sh')
+    command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'db:chatwoot_prepare')
+    output = command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'runner', '/probe/seed.rb')
+    fixture = json.loads(next(line.split('=', 1)[1] for line in output.splitlines() if line.startswith('SYNTHETIC_FIXTURE=')))
+    assert fixture['account_id'] == 1 and fixture['bot_id'] == 1
+    # Replace the sleeping disposable shell by the actual web process.
+    command('docker', 'rm', '-f', inbox)
+    CONTAINERS.remove(inbox)
+    inbox = start('inbox', APP, '172.30.248.20', app_env, app_mounts, ['bundle', 'exec', 'rails', 's', '-b', '0.0.0.0', '-p', '3000'], 'probe-inbox')
+    wait_for(lambda: command('docker', 'exec', inbox, 'curl', '-fsS', 'http://127.0.0.1:3000/health', check=False) != '', 'inbox_health')
+    # n8n env schema, with synthetic secrets only and no host port bindings.
+    n8n_env = {}
+    for line in (ROOT / 'deployment/.env.n8n.example').read_text().splitlines():
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            n8n_env[key] = secrets.token_hex(32) if '<' in value else value
+    n8n_env.update({'DB_POSTGRESDB_HOST': 'probe-n8n-db', 'DB_POSTGRESDB_USER': 'postgres', 'DB_POSTGRESDB_PASSWORD': password,
+                    'N8N_CUSTOM_EXTENSIONS': '/opt/volitex/n8n-custom',
+                    'QUEUE_BULL_REDIS_HOST': 'probe-redis', 'QUEUE_BULL_REDIS_PASSWORD': '', 'QUEUE_BULL_REDIS_DB': '1',
+                    'QUEUE_BULL_PREFIX': 'synthetic-acceptance', 'N8N_HOST': 'probe-n8n', 'N8N_PROTOCOL': 'http',
+                    'N8N_WEBHOOK_URL': 'http://probe-n8n:5678', 'N8N_EDITOR_BASE_URL': 'http://probe-n8n:5678',
+                    'N8N_SSRF_ALLOWED_HOSTNAMES': 'probe-fake', 'EXECUTIONS_DATA_SAVE_ON_SUCCESS': 'all',
+                    'N8N_SMTP_HOST': 'smtp.invalid', 'N8N_SMTP_SENDER': 'Synthetic <synthetic@example.invalid>'})
+    n8n_start(OLD)
+    credential_data = {'baseUrl': 'http://probe-fake:8080', 'accountId': fixture['account_id'], 'inboxId': fixture['inbox_id'],
+                       'botId': fixture['bot_id'], 'apiToken': fixture['api_token'], 'signingSecret': fixture['signing_secret']}
+    write_json('credentials-data.json', credential_data)
+    write_json('credentials.json', [{'id': 'VolitexStagingAgentBot', 'name': 'Synthetic scoped bot', 'type': 'volitexInbox', 'data': credential_data}])
+    workflow = json.loads((ROOT / 'deployment/n8n/inbox-reply.workflow.json').read_text())
+    workflow['settings']['saveDataSuccessExecution'] = 'all'
+    write_json('workflow.json', workflow)
+    owner = sql('n8n', 'SELECT id FROM "user" LIMIT 1')
+    command('docker', 'exec', n8n_main, 'n8n', 'import:credentials', '--input=/fixtures/credentials.json', '--userId=' + owner)
+    command('docker', 'exec', n8n_main, 'n8n', 'import:workflow', '--input=/fixtures/workflow.json', '--userId=' + owner)
+    command('docker', 'exec', n8n_main, 'n8n', 'publish:workflow', '--id=VolitexStagingReply')
+    command('docker', 'restart', n8n_main, n8n_worker)
+    wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'old_n8n_active')
+    worker = start('app-worker', APP, '172.30.248.21', app_env, app_mounts, ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml'])
+    emit_event()
+    wait_for(lambda: fake_state()['providerCalls'] == 1, 'old_authenticated_round_trip')
+    command('docker', 'stop', '--time', '30', worker)
+    stop_n8n()
+    backup = subprocess.run(['docker', 'exec', n8n_db, 'pg_dump', '-U', 'postgres', '-Fc', 'n8n'], capture_output=True, check=True).stdout
+    (SCRATCH / 'prior.dump').write_bytes(backup)
+    os.chmod(SCRATCH / 'prior.dump', 0o600)
+    RESULTS['prior_backup_sha256'] = hashlib.sha256(backup).hexdigest()
+    command('docker', 'run', '--rm', '-v', PREFIX + '-n8n-data:/from:ro', '-v', str(SCRATCH) + ':/out', 'alpine:3.23', 'tar', 'cf', '/out/prior-data.tar', '-C', '/from', '.')
+    n8n_start(NEW)
+    command('docker', 'start', worker)
+    emit_event()
+    wait_for(lambda: fake_state()['providerCalls'] == 2, 'candidate_authenticated_round_trip')
+    for mode, status in [('invalid', '401'), ('foreign', '403'), ('replay', '200')]:
+        actual = command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', mode)
+        assert actual == status, mode + ' rejected incorrectly'
+    time.sleep(3)
+    assert fake_state()['providerCalls'] == 2
+    RESULTS['invalid_auth_foreign_tenant_replay'] = 'PASS'
+    # Pause the worker after the real Inbox API commits, before its response returns.
+    command('docker', 'exec', fake, 'node', '-e', 'fetch("http://127.0.0.1:8080/delay-next").then(r=>r.text()).then(console.log)')
+    emit_event()
+    wait_for(lambda: (SCRATCH / 'api-committed').exists(), 'api_committed_before_worker_kill', interval=0.1)
+    assert time.time() - (SCRATCH / 'api-committed').stat().st_mtime < 1
+    command('docker', 'kill', n8n_worker)
+    assert not (SCRATCH / 'api-response-released').exists()
+    command('docker', 'stop', '--time', '30', worker)
+    command('docker', 'start', n8n_worker)
+    wait_for(lambda: command('docker', 'exec', n8n_worker, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '',
+             'worker_restarted_after_kill')
+    owner = command('docker', 'exec', app_db, 'psql', '-U', 'postgres', '-d', 'n8n_acceptance', '-Atc',
+                    "SELECT custom_attributes->>'automation_owner' FROM conversations LIMIT 1")
+    RESULTS['owner_after_interruption'] = owner
+    if owner == 'human':
+        rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).enable_n8n!')
+        RESULTS['operator_resume_after_handoff'] = 'explicit ownership service, not bypassed'
+    command('docker', 'start', worker)
+    before_replay = fake_state()['apiPosts']
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'replay') == '200'
+    wait_for(lambda: fake_state()['apiPosts'] > before_replay, 'repeated_api_side_effect_attempted')
+    wait_for(lambda: fake_state()['providerCalls'] == 3, 'interrupted_reply_replay_one_provider_call')
+    time.sleep(5)
+    assert fake_state()['providerCalls'] == 3
+    RESULTS['interrupted_side_effect_duplicate_safety'] = 'PASS'
+    command('docker', 'stop', '--time', '30', n8n_worker)
+    emit_event()
+    time.sleep(1)
+    assert fake_state()['providerCalls'] == 3
+    command('docker', 'start', n8n_worker)
+    wait_for(lambda: fake_state()['providerCalls'] == 4, 'queued_work_recovered_after_worker_start')
+    rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).handoff_to_human!')
+    emit_event()
+    before = fake_state()
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'replay') == '200'
+    time.sleep(3)
+    assert fake_state() == before
+    RESULTS['human_handoff_no_api_post'] = 'PASS'
+    wait_for(lambda: sql('n8n', "SELECT count(*) FROM execution_entity WHERE status IN ('running','new','waiting')") == '0',
+             'interrupted_execution_terminal', timeout=240)
+    RESULTS['candidate_execution_states'] = sql('n8n', 'SELECT status,count(*) FROM execution_entity GROUP BY status ORDER BY status')
+    command('docker', 'stop', '--time', '30', worker)
+    stop_n8n()
+    sql('postgres', 'CREATE DATABASE n8n_restore')
+    command('docker', 'cp', str(SCRATCH / 'prior.dump'), n8n_db + ':/tmp/prior.dump')
+    command('docker', 'exec', n8n_db, 'pg_restore', '-U', 'postgres', '-d', 'n8n_restore', '/tmp/prior.dump')
+    command('docker', 'run', '--rm', '-v', PREFIX + '-n8n-data-restore:/to', '-v', str(SCRATCH) + ':/out:ro', 'alpine:3.23', 'tar', 'xf', '/out/prior-data.tar', '-C', '/to')
+    rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).enable_n8n!')
+    n8n_start(OLD, 'n8n_restore', '-restore')
+    command('docker', 'start', worker)
+    emit_event()
+    wait_for(lambda: fake_state()['providerCalls'] == 5, 'rollback_restored_credentials_and_workflow')
+    RESULTS['provider_calls'] = fake_state()['providerCalls']
+    RESULTS['result'] = 'PASS'
+except Exception as error:
+    RESULTS['result'] = 'FAIL'
+    RESULTS['failure'] = type(error).__name__ + ': ' + str(error)[:200]
+    raise
+finally:
+    for container in CONTAINERS:
+        command('docker', 'logs', container, check=False)
+    for container in reversed(CONTAINERS):
+        command('docker', 'rm', '-f', container, check=False)
+    if NETWORK_CREATED:
+        command('docker', 'network', 'rm', PREFIX, check=False)
+    (SCRATCH / 'result.json').write_text(json.dumps(RESULTS, indent=2))
+    print(json.dumps({'evidence': str(SCRATCH), **RESULTS}, indent=2))

@@ -1,5 +1,7 @@
 # n8n architecture-aware security closure — 2026-10-19
 
+Follow-up: [private AgentBot transport and isolated candidate acceptance](agentbot-private-transport-2026-10-19.md) implements the source-only transport exception and records additional compatibility checks. [Actual capability inventory](n8n-capabilities-2026-10-19.md) distinguishes the staging responder from the missing approved business workflow. Historical NOT RUN/absent statements below describe this report's original execution; use the follow-up for subsequent results. Published Inbox and existing staging remain unchanged.
+
 ## Verdict: FAIL for release; narrower caller-level exclusions established
 
 Read the prior disposition and complete132-row inventory first. This follow-up does not repeat the same scan or declare a lower finding count a pass. It selects **Option A as a proposed target**, traces additional installed call sites and adds repeatable caller-boundary checks. Neither the architecture nor2.43.7 has been adopted. See [exposure decision](n8n-exposure-decision-2026-10-19.md).

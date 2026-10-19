@@ -1,5 +1,7 @@
 # n8n exposure architecture decision — 2026-10-19
 
+Follow-up: the [private AgentBot transport](agentbot-private-transport-2026-10-19.md) is now implemented/tested in an isolated source branch. It is **not in the unchanged published Inbox image** and has not been adopted in staging/production. The analysis below records the original decision baseline; source compatibility evidence does not itself clear n8n advisories or authorize deployment.
+
 ## Recommendation: Option A, internal-only n8n — proposed, not applied
 
 The repository's current verified functional contract needs **no public n8n endpoint**. Recommend private Inbox-worker-to-n8n-main delivery, private n8n editor access through an operator SSH tunnel, and n8n-to-Inbox API via the existing authenticated public Inbox HTTPS origin. Keep main/worker, PostgreSQL and Valkey roles unchanged. This recommendation has a concrete compatibility gate below; the frozen Inbox image cannot simply be pointed at a Docker hostname today.

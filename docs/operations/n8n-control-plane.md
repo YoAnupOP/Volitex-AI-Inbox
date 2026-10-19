@@ -2,6 +2,8 @@
 
 Volitex uses a dedicated account-scoped `AgentBot` for n8n. Do not use an administrator or human-agent API token in n8n.
 
+Internal-only proposal: [private AgentBot transport and isolated acceptance](agentbot-private-transport-2026-10-19.md) documents the source-only, operator-bound alternative to the public destination below. It requires an exact account/bot/URL/IP binding through `N8N_AGENT_BOT_TRANSPORTS`, with the global private-network switch false. It is not included in the unchanged published Inbox artifact and has not changed staging. Do not merely point that artifact at a Docker hostname. See the [actual capability inventory](n8n-capabilities-2026-10-19.md) before treating the staging responder as a production workflow.
+
 ## Provisioning
 
 Run `bundle exec rails 'volitex:create_n8n_agent_bot[ACCOUNT_ID,https://automation.volitexai.tech/webhook/volitex-inbox]'` once per customer account. Copy the API token and signing secret from the authenticated dashboard directly into n8n credentials; do not print them in a shell, place them in a workflow node, or commit them. Attach that bot to each inbox that n8n will automate.
