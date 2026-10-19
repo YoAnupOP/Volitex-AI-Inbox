@@ -81,3 +81,16 @@ python3 script/production/verify_n8n_acceptance.py --app-image <tested-applicati
 ```
 
 Node monitor/reply checks passed 16/16 on Linux; the two cleanup-ownership harness checks passed. The first Windows monitor attempt failed because its Bash invocation could not resolve `cygpath`; the Linux-target rerun passed without modifying production monitor behavior. These results do not clear existing full-suite/lint debt or actual KVM acceptance.
+
+
+## General production reply operations
+
+The custom node now offers `Authorize Automation` and `Send Reply` alongside the existing staging-only operations. Authorization verifies the raw signed body, tenant/inbox/contact, current conversation ownership and service window. Only its first output may lead to AI/provider actions; its second output handles rejected/ignored events. Downstream expressions must use `verifiedEvent`, not an incoming parsed body. Preserve the original raw binary `data` and signature headers through provider/AI nodes, merging them back before Send Reply when a node replaces its input.
+
+Send Reply requires configured text, checks live ownership again, and uses the incoming message identity as its idempotency key. Failed authorization reads fail the execution so they are visible and eligible for bounded recovery. Invalid signatures and human ownership do not proceed to customer actions. Reauthorize immediately before calendar/CRM writes as well, and give those writes provider-supported idempotency keys. A human takeover cannot undo an external booking already committed. These reply guarantees do not establish booking/provider idempotency until a specific integration is selected and accepted.
+
+The monitor now requires both database URLs and both Redis URLs. It alerts on recent n8n `error`/`crashed` executions, including executions interrupted after a committed external effect. Reconcile effects before replay; never bulk-retry failed booking executions blindly.
+
+Intermediate actual-image acceptance passed source-marker, isolated boot, bridge membership, blocked Rails-to-n8n access, authenticated old/new round trips, rejected HMAC/foreign tenant, interrupted-reply duplicate safety, queued recovery, human takeover and the crashed-execution monitor query. The run then exposed a harness variable collision at the general-workflow import; it is not recorded as an overall pass. Remote candidate boot and package audit passed, but its acceptance step failed importing fixtures. The harness now mounts a readable synthetic fixture child beneath a host-private temporary directory, supporting CI/container UID differences, and separates the n8n user ID from Inbox automation ownership. A complete rerun remains required.
+
+Focused Linux monitor/reply checks: 24 passed. Exact 2.43.8 node/module/DTO policy probe: passed, 18 allowed types. These checks do not approve the whole release or change `N8N_IMAGE` from its pending state.

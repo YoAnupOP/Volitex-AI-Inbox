@@ -5,6 +5,7 @@ Requires a built Inbox image and its source SHA; no runtime source overlays.
 No ports are published. Network is --internal. Existing staging is never read.
 """
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -34,7 +35,11 @@ FAKE_NODE = 'node@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7
 PREFIX = f'volitex-acceptance-{os.getpid()}'
 SCRATCH = Path(tempfile.mkdtemp(prefix=PREFIX + '-'))
 os.chmod(SCRATCH, 0o700)
-(SCRATCH / 'post.cjs').write_bytes((FIXTURES / 'post.cjs').read_bytes())
+RUNTIME_FIXTURES = SCRATCH / 'fixtures'
+RUNTIME_FIXTURES.mkdir(mode=0o755)
+# Mount the child only: host access remains protected by SCRATCH (0700),
+# while the container's uid 1000 can read synthetic fixtures on CI uid 1001.
+(RUNTIME_FIXTURES / 'post.cjs').write_bytes((FIXTURES / 'post.cjs').read_bytes())
 CONTAINERS = []
 NETWORKS = []
 APP_NETWORK = PREFIX + '-app'
@@ -64,9 +69,9 @@ def command(*args, check=True, timeout=300):
 
 
 def write_json(name, value):
-    path = SCRATCH / name
+    path = RUNTIME_FIXTURES / name
     path.write_text(json.dumps(value))
-    os.chmod(path, 0o600)
+    os.chmod(path, 0o644)
 
 
 def write_env(name, values):
@@ -116,8 +121,8 @@ def sql(database, statement):
     return command('docker', 'exec', n8n_db, 'psql', '-U', 'postgres', '-d', database, '-Atc', statement)
 
 
-def rails(code):
-    return command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'runner', code)
+def rails(code, *args):
+    return command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'runner', code, *args)
 
 
 def fake_state():
@@ -125,8 +130,8 @@ def fake_state():
     return json.loads(command('docker', 'exec', fake, 'node', '-e', code))
 
 
-def emit_event():
-    output = rails('c=Conversation.first; m=c.messages.create!(account:c.account,inbox:c.inbox,sender:c.contact,message_type: :incoming,content:"Volitex round trip"); puts "EVENT="+m.webhook_data.merge(event:"message_created").to_json')
+def emit_event(content='Volitex round trip'):
+    output = rails('c=Conversation.first; m=c.messages.create!(account:c.account,inbox:c.inbox,sender:c.contact,message_type: :incoming,content:ARGV.fetch(0)); puts "EVENT="+m.webhook_data.merge(event:"message_created").to_json', content)
     event = json.loads(next(line[6:] for line in output.splitlines() if line.startswith('EVENT=')))
     write_json('event.json', event)
     return event
@@ -136,7 +141,7 @@ def n8n_start(image, database='n8n', suffix=''):
     global n8n_main, n8n_worker
     config = dict(n8n_env, DB_POSTGRESDB_DATABASE=database)
     env = write_env('n8n.env', config)
-    mounts = [f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', f'{SCRATCH}:/fixtures:ro',
+    mounts = [f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', f'{RUNTIME_FIXTURES}:/fixtures:ro',
               f'{PREFIX}-n8n-data{suffix}:/home/node/.n8n']
     n8n_main = start('n8n-main', image, '172.30.248.10', env, mounts, ['start'], 'probe-n8n')
     wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'n8n_readiness')
@@ -217,9 +222,9 @@ try:
     workflow = json.loads((ROOT / 'deployment/n8n/inbox-reply.workflow.json').read_text())
     workflow['settings']['saveDataSuccessExecution'] = 'all'
     write_json('workflow.json', workflow)
-    owner = sql('n8n', 'SELECT id FROM "user" LIMIT 1')
-    command('docker', 'exec', n8n_main, 'n8n', 'import:credentials', '--input=/fixtures/credentials.json', '--userId=' + owner)
-    command('docker', 'exec', n8n_main, 'n8n', 'import:workflow', '--input=/fixtures/workflow.json', '--userId=' + owner)
+    n8n_owner = sql('n8n', 'SELECT id FROM "user" LIMIT 1')
+    command('docker', 'exec', n8n_main, 'n8n', 'import:credentials', '--input=/fixtures/credentials.json', '--userId=' + n8n_owner)
+    command('docker', 'exec', n8n_main, 'n8n', 'import:workflow', '--input=/fixtures/workflow.json', '--userId=' + n8n_owner)
     command('docker', 'exec', n8n_main, 'n8n', 'publish:workflow', '--id=VolitexStagingReply')
     command('docker', 'restart', n8n_main, n8n_worker)
     wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'old_n8n_active')
@@ -287,6 +292,40 @@ try:
     wait_for(lambda: sql('n8n', "SELECT count(*) FROM execution_entity WHERE status IN ('running','new','waiting')") == '0',
              'interrupted_execution_terminal', timeout=240)
     RESULTS['candidate_execution_states'] = sql('n8n', 'SELECT status,count(*) FROM execution_entity GROUP BY status ORDER BY status')
+    assert int(sql('n8n', "SELECT count(*) FROM execution_entity WHERE status IN ('error', 'crashed') AND COALESCE(\"stoppedAt\", \"startedAt\") >= now() - interval '5 minutes'")) > 0
+    RESULTS['crashed_execution_monitor_query'] = 'PASS'
+    # Exercise general production operations, not only the guarded smoke phrase.
+    rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).enable_n8n!')
+    workflow['nodes'][1]['parameters']['operation'] = 'authorize'
+    workflow['nodes'][3]['parameters'] = {'operation': 'sendReply', 'content': 'Synthetic real-estate workflow response'}
+    rejected = copy.deepcopy(workflow['nodes'][2])
+    rejected['id'] = 'rejected-automation'
+    rejected['name'] = 'Rejected automation'
+    workflow['nodes'].append(rejected)
+    workflow['connections']['Validate webhook']['main'] = [
+        [{'node': 'Webhook result', 'type': 'main', 'index': 0}],
+        [{'node': 'Rejected automation', 'type': 'main', 'index': 0}],
+    ]
+    write_json('production-contract.json', workflow)
+    command('docker', 'exec', n8n_main, 'n8n', 'import:workflow', '--input=/fixtures/production-contract.json', '--userId=' + n8n_owner)
+    command('docker', 'exec', n8n_main, 'n8n', 'publish:workflow', '--id=VolitexStagingReply')
+    command('docker', 'restart', n8n_main, n8n_worker)
+    wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'production_contract_ready')
+    emit_event('Can I schedule a site visit?')
+    wait_for(lambda: fake_state()['providerCalls'] == 5, 'ordinary_customer_configured_reply')
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'invalid') == '401'
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'foreign') == '403'
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'replay') == '200'
+    time.sleep(3)
+    assert fake_state()['providerCalls'] == 5
+    RESULTS['production_rejection_and_reply_replay'] = 'PASS'
+    rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).handoff_to_human!')
+    emit_event('Please connect me to an agent')
+    before = fake_state()
+    assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'replay') == '200'
+    time.sleep(3)
+    assert fake_state() == before
+    RESULTS['production_handoff_no_api_post'] = 'PASS'
     command('docker', 'stop', '--time', '30', worker)
     stop_n8n()
     sql('postgres', 'CREATE DATABASE n8n_restore')
@@ -297,7 +336,7 @@ try:
     n8n_start(OLD, 'n8n_restore', '-restore')
     command('docker', 'start', worker)
     emit_event()
-    wait_for(lambda: fake_state()['providerCalls'] == 5, 'rollback_restored_credentials_and_workflow')
+    wait_for(lambda: fake_state()['providerCalls'] == 6, 'rollback_restored_credentials_and_workflow')
     RESULTS['provider_calls'] = fake_state()['providerCalls']
     RESULTS['result'] = 'PASS'
 except Exception as error:

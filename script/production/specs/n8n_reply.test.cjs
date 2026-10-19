@@ -4,6 +4,7 @@ const { createHmac } = require('node:crypto');
 const {
   VolitexReply,
   processEvent,
+  authorizeEvent,
 } = require('../../../deployment/n8n/custom/VolitexReply.node.js');
 
 const credentials = {
@@ -170,5 +171,178 @@ test('timeout returns retryable result without immediate duplicate POST; handoff
       assert.equal(calls, 1);
       assert.equal(response.statusCode, statusCode === 422 ? 200 : 503);
     })
+  );
+});
+
+test('production authorization accepts ordinary customer text and exposes only the signed event on its authorized output', async () => {
+  const customerEvent = { ...event, content: 'I want a 2BHK site visit' };
+  const customerRaw = Buffer.from(JSON.stringify(customerEvent));
+  const customerHeaders = {
+    ...headers,
+    'x-chatwoot-signature': `sha256=${createHmac('sha256', credentials.signingSecret).update(`${timestamp}.`).update(customerRaw).digest('hex')}`,
+  };
+  const input = {
+    json: { headers: customerHeaders, body: { account: { id: 999 } } },
+    binary: { data: {} },
+  };
+  const context = {
+    getCredentials: async () => credentials,
+    getInputData: () => [input],
+    getNodeParameter: () => 'authorize',
+    helpers: {
+      getBinaryDataBuffer: async () => customerRaw,
+      httpRequest: options => {
+        assert.equal(options.method, 'GET');
+        return conversation;
+      },
+    },
+  };
+  const [accepted, rejected] =
+    await VolitexReply.prototype.execute.call(context);
+  assert.equal(accepted.length, 1);
+  assert.deepEqual(rejected, []);
+  assert.deepEqual(accepted[0].json.verifiedEvent, customerEvent);
+  assert.equal(accepted[0].json.body, undefined);
+  assert.equal(accepted[0].binary, input.binary);
+});
+
+test('invalid authentication never reaches the production authorized branch or Inbox API', async () => {
+  const context = {
+    getCredentials: async () => credentials,
+    getInputData: () => [{ json: { headers: {} } }],
+    getNodeParameter: () => 'authorize',
+    helpers: {
+      getBinaryDataBuffer: async () => raw,
+      httpRequest: () => {
+        throw new Error('must not call API');
+      },
+    },
+  };
+  const [accepted, rejected] =
+    await VolitexReply.prototype.execute.call(context);
+  assert.deepEqual(accepted, []);
+  assert.equal(rejected[0].json.verification.statusCode, 401);
+  assert.equal(rejected[0].json.verifiedEvent, undefined);
+});
+
+test('current human ownership rejects the production authorization branch', async () => {
+  const context = {
+    getCredentials: async () => credentials,
+    getInputData: () => [{ json: { headers } }],
+    getNodeParameter: () => 'authorize',
+    helpers: {
+      getBinaryDataBuffer: async () => raw,
+      httpRequest: options => {
+        assert.equal(options.method, 'GET');
+        return {
+          ...conversation,
+          custom_attributes: { automation_owner: 'human' },
+        };
+      },
+    },
+  };
+  const [accepted, rejected] =
+    await VolitexReply.prototype.execute.call(context);
+  assert.deepEqual(accepted, []);
+  assert.equal(rejected[0].json.verification.status, 'human_owned');
+});
+
+test('configured production replies accept ordinary text, preserve stable reply identity and keep the smoke phrase guard', async () => {
+  const customerRaw = Buffer.from(
+    JSON.stringify({ ...event, content: 'Can I visit tomorrow?' })
+  );
+  const customerHeaders = {
+    ...headers,
+    'x-chatwoot-signature': `sha256=${createHmac('sha256', credentials.signingSecret).update(`${timestamp}.`).update(customerRaw).digest('hex')}`,
+  };
+  const posts = [];
+  const request = options => {
+    if (options.method === 'GET') return conversation;
+    posts.push(options);
+    return { id: 44 };
+  };
+  const reply = {
+    content: 'Your site visit request has been shared with the team.',
+  };
+  await processEvent(
+    customerRaw,
+    customerHeaders,
+    credentials,
+    request,
+    undefined,
+    reply
+  );
+  await processEvent(
+    customerRaw,
+    customerHeaders,
+    credentials,
+    request,
+    undefined,
+    reply
+  );
+  assert.equal(posts.length, 2);
+  assert.equal(posts[0].body.content, reply.content);
+  assert.equal(
+    posts[0].body.automation_delivery_id,
+    posts[1].body.automation_delivery_id
+  );
+  const smoke = await processEvent(
+    customerRaw,
+    customerHeaders,
+    credentials,
+    () => {
+      throw new Error('smoke must ignore real text');
+    }
+  );
+  assert.equal(smoke.status, 'ignored_test_phrase');
+});
+
+test('production reply rechecks ownership after an earlier successful authorization', async () => {
+  let owner = 'n8n';
+  const request = options => {
+    assert.equal(options.method, 'GET');
+    return {
+      ...conversation,
+      custom_attributes: {
+        automation_owner: owner,
+        automation_agent_bot_id: 7,
+      },
+    };
+  };
+  const authorized = await authorizeEvent(raw, headers, credentials, request);
+  assert.equal(authorized.event.id, event.id);
+  owner = 'human';
+  const response = await processEvent(
+    raw,
+    headers,
+    credentials,
+    request,
+    undefined,
+    { content: 'Should not send' }
+  );
+  assert.equal(response.status, 'human_owned');
+});
+
+test('read-only authorization failures are retryable and an empty production reply fails without a POST', async () => {
+  for (const statusCode of [401, 403, 429, 500]) {
+    const unavailable = await authorizeEvent(raw, headers, credentials, () => {
+      throw Object.assign(new Error('context unavailable'), { statusCode });
+    });
+    assert.equal(unavailable.statusCode, 503);
+    assert.equal(unavailable.event, undefined);
+  }
+  await assert.rejects(
+    processEvent(
+      raw,
+      headers,
+      credentials,
+      options => {
+        assert.equal(options.method, 'GET');
+        return conversation;
+      },
+      undefined,
+      { content: '' }
+    ),
+    /non-empty reply content/
   );
 });

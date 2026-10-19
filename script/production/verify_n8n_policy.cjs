@@ -72,6 +72,19 @@ async function verify() {
       `Required node cannot load: ${type}`
     );
   }
+  const gateway = nodeTypes.getByNameAndVersion(
+    'CUSTOM.volitexReply'
+  ).description;
+  assert.equal(gateway.outputs.length, 2);
+  const operation = gateway.properties.find(
+    property => property.name === 'operation'
+  );
+  assert.equal(operation.default, 'authorize');
+  assert.ok(operation.options.some(option => option.value === 'sendReply'));
+  assert.equal(
+    gateway.properties.find(property => property.name === 'content').required,
+    true
+  );
   for (const type of [
     'n8n-nodes-base.git',
     'n8n-nodes-base.ssh',
@@ -84,6 +97,12 @@ async function verify() {
     'n8n-nodes-base.gitTool',
     'n8n-nodes-base.sshTool',
     'n8n-nodes-base.codeTool',
+    'n8n-nodes-base.editImage',
+    'n8n-nodes-base.editImageTool',
+    'n8n-nodes-base.snowflake',
+    'n8n-nodes-base.snowflakeTool',
+    'n8n-nodes-base.kafka',
+    'n8n-nodes-base.kafkaTrigger',
   ]) {
     assert.equal(loader.isKnownNode(type), false, `${type} remains available`);
     assert.throws(
@@ -92,6 +111,16 @@ async function verify() {
       `${type} can execute`
     );
   }
+  const forbiddenImports = Object.keys(require.cache).filter(filename =>
+    /\/node_modules\/(?:simple-git|@simple-git\/argv-parser|toml|snowflake-sdk|gm|@confluentinc\/kafka-javascript)\//.test(
+      filename
+    )
+  );
+  assert.deepEqual(
+    forbiddenImports,
+    [],
+    'Restricted nodes imported an excluded SDK'
+  );
   console.log(
     JSON.stringify({
       result: 'PASS',

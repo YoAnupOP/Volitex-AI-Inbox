@@ -14,11 +14,21 @@ for (const scenario of [
   'unreachable',
   'alert-failure',
   'docker-error',
+  'n8n-crashed',
+  'n8n-inspection-error',
 ]) {
   test(`monitor: ${scenario}`, () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'volitex-monitor-'));
     try {
       const commands = {
+        psql: `#!/bin/bash
+if [[ "$*" == *execution_entity* ]]; then
+  [[ "$SCENARIO" != n8n-inspection-error ]] || exit 1
+  [[ "$SCENARIO" != n8n-crashed ]] || { echo 1; exit; }
+  echo 0
+elif [[ "$*" == *max_connections* ]]; then echo 100
+else echo 0; fi
+`,
         curl: '#!/bin/bash\n[[ "$*" != *operator.invalid* ]] || { echo alert >> "$TEST_ALERT"; [[ "$SCENARIO" != alert-failure ]]; }\n',
         jq: '#!/bin/bash\ncat >/dev/null; echo \'{"text":"test alert"}\'\n',
         awk: '#!/bin/bash\ncase "$1" in *MemAvailable*) echo 900;; *MemTotal*) echo 1000;; *) exec /usr/bin/awk "$@";; esac\n',
@@ -63,9 +73,9 @@ exec bash "$MONITOR_PATH"
             N8N_HEALTH_URL: 'https://automation.invalid/healthz',
             ALERT_WEBHOOK_URL: 'https://operator.invalid/alert',
             VOLITEX_REDIS_URL: 'redis://test.invalid/0',
-            N8N_REDIS_URL: '',
-            VOLITEX_DATABASE_URL: '',
-            N8N_DATABASE_URL: '',
+            N8N_REDIS_URL: 'redis://test.invalid/1',
+            VOLITEX_DATABASE_URL: 'postgresql://test.invalid/inbox',
+            N8N_DATABASE_URL: 'postgresql://test.invalid/n8n',
             MEMORY_USED_ALERT_PERCENT: '101',
           },
         }

@@ -565,7 +565,7 @@ MONITOR_DISK_PATH=/
 SIDEKIQ_QUEUE_NAMES="critical high medium default mailers campaigns"
 ```
 
-The script checks public health, DB connection headroom, Redis/Valkey connectivity/evictions, Sidekiq backlog, memory, unhealthy containers, and disk.
+All four database/Redis URLs above are required. The script checks health, DB connection headroom, Redis/Valkey connectivity/evictions, Sidekiq backlog, memory, unhealthy containers, disk, and n8n error/crashed executions from the last five minutes. Run it every minute and verify alert delivery independently. Reconcile external side effects before replaying a failed execution.
 
 Its defaults are 85% memory, 85% disk, and 100 jobs per listed queue. They are early-warning defaults, not capacity guarantees. **Establish baseline during initial production/load test.**
 

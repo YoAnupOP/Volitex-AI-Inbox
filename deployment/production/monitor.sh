@@ -3,8 +3,12 @@
 set -Eeuo pipefail
 
 : "${INBOX_HEALTH_URL:?Set INBOX_HEALTH_URL, for example https://inbox.volitexai.tech/health}"
-: "${N8N_HEALTH_URL:?Set N8N_HEALTH_URL, for example https://automation.volitexai.tech/healthz}"
+: "${N8N_HEALTH_URL:?Set N8N_HEALTH_URL to the private n8n readiness endpoint}"
 : "${ALERT_WEBHOOK_URL:?Set ALERT_WEBHOOK_URL to an operator alert webhook}"
+: "${VOLITEX_DATABASE_URL:?Set VOLITEX_DATABASE_URL for production database checks}"
+: "${N8N_DATABASE_URL:?Set N8N_DATABASE_URL for database and failed-execution checks}"
+: "${VOLITEX_REDIS_URL:?Set VOLITEX_REDIS_URL for Sidekiq and queue-store checks}"
+: "${N8N_REDIS_URL:?Set N8N_REDIS_URL for n8n queue-store checks}"
 
 command -v curl >/dev/null || { echo 'curl is required' >&2; exit 1; }
 command -v jq >/dev/null || { echo 'jq is required' >&2; exit 1; }
@@ -70,6 +74,19 @@ check_redis() {
   fi
 }
 
+check_n8n_executions() {
+  local recent_failures
+  if ! recent_failures="$(psql "$N8N_DATABASE_URL" -Atqc \
+    "SELECT count(*) FROM execution_entity WHERE status IN ('error', 'crashed') AND COALESCE(\"stoppedAt\", \"startedAt\") >= now() - interval '5 minutes';")" || \
+    [[ ! "$recent_failures" =~ ^[0-9]+$ ]]; then
+    failures+=('n8n failed-execution inspection failed')
+    return
+  fi
+  if [[ "$recent_failures" -gt 0 ]]; then
+    failures+=("n8n has ${recent_failures} errored/crashed executions in the last five minutes; reconcile side effects before replay")
+  fi
+}
+
 check_sidekiq_queues() {
   local redis_url="$1"
   local queue
@@ -123,19 +140,14 @@ check_unhealthy_containers() {
   fi
 }
 
-if [[ -n "${VOLITEX_DATABASE_URL:-}" || -n "${N8N_DATABASE_URL:-}" ]]; then
-  command -v psql >/dev/null || failures+=('psql is required when database URLs are configured')
-  [[ -n "${VOLITEX_DATABASE_URL:-}" ]] && check_postgres volitex "$VOLITEX_DATABASE_URL"
-  [[ -n "${N8N_DATABASE_URL:-}" ]] && check_postgres n8n "$N8N_DATABASE_URL"
-fi
-
-if [[ -n "${VOLITEX_REDIS_URL:-}" || -n "${N8N_REDIS_URL:-}" ]]; then
-  command -v redis-cli >/dev/null || failures+=('redis-cli is required when Redis URLs are configured')
-  [[ -n "${VOLITEX_REDIS_URL:-}" ]] && check_redis volitex "$VOLITEX_REDIS_URL"
-  [[ -n "${N8N_REDIS_URL:-}" ]] && check_redis n8n "$N8N_REDIS_URL"
-fi
-
-[[ -n "${VOLITEX_REDIS_URL:-}" ]] && check_sidekiq_queues "$VOLITEX_REDIS_URL"
+command -v psql >/dev/null || failures+=('psql is required for database inspection')
+command -v redis-cli >/dev/null || failures+=('redis-cli is required for queue-store inspection')
+check_postgres volitex "$VOLITEX_DATABASE_URL"
+check_postgres n8n "$N8N_DATABASE_URL"
+check_n8n_executions
+check_redis volitex "$VOLITEX_REDIS_URL"
+check_redis n8n "$N8N_REDIS_URL"
+check_sidekiq_queues "$VOLITEX_REDIS_URL"
 check_memory
 check_unhealthy_containers
 
