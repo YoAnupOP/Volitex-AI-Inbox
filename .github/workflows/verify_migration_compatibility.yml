@@ -2,7 +2,7 @@ name: Verify migration compatibility
 
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*']
+    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
   workflow_dispatch:
 
 permissions:
@@ -62,7 +62,7 @@ jobs:
         run: |
           bundle exec bundle-audit check --update
           bundle exec rails db:create db:schema:load
-          bundle exec rspec spec/models/quick_menu_spec.rb spec/policies/quick_menu_policy_spec.rb spec/requests/api/v1/accounts/quick_menus_spec.rb spec/requests/api/v1/accounts/quick_menu_sending_spec.rb spec/controllers/webhooks/whatsapp_controller_spec.rb spec/jobs/webhooks/whatsapp_events_job_spec.rb spec/jobs/agent_bots/webhook_job_spec.rb spec/lib/webhooks/trigger_spec.rb spec/services/conversations/automation_ownership_service_spec.rb spec/controllers/webhooks/meta_controller_spec.rb spec/models/application_record_external_credentials_encryption_spec.rb spec/services/instagram/refresh_oauth_token_service_spec.rb spec/services/conversations/message_window_service_spec.rb spec/services/whatsapp/providers/base_service_spec.rb spec/services/whatsapp/providers/whatsapp_cloud_service_spec.rb spec/services/whatsapp/providers/whatsapp360_dialog_service_spec.rb spec/services/whatsapp/incoming_message_whatsapp_cloud_service_spec.rb --format progress --format json --out tmp/production_critical_results.json
+          bundle exec rspec spec/models/quick_menu_spec.rb spec/policies/quick_menu_policy_spec.rb spec/requests/api/v1/accounts/quick_menus_spec.rb spec/requests/api/v1/accounts/quick_menu_sending_spec.rb spec/controllers/webhooks/whatsapp_controller_spec.rb spec/jobs/webhooks/whatsapp_events_job_spec.rb spec/jobs/agent_bots/webhook_job_spec.rb spec/lib/webhooks/trigger_spec.rb spec/lib/webhooks/private_agent_bot_transport_spec.rb spec/services/conversations/automation_ownership_service_spec.rb spec/controllers/webhooks/meta_controller_spec.rb spec/models/application_record_external_credentials_encryption_spec.rb spec/services/instagram/refresh_oauth_token_service_spec.rb spec/services/conversations/message_window_service_spec.rb spec/services/whatsapp/providers/base_service_spec.rb spec/services/whatsapp/providers/whatsapp_cloud_service_spec.rb spec/services/whatsapp/providers/whatsapp360_dialog_service_spec.rb spec/services/whatsapp/incoming_message_whatsapp_cloud_service_spec.rb --format progress --format json --out tmp/production_critical_results.json
           bundle exec rspec spec/lib/volitex_production_configuration_spec.rb --format progress --format json --out tmp/runtime_guard_results.json
           bundle exec rspec spec/controllers/api/v1/accounts/conversations/messages_controller_spec.rb --example 'Volitex n8n AgentBot' --format progress --format json --out tmp/n8n_api_results.json
       - uses: actions/upload-artifact@v4

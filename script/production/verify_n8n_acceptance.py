@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 """Disposable, provider-stubbed acceptance. Never accepts an operator env/DB URL.
 
-Uses the published Inbox image with ONLY this branch's transport files mounted.
-This verifies the code overlay, not a newly built/published immutable app image.
+Requires a built Inbox image and its source SHA; no runtime source overlays.
 No ports are published. Network is --internal. Existing staging is never read.
 """
+import argparse
 import hashlib
 import json
 import os
 from pathlib import Path
 import secrets
+import re
 import subprocess
 import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'script/production/specs/n8n_acceptance'
-APP = 'ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--app-image', required=True)
+parser.add_argument('--source-sha', required=True)
+args = parser.parse_args()
+APP = args.app_image
+SOURCE_SHA = args.source_sha
+if not re.fullmatch(r'[0-9a-f]{40}', SOURCE_SHA):
+    parser.error('--source-sha must be a full lowercase Git SHA')
 OLD = 'n8nio/n8n@sha256:c34ee9107a42b837e25cec0c8a927ab90a45b776aa2ccbf15e5b9cda466fad2c'
-NEW = 'n8nio/n8n@sha256:3db21366be1d3c77c1708963129c051948573019659e8873e0294be035ffc1b2'
+NEW = 'n8nio/n8n@sha256:a18edcf018198b33b5488fb47ededafe11e0b10d28f65b9535b7c447c9ce3b2c'
 PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
 APP_PG = 'pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2'
 REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
@@ -29,7 +37,8 @@ os.chmod(SCRATCH, 0o700)
 (SCRATCH / 'post.cjs').write_bytes((FIXTURES / 'post.cjs').read_bytes())
 CONTAINERS = []
 NETWORK_CREATED = False
-RESULTS = {}
+RESULTS = {'application_image': APP, 'application_source': SOURCE_SHA, 'candidate_n8n_image': NEW,
+           'runtime_policy_sha256': hashlib.sha256((ROOT / 'deployment/n8n/runtime-policy.env').read_bytes()).hexdigest()}
 
 
 def command(*args, check=True, timeout=300):
@@ -127,6 +136,10 @@ def stop_n8n():
 
 
 try:
+    marker = command('docker', 'run', '--rm', '--network', 'none', '--entrypoint', 'cat', APP, '/app/.git_sha')
+    if marker != SOURCE_SHA:
+        raise RuntimeError('Application image source does not match --source-sha')
+    RESULTS['application_source_marker'] = 'PASS'
     command('docker', 'network', 'create', '--internal', '--subnet', '172.30.248.0/24', PREFIX)
     NETWORK_CREATED = True
     for name in ('app-db', 'n8n-db', 'redis', 'app-redis', 'app-storage', 'n8n-data', 'n8n-data-restore'):
@@ -151,10 +164,7 @@ try:
     for key in ('PRIMARY_KEY', 'DETERMINISTIC_KEY', 'KEY_DERIVATION_SALT'):
         app_values['ACTIVE_RECORD_ENCRYPTION_' + key] = secrets.token_hex(32)
     app_env = write_env('app.env', app_values)
-    app_mounts = [f'{ROOT}/lib/webhooks/trigger.rb:/app/lib/webhooks/trigger.rb:ro',
-                  f'{ROOT}/lib/webhooks/private_agent_bot_transport.rb:/app/lib/webhooks/private_agent_bot_transport.rb:ro',
-                  f'{ROOT}/lib/webhooks/private_agent_bot_transport:/app/lib/webhooks/private_agent_bot_transport:ro',
-                  f'{FIXTURES}:/probe:ro', f'{PREFIX}-app-storage:/app/storage']
+    app_mounts = [f'{FIXTURES}:/probe:ro', f'{PREFIX}-app-storage:/app/storage']
     inbox = start('inbox', APP, '172.30.248.20', app_env, app_mounts, ['-c', 'sleep infinity'], 'probe-inbox', 'sh')
     command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'db:chatwoot_prepare')
     output = command('docker', 'exec', inbox, 'bundle', 'exec', 'rails', 'runner', '/probe/seed.rb')
@@ -167,7 +177,8 @@ try:
     wait_for(lambda: command('docker', 'exec', inbox, 'curl', '-fsS', 'http://127.0.0.1:3000/health', check=False) != '', 'inbox_health')
     # n8n env schema, with synthetic secrets only and no host port bindings.
     n8n_env = {}
-    for line in (ROOT / 'deployment/.env.n8n.example').read_text().splitlines():
+    policy_lines = (ROOT / 'deployment/n8n/runtime-policy.env').read_text().splitlines()
+    for line in (ROOT / 'deployment/.env.n8n.example').read_text().splitlines() + policy_lines:
         if line and not line.startswith('#') and '=' in line:
             key, value = line.split('=', 1)
             n8n_env[key] = secrets.token_hex(32) if '<' in value else value

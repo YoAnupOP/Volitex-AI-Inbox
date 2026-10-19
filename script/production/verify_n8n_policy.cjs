@@ -1,0 +1,66 @@
+// Run inside the exact candidate image with runtime-policy.env and no network.
+// Exercises n8n's real node loader; this is not a dependency scan or core-mailer clearance.
+const assert = require('node:assert/strict');
+const { createRequire } = require('node:module');
+
+const fromN8n = createRequire('/usr/local/lib/node_modules/n8n/package.json');
+const { Container } = fromN8n('@n8n/di');
+const { ModuleRegistry } = fromN8n('@n8n/backend-common');
+const { LoadNodesAndCredentials } = fromN8n(
+  './dist/load-nodes-and-credentials'
+);
+const { NodeTypes } = fromN8n('./dist/node-types');
+
+async function verify() {
+  const allowed = JSON.parse(process.env.NODES_INCLUDE);
+  assert.ok(Array.isArray(allowed) && allowed.length > 0);
+  const modules = Container.get(ModuleRegistry);
+  for (const name of ['source-control', 'promotions', 'community-packages']) {
+    assert.ok(!modules.eligibleModules.includes(name), `${name} is enabled`);
+  }
+
+  const loader = Container.get(LoadNodesAndCredentials);
+  await loader.init();
+  const nodeTypes = Container.get(NodeTypes);
+  const unexpected = Object.keys(loader.known.nodes).filter(
+    type => !allowed.includes(type)
+  );
+  assert.deepEqual(
+    unexpected,
+    [],
+    `Unexpected nodes loaded: ${unexpected.join(', ')}`
+  );
+  for (const type of allowed) {
+    assert.ok(loader.isKnownNode(type), `Required node missing: ${type}`);
+    assert.ok(
+      nodeTypes.getByNameAndVersion(type),
+      `Required node cannot load: ${type}`
+    );
+  }
+  for (const type of [
+    'n8n-nodes-base.git',
+    'n8n-nodes-base.ssh',
+    'n8n-nodes-base.code',
+    'n8n-nodes-base.executeCommand',
+    'n8n-nodes-base.emailSend',
+    'n8n-nodes-base.readWriteFile',
+    'n8n-nodes-base.xml',
+    'n8n-nodes-base.compression',
+    'n8n-nodes-base.gitTool',
+    'n8n-nodes-base.sshTool',
+    'n8n-nodes-base.codeTool',
+  ]) {
+    assert.equal(loader.isKnownNode(type), false, `${type} remains available`);
+    assert.throws(
+      () => nodeTypes.getByNameAndVersion(type),
+      undefined,
+      `${type} can execute`
+    );
+  }
+  console.log(JSON.stringify({ result: 'PASS', allowedNodes: allowed.length }));
+}
+
+verify().catch(error => {
+  console.error(error.message);
+  process.exitCode = 1;
+});

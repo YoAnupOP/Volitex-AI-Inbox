@@ -2,13 +2,30 @@ name: Verify non-production candidate
 
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus, 'codex/upstream-maintenance-*', 'codex/integrated-release-candidate-*']
+    branches: [codex/whatsapp-interactive-quick-menus, 'codex/upstream-maintenance-*', 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  n8n-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify actual n8n node and module restrictions
+        env:
+          N8N_ASSESSMENT_IMAGE: n8nio/n8n@sha256:a18edcf018198b33b5488fb47ededafe11e0b10d28f65b9535b7c447c9ce3b2c
+        run: |
+          docker pull "$N8N_ASSESSMENT_IMAGE"
+          docker run --rm --network none \
+            --env-file deployment/n8n/runtime-policy.env \
+            -e N8N_CUSTOM_EXTENSIONS=/opt/volitex/n8n-custom \
+            -v "$PWD/deployment/n8n/custom:/opt/volitex/n8n-custom:ro" \
+            -v "$PWD/script/production/verify_n8n_policy.cjs:/probe.cjs:ro" \
+            --entrypoint node "$N8N_ASSESSMENT_IMAGE" /probe.cjs
+
   n8n-contract:
     runs-on: ubuntu-latest
     steps:

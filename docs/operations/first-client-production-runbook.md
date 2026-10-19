@@ -2,6 +2,8 @@
 
 **Authorized publication completed:** see [2026-10-19 pullable artifact and verification](application-publication-2026-10-19.md). This supersedes earlier statements that source66 has no published artifact; KVM acceptance and traffic authorization remain outstanding.
 
+**Pre-client scope confirmed on 2026-10-19:** appointment booking with calendar/CRM integration; providers are chosen per client. The current staging workflow is a fixed reply integration test, not a booking workflow. Prepare the platform integration and security controls before the first sale; configure and accept each client's provider workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md). The [private AgentBot transport and isolated recovery checks](agentbot-private-transport-2026-10-19.md) are newer source changes not included in the published application image below. n8n version/capability approval and a verified artifact containing any adopted transport change are pre-KVM work. Publication of the application image alone does not clear these gates.
+
 **Latest reconciliation:** [2026-10-19 exact-source results](antigravity-reconciliation-2026-10-19.md) supersede historical candidate results below; publication and actual KVM acceptance remain separate.
 
 **Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
@@ -53,15 +55,15 @@ Codex can automate repository changes, CI/test execution, image/digest verificat
 
 ## Frozen release and exact production artifact
 
-### Candidate release gate (2026-10-11)
+### Published application artifact (2026-10-19)
 
-The artifact below is a historical master release, **not the Quick Menu candidate**. Do not deploy it expecting Quick Menus. The current candidate must pass non-publishing image build, isolated web/Sidekiq boot, security triage, and authorized Meta/n8n smoke verification before a new release is selected. See [production candidate verification](production-candidate-verification.md) for executed checks and blockers. Never treat historical audit or image claims as evidence for a newer commit.
+The artifact below was published and pulled back for verification from the exact source recorded here. Its build, boot, migration, storage, worker recovery and scan evidence is in the [publication record](application-publication-2026-10-19.md). It does not contain the later private AgentBot transport change. Adopting that change requires a new verified application artifact before private n8n delivery can be deployed.
 
 | Item             | Value                                                                                                     |
 | ---------------- | --------------------------------------------------------------------------------------------------------- |
-| Git branch       | master                                                                                                    |
-| Git commit       | 3e1cc0089c2e0685f348e7000429ecc36ea46b66                                                                  |
-| Volitex image    | ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df |
+| Git branch       | codex/integrated-release-candidate-reconcile-20261019                                                        |
+| Git commit       | 66aa7305bf724823a7f9ac6a16488d81dcd583dd                                                                  |
+| Volitex image    | ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4 |
 | Coolify variable | VOLITEX_IMAGE set to the full image reference above                                                       |
 
 The image was published from the final commit and its embedded /app/.git_sha matches that commit. Do not use latest, a mutable branch tag, or a Chatwoot image.
@@ -74,9 +76,9 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.1 Done now
 
-- [ALREADY DONE] The Volitex application release is frozen at commit 3e1cc0089c2e0685f348e7000429ecc36ea46b66.
+- [ALREADY DONE] The published Volitex application source is 66aa7305bf724823a7f9ac6a16488d81dcd583dd; later private transport changes are source-only until separately built and verified.
 - [ALREADY DONE] The immutable GHCR artifact is published and recorded above.
-- [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and starts migrate, rails, and sidekiq. Migration must complete before Rails or Sidekiq starts.
+- [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; the campaign feature remains disabled until its separate acceptance gates pass.
 - [ALREADY DONE] WhatsApp and Instagram webhook controllers validate Meta signatures, enqueue work, and acknowledge accepted deliveries. WhatsApp uses /webhooks/whatsapp/:phone_number; Instagram uses /webhooks/instagram.
 - [ALREADY DONE] WhatsApp webhook work is on a high-priority Sidekiq queue. Queue order is in config/sidekiq.yml.
 - [ALREADY DONE] Instagram inbound deduplication is protected by the database uniqueness boundary (inbox_id, source_id) and concurrent duplicate handling.
@@ -94,7 +96,6 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.3 Required before the first client is declared live
 
-- [MANUAL] Remediate the Meta App Secret exposure in Meta. Revoke or regenerate the affected secret as appropriate. Never reuse the exposed value. Codex must not rotate or revoke external credentials.
 - [MANUAL] Keep SECRET*KEY_BASE, the three ACTIVE_RECORD_ENCRYPTION*\* values, Meta/OAuth/SMTP secrets, database passwords, Redis passwords, object-storage credentials, N8N_ENCRYPTION_KEY, the backup age identity, and alert-webhook credentials only in a password manager and provider secret stores.
 - [MANUAL] Confirm GitHub/GHCR ownership and that Coolify can pull the exact image. If GHCR is private, use a read-only package credential stored only in Coolify.
 - [MANUAL] Own DNS for inbox.volitexai.tech and automation.volitexai.tech.
@@ -236,7 +237,7 @@ Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox V
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
 ```dotenv
-VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df
+VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4
 RAILS_ENV=production
 NODE_ENV=production
 INSTALLATION_ENV=docker
@@ -670,8 +671,8 @@ Recovery time and recovery-point objectives are not promises until restore and V
 # Phase 11 — Final chronological checklist
 
 1. [MANUAL] [ONGOING] Organize credentials, Meta access, domains, client materials, pricing, and operators.
-2. [ALREADY DONE] Freeze code at 3e1cc0089c2e0685f348e7000429ecc36ea46b66.
-3. [ALREADY DONE] Record immutable image ghcr.io/yoanupop/volitex-ai-inbox@sha256:bec4602f579e370b998427caaa5c98eb2630c7bee2f6890ea8576843993596df.
+2. [ALREADY DONE] Record published application source 66aa7305bf724823a7f9ac6a16488d81dcd583dd; verify a new artifact before adopting later private transport source changes.
+3. [ALREADY DONE] Record immutable image ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4.
 4. [MANUAL] Finalize packages, features, pricing, contract, and demo.
 5. [MANUAL] Begin sales/outreach.
 6. [MANUAL] [PER CLIENT] Client signs.

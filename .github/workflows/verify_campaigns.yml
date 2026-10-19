@@ -1,7 +1,7 @@
 name: Verify campaign lifecycle
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*']
+    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
   workflow_dispatch:
 permissions:
   contents: read
