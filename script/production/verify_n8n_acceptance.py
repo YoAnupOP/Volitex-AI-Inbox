@@ -36,7 +36,16 @@ SCRATCH = Path(tempfile.mkdtemp(prefix=PREFIX + '-'))
 os.chmod(SCRATCH, 0o700)
 (SCRATCH / 'post.cjs').write_bytes((FIXTURES / 'post.cjs').read_bytes())
 CONTAINERS = []
-NETWORK_CREATED = False
+NETWORKS = []
+APP_NETWORK = PREFIX + '-app'
+N8N_NETWORK = PREFIX + '-n8n'
+ROLE_NETWORKS = {
+    'app-db': (APP_NETWORK, '172.30.246.'), 'app-redis': (APP_NETWORK, '172.30.246.'),
+    'inbox': (APP_NETWORK, '172.30.246.'), 'app-worker': (APP_NETWORK, '172.30.246.'),
+    'fake': (APP_NETWORK, '172.30.246.'), 'n8n-db': (N8N_NETWORK, '172.30.247.'),
+    'redis': (N8N_NETWORK, '172.30.247.'), 'n8n-main': (N8N_NETWORK, '172.30.247.'),
+    'n8n-worker': (N8N_NETWORK, '172.30.247.'),
+}
 RESULTS = {'application_image': APP, 'application_source': SOURCE_SHA, 'candidate_n8n_image': NEW,
            'runtime_policy_sha256': hashlib.sha256((ROOT / 'deployment/n8n/runtime-policy.env').read_bytes()).hexdigest()}
 
@@ -69,8 +78,8 @@ def write_env(name, values):
 
 def start(role, image, ip, env=None, mounts=(), args=(), alias=None, entrypoint=None):
     name = PREFIX + '-' + role
-    CONTAINERS.append(name)
-    options = ['docker', 'run', '-d', '--name', name, '--network', PREFIX, '--ip', ip]
+    network, subnet = ROLE_NETWORKS[role]
+    options = ['docker', 'create', '--name', name, '--network', network, '--ip', subnet + ip.rsplit('.', 1)[1]]
     if alias:
         options += ['--network-alias', alias]
     if env:
@@ -80,6 +89,13 @@ def start(role, image, ip, env=None, mounts=(), args=(), alias=None, entrypoint=
     if entrypoint:
         options += ['--entrypoint', entrypoint]
     command(*options, image, *args)
+    CONTAINERS.append(name)
+    if role in ('app-worker', 'n8n-main'):
+        extra = ['--alias', alias] if alias else []
+        command('docker', 'network', 'connect', '--ip', ip, *extra, PREFIX, name)
+    if role == 'fake':
+        command('docker', 'network', 'connect', '--ip', '172.30.247.30', '--alias', 'probe-fake', N8N_NETWORK, name)
+    command('docker', 'start', name)
     return name
 
 
@@ -140,8 +156,9 @@ try:
     if marker != SOURCE_SHA:
         raise RuntimeError('Application image source does not match --source-sha')
     RESULTS['application_source_marker'] = 'PASS'
-    command('docker', 'network', 'create', '--internal', '--subnet', '172.30.248.0/24', PREFIX)
-    NETWORK_CREATED = True
+    for network, subnet in ((APP_NETWORK, '172.30.246.0/24'), (N8N_NETWORK, '172.30.247.0/24'), (PREFIX, '172.30.248.0/24')):
+        command('docker', 'network', 'create', '--internal', '--subnet', subnet, network)
+        NETWORKS.append(network)
     for name in ('app-db', 'n8n-db', 'redis', 'app-redis', 'app-storage', 'n8n-data', 'n8n-data-restore'):
         command('docker', 'volume', 'create', PREFIX + '-' + name)
     password = secrets.token_hex(24)
@@ -190,6 +207,9 @@ try:
                     'N8N_SSRF_ALLOWED_HOSTNAMES': 'probe-fake', 'EXECUTIONS_DATA_SAVE_ON_SUCCESS': 'all',
                     'N8N_SMTP_HOST': 'smtp.invalid', 'N8N_SMTP_SENDER': 'Synthetic <synthetic@example.invalid>'})
     n8n_start(OLD)
+    blocked_probe = 'require "socket"; begin; Socket.tcp("172.30.248.10",5678,connect_timeout:2).close; abort "Unexpected private-network bypass"; rescue Errno::EHOSTUNREACH,Errno::ENETUNREACH,Errno::ECONNREFUSED,Errno::ETIMEDOUT; puts "BLOCKED"; end'
+    assert command('docker', 'exec', inbox, 'ruby', '-e', blocked_probe) == 'BLOCKED'
+    RESULTS['rails_cannot_reach_private_n8n'] = 'PASS'
     credential_data = {'baseUrl': 'http://probe-fake:8080', 'accountId': fixture['account_id'], 'inboxId': fixture['inbox_id'],
                        'botId': fixture['bot_id'], 'apiToken': fixture['api_token'], 'signingSecret': fixture['signing_secret']}
     write_json('credentials-data.json', credential_data)
@@ -204,6 +224,9 @@ try:
     command('docker', 'restart', n8n_main, n8n_worker)
     wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'old_n8n_active')
     worker = start('app-worker', APP, '172.30.248.21', app_env, app_mounts, ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml'])
+    bridge = json.loads(command('docker', 'network', 'inspect', PREFIX))[0]
+    assert {member['Name'] for member in bridge['Containers'].values()} == {worker, n8n_main}
+    RESULTS['automation_bridge_only_worker_and_main'] = 'PASS'
     emit_event()
     wait_for(lambda: fake_state()['providerCalls'] == 1, 'old_authenticated_round_trip')
     command('docker', 'stop', '--time', '30', worker)
@@ -286,7 +309,7 @@ finally:
         command('docker', 'logs', container, check=False)
     for container in reversed(CONTAINERS):
         command('docker', 'rm', '-f', container, check=False)
-    if NETWORK_CREATED:
-        command('docker', 'network', 'rm', PREFIX, check=False)
+    for network in reversed(NETWORKS):
+        command('docker', 'network', 'rm', network, check=False)
     (SCRATCH / 'result.json').write_text(json.dumps(RESULTS, indent=2))
     print(json.dumps({'evidence': str(SCRATCH), **RESULTS}, indent=2))

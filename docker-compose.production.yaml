@@ -48,6 +48,9 @@ services:
 
   sidekiq:
     <<: *base
+    networks:
+      - default
+      - automation
     healthcheck:
       test: ["CMD", "bundle", "exec", "ruby", "script/production/campaign_worker_health.rb"]
       interval: 30s
@@ -90,3 +93,8 @@ services:
 
 volumes:
   volitex_storage:
+
+networks:
+  automation:
+    external: true
+    name: ${VOLITEX_AUTOMATION_NETWORK:?Set the private Inbox-to-n8n network name}

@@ -25,6 +25,9 @@ jobs:
             -v "$PWD/deployment/n8n/custom:/opt/volitex/n8n-custom:ro" \
             -v "$PWD/script/production/verify_n8n_policy.cjs:/probe.cjs:ro" \
             --entrypoint node "$N8N_ASSESSMENT_IMAGE" /probe.cjs
+          docker run --rm --network none \
+            -v "$PWD/script/production/specs/n8n_core_boundaries.cjs:/probe.cjs:ro" \
+            --entrypoint node "$N8N_ASSESSMENT_IMAGE" --test /probe.cjs
 
   n8n-contract:
     runs-on: ubuntu-latest
@@ -65,6 +68,8 @@ jobs:
           docker image inspect "volitex-candidate:$GITHUB_SHA" --format 'Local image ID: {{.Id}}' >> "$GITHUB_STEP_SUMMARY"
       - name: Verify isolated production boot
         run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA"
+      - name: Verify private n8n upgrade, ownership and interrupted reply recovery
+        run: python3 script/production/verify_n8n_acceptance.py --app-image "volitex-candidate:$GITHUB_SHA" --source-sha "$GITHUB_SHA"
       - name: Audit candidate image runtime packages
         if: always() && steps.build.outcome == 'success'
         run: |

@@ -10,8 +10,43 @@ const { LoadNodesAndCredentials } = fromN8n(
   './dist/load-nodes-and-credentials'
 );
 const { NodeTypes } = fromN8n('./dist/node-types');
+const {
+  ForgotPasswordRequestDto,
+  InviteUsersRequestDto,
+  OwnerSetupRequestDto,
+} = fromN8n('@n8n/api-types');
 
 async function verify() {
+  const email = 'operator@example.invalid';
+  const owner = {
+    email,
+    firstName: 'Synthetic',
+    lastName: 'Operator',
+    password: 'Synthetic_Private1!',
+  };
+  assert.equal(ForgotPasswordRequestDto.safeParse({ email }).success, true);
+  assert.equal(InviteUsersRequestDto.safeParse([{ email }]).success, true);
+  assert.equal(OwnerSetupRequestDto.safeParse(owner).success, true);
+  for (const address of [email + ',' + email, 'free text '.repeat(64)]) {
+    assert.equal(
+      ForgotPasswordRequestDto.safeParse({ email: address }).success,
+      false
+    );
+    assert.equal(
+      InviteUsersRequestDto.safeParse([{ email: address }]).success,
+      false
+    );
+    assert.equal(
+      OwnerSetupRequestDto.safeParse({ ...owner, email: address }).success,
+      false
+    );
+  }
+  assert.equal(
+    ForgotPasswordRequestDto.safeParse({
+      email: 'a'.repeat(256) + '@example.invalid',
+    }).success,
+    false
+  );
   const allowed = JSON.parse(process.env.NODES_INCLUDE);
   assert.ok(Array.isArray(allowed) && allowed.length > 0);
   const modules = Container.get(ModuleRegistry);
@@ -57,7 +92,13 @@ async function verify() {
       `${type} can execute`
     );
   }
-  console.log(JSON.stringify({ result: 'PASS', allowedNodes: allowed.length }));
+  console.log(
+    JSON.stringify({
+      result: 'PASS',
+      allowedNodes: allowed.length,
+      coreAddressShapes: 'PASS',
+    })
+  );
 }
 
 verify().catch(error => {

@@ -24,7 +24,7 @@ class CleanupOwnershipTest(unittest.TestCase):
     def test_cleanup_only_removes_network_created_by_this_run(self):
         source = subprocess.CompletedProcess([], 0, '0' * 40, '')
         created = subprocess.CompletedProcess([], 0, 'synthetic-network', '')
-        denied = subprocess.CompletedProcess([], 1, '', 'synthetic volume failure')
+        denied = subprocess.CompletedProcess([], 1, '', 'synthetic network setup failure')
         with patch('sys.argv', [str(HARNESS), '--app-image', 'synthetic:source', '--source-sha', '0' * 40]), \
                 patch('subprocess.run', side_effect=[source, created, denied, created]) as calls, contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(RuntimeError):

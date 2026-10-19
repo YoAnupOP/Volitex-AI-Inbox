@@ -98,7 +98,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 - [MANUAL] Keep SECRET*KEY_BASE, the three ACTIVE_RECORD_ENCRYPTION*\* values, Meta/OAuth/SMTP secrets, database passwords, Redis passwords, object-storage credentials, N8N_ENCRYPTION_KEY, the backup age identity, and alert-webhook credentials only in a password manager and provider secret stores.
 - [MANUAL] Confirm GitHub/GHCR ownership and that Coolify can pull the exact image. If GHCR is private, use a read-only package credential stored only in Coolify.
-- [MANUAL] Own DNS for inbox.volitexai.tech and automation.volitexai.tech.
+- [MANUAL] Own DNS for inbox.volitexai.tech and the protected Coolify administration endpoint. n8n has no public domain in the selected private profile.
 - [MANUAL] Prepare the Meta Developer App, Business/Tech Provider setup, WhatsApp Embedded Signup configuration, Instagram product, privacy/terms/data-deletion URLs, and required review permissions.
 - [MANUAL] Prepare off-server S3-compatible storage for media/backups and an age encryption key pair.
 - [MANUAL] Prepare a private alert-webhook destination and a client onboarding record.
@@ -139,13 +139,11 @@ The trigger is client signed -> payment received. Do not connect live client Met
 The topology is one Hostinger KVM 4 with Coolify-managed private services:
 
 ```text
-Public 80/443 -> Coolify proxy
-       |                         |
-inbox.volitexai.tech     automation.volitexai.tech
-       |                         |
-Volitex Rails/Sidekiq          n8n main
-       |                         |
-Volitex PostgreSQL/Valkey      n8n worker/PostgreSQL/Valkey
+Public 80/443 -> Coolify proxy -> inbox.volitexai.tech -> Rails
+Volitex Rails/Sidekiq -> private Volitex PostgreSQL/Valkey
+Volitex ordinary Sidekiq worker -> dedicated private bridge -> n8n main
+n8n main/worker -> separate private n8n PostgreSQL/Valkey
+Operator browser -> localhost SSH forward -> n8n main private IP
 ```
 
 docker-compose.production.yaml intentionally does not create Volitex PostgreSQL or Volitex Redis/Valkey; create them as separate private Coolify resources. deployment/n8n-queue.compose.yaml creates the n8n database, n8n Valkey, main, and worker.
@@ -187,9 +185,8 @@ Create:
 | Name                      | Type   | Value           | Use            |
 | ------------------------- | ------ | --------------- | -------------- |
 | inbox.volitexai.tech      | A/AAAA | KVM 4 public IP | Volitex proxy  |
-| automation.volitexai.tech | A/AAAA | KVM 4 public IP | n8n-main proxy |
 
-Attach inbox to Rails port 3000 and automation to n8n-main port 5678. Enable Coolify TLS. Never create public routes for either PostgreSQL, either Redis/Valkey service, or n8n-worker.
+Attach inbox to Rails port 3000 and enable Coolify TLS. Do not assign any n8n service a Coolify domain. Never create public routes for either PostgreSQL, either Redis/Valkey service, n8n main or n8n worker. The n8n main service also declares `traefik.enable=false`; inspect actual generated proxy configuration during server acceptance.
 
 **Success:** external HTTPS works with a valid certificate and private services have no public listener. **Recovery:** correct DNS/proxy/TLS before Meta configuration; do not use HTTP as a workaround.
 
@@ -318,24 +315,35 @@ Create a second Coolify Docker Compose application from deployment/n8n-queue.com
 
 The current example deliberately leaves `N8N_IMAGE` empty: select and record the reviewed immutable n8n digest rather than reusing the historical 2.40.3/2.42.7 pins. Both main and worker receive the same image, DB, queue, N8N_ENCRYPTION_KEY, security, SMTP, and EXECUTIONS_MODE=queue settings. Start one worker at N8N_WORKER_CONCURRENCY=5 and record the PostgreSQL/Valkey image digests too.
 
-**Required ingress control:** the reviewed official 2.43.5 artifact still contains vulnerable compression 1.8.1. Before exposing it, install `deployment/n8n/traefik-compression-guard.yaml` through Coolify's Proxy → Dynamic Configurations UI. The Compose main service references `volitex-n8n-identity@file`; verify that every generated router forwarding to n8n actually includes it, with no public direct port or alternate unguarded route. The isolated mitigation test passes; authenticated HTTPS/workflow acceptance on the real server remains mandatory. Follow the [compression gate evidence](n8n-compression-gate-2026-10-14.md), [security inventory](n8n-security-2026-10-14.md), and [current deployment/campaign acceptance checklist](first-client-readiness-2026-10-17.md). This is an ingress mitigation, not a claim of a patched image or zero security findings.
+**Private transport prerequisite:** the published source66 application image does not contain the private AgentBot transport. Do not point that image at a private hostname or enable `SAFE_FETCH_ALLOW_PRIVATE_NETWORK`. First build, verify and publish an application image containing the tested private transport. The application artifact and n8n security/version approval remain separate gates.
+
+Before either Compose application is deployed, select a non-conflicting RFC1918 subnet and create one dedicated internal Docker bridge. For example, only after confirming that the example subnet is unused:
+
+```bash
+docker network create --internal --subnet 172.28.8.0/24 volitex-automation
+```
+
+Set `VOLITEX_AUTOMATION_NETWORK=volitex-automation` in both applications and `N8N_PRIVATE_IP=172.28.8.10` in the n8n application, using the actual reserved subnet/IP rather than blindly copying these examples. Compose attaches only the ordinary Inbox worker and n8n main to this shared bridge. n8n worker/database/Valkey remain on the separate n8n application network; Rails and the campaign worker remain on the Inbox application network. Confirm actual Coolify network membership, including any additional automatically attached networks.
 
 Required topology:
 
-- n8n-main is the only public n8n service at automation.volitexai.tech.
-- n8n-worker, n8n PostgreSQL, and n8n Valkey have no public domain/port.
+- No n8n service has a public domain or host-port mapping.
+- n8n-main uses the reserved private IP, and its worker/database/Valkey have no membership on the shared automation bridge.
 - QUEUE_BULL_PREFIX=volitex:n8n and its password are separate from Volitex Redis.
-- N8N_EDITOR_BASE_URL and N8N_WEBHOOK_URL are https://automation.volitexai.tech.
-- N8N_PROXY_HOPS=1 is valid only with Coolify as the single trusted proxy.
+- N8N_EDITOR_BASE_URL is http://localhost:5678 for the operator's local SSH forward. Keep secure cookies enabled; verify actual browser login, logout, MFA and recovery through the tunnel before activation.
+- N8N_WEBHOOK_URL is http://n8n-main:5678 for signed private deliveries; N8N_PROXY_HOPS=0 because this path has no HTTP proxy.
+- Main and worker load the same versioned node/module policy from deployment/n8n/runtime-policy.env.
 - Keep n8n_data, n8n_postgres_data, and n8n_valkey_data attached across restart/replacement.
 
-Verify:
+Open the editor through an SSH forward using the actual reserved private IP:
 
 ```bash
-curl --fail --silent --show-error https://automation.volitexai.tech/healthz >/dev/null
+ssh -N -L 127.0.0.1:5678:172.28.8.10:5678 <operator>@<server>
+# In another local terminal:
+curl --fail --silent --show-error http://localhost:5678/healthz/readiness >/dev/null
 ```
 
-Set the n8n owner password and MFA, confirm SMTP recovery, create no public test workflows, and run n8n audit. The Compose healthcheck uses /healthz/readiness internally.
+Set the n8n owner password and MFA, confirm SMTP recovery, verify tunnel/browser recovery, and run n8n audit. The Compose healthcheck uses /healthz/readiness internally. Add operator-controlled N8N_AGENT_BOT_TRANSPORTS bindings to the protected Inbox environment using each account/bot/secret, its exact private webhook URL and the reserved main IP; see the private transport report. Credentials and IP bindings must not be selected from customer input. n8n-to-Inbox requests continue to use the fixed public Inbox HTTPS origin and scoped bot credentials.
 
 # Phase 3 — Meta production configuration
 
@@ -428,7 +436,7 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 From the running Volitex release container:
 
 ```bash
-bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,https://automation.volitexai.tech/webhook/volitex-inbox-<AGENT_BOT_ID>]'
+bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,http://n8n-main:5678/webhook/volitex-inbox-<AGENT_BOT_ID>]'
 ```
 
 Retrieve token and signing secret from the authenticated Inbox dashboard and enter them directly into dedicated n8n credentials. Do not print them in a shell or put them in a workflow node.
@@ -451,7 +459,7 @@ Record timestamp, operator, release commit, image digest, and evidence. Do not d
 
 ### Infrastructure
 
-- [MANUAL] Inbox /health and n8n /healthz return healthy over TLS.
+- [MANUAL] Inbox /health returns healthy over public TLS; n8n /healthz/readiness is healthy through the private operator tunnel, with no public n8n route.
 - [MANUAL] migrate completed; Rails and Sidekiq are healthy.
 - [MANUAL] PostgreSQL extension preflight passed.
 - [MANUAL] Four database/Valkey services are private and persistent.
@@ -547,7 +555,7 @@ Run deployment/production/monitor.sh every minute from the VPS or trusted monito
 
 ```dotenv
 INBOX_HEALTH_URL=https://inbox.volitexai.tech/health
-N8N_HEALTH_URL=https://automation.volitexai.tech/healthz
+N8N_HEALTH_URL=http://<reserved-private-n8n-main-ip>:5678/healthz/readiness
 ALERT_WEBHOOK_URL=<private-alert-webhook>
 VOLITEX_DATABASE_URL=<private-url>
 N8N_DATABASE_URL=<private-url>
@@ -651,7 +659,7 @@ The single-KVM architecture can take every tenant down during a VPS/Hostinger ou
 | ------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------- |
 | Volitex Rails crash      | Coolify/Docker restarts; health fails while unavailable | Inspect logs/health/DB/Redis; restore old image only for app-only regression | Health, login, inbound/outbound  |
 | Sidekiq crash            | Restart; accepted Redis jobs remain queued              | Restart, inspect queue/retry/dead sets                                       | One webhook -> one message       |
-| n8n main crash           | Restart; public n8n temporarily unavailable             | Restart and inspect queue/logs                                               | Health and one workflow          |
+| n8n main crash           | Private webhook/editor unavailable until recovery      | Restart and inspect queue/logs                                               | Health and one workflow          |
 | n8n worker crash         | Restart; Bull jobs remain stored                        | Restart and inspect failed executions                                        | One workflow completes once      |
 | Redis/Valkey crash       | Restart may recover persisted state                     | Recover, ping, inspect backlog/retries                                       | Queue drain and duplicate check  |
 | Volitex PostgreSQL crash | Restart/recovery if volume intact                       | Verify extensions; use approved restore plan if needed                       | Health, records, channel test    |
@@ -740,6 +748,6 @@ If using the existing Sentry integration, configure a protected SENTRY_DSN and `
 
 The current installation defaults already specify Volitex AI Inbox and `/brand-assets/` logos; dashboard/layout titles, English login/account strings, email templates and public favicon assets are branded. Existing DB overrides or cached installation settings can differ: inspect the running installation, then visually accept login, dashboard, Super Admin, a delivered test email, favicon and mobile/dark mode where supported. Internal Ruby constants, package namespaces, i18n keys, upstream attribution and API identifiers are not branding defects and must not be renamed indiscriminately.
 
-Normal client traffic requires an authorized pullable image, actual KVM TLS/private-network/guarded-n8n acceptance, migration and complete restore/reboot/alert tests, tenant/human-handoff checks and authorized channel-specific smoke tests. Campaigns additionally require the small opted-in approved-template live campaign, actual delivered/read/failed reconciliation, opt-out procedure, unknown-outcome review and measured KVM resource/queue recovery acceptance. Keep the campaign feature disabled until those separate gates pass. No production action or live traffic is authorized by this runbook.
+Normal client traffic requires an authorized pullable image containing the private transport, actual KVM Inbox TLS/private-network/tunnel acceptance, migration and complete restore/reboot/alert tests, tenant/human-handoff checks and authorized channel-specific smoke tests. Verify no public n8n route or bypass port, the reserved-IP binding, only the two intended automation-bridge members, and the same enforced node/module policy on main and worker. Campaigns additionally require the small opted-in approved-template live campaign, actual delivered/read/failed reconciliation, opt-out procedure, unknown-outcome review and measured KVM resource/queue recovery acceptance. Keep the campaign feature disabled until those separate gates pass. No production action or live traffic is authorized by this runbook.
 
 Rollback note: pair the previous application image with its matching Compose configuration. In particular, the older campaign-only health executable does not understand the new ordinary-worker queue selector; do not retain that new health command against an older image. Preserve the repaired host monitor, encryption keys and compatible recipient ledger; never downgrade to the pre-ledger sender or reset unknown outcomes. The legacy EE Docker Hub publisher is restricted to the official upstream repository. Volitex releases use only the explicit GHCR publication workflow; never merge or tag merely to publish.

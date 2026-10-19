@@ -112,7 +112,11 @@ services:
     <<: *n8n
     command: ['start']
     labels:
-      - coolify.traefik.middlewares=volitex-n8n-identity@file
+      - traefik.enable=false
+    networks:
+      default: {}
+      automation:
+        ipv4_address: ${N8N_PRIVATE_IP:?Reserve a private n8n-main IP for the AgentBot transport}
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n/custom:/opt/volitex/n8n-custom:ro
@@ -121,8 +125,6 @@ services:
         condition: service_healthy
       n8n-valkey:
         condition: service_healthy
-    expose:
-      - '5678'
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:5678/healthz/readiness >/dev/null 2>&1']
       interval: 30s
@@ -149,3 +151,8 @@ volumes:
   n8n_data:
   n8n_postgres_data:
   n8n_valkey_data:
+
+networks:
+  automation:
+    external: true
+    name: ${VOLITEX_AUTOMATION_NETWORK:?Set the private Inbox-to-n8n network name}

@@ -28,6 +28,7 @@ values = {
     'REDIS_URL': 'redis://' + prefix + '-redis:6379/0',
     'RAILS_LOG_TO_STDOUT': 'true', 'ACTIVE_STORAGE_SERVICE': 'local',
     'ENABLE_ACCOUNT_SIGNUP': 'false', 'SIDEKIQ_CONCURRENCY': '2',
+    'VOLITEX_AUTOMATION_NETWORK': prefix + '-automation',
 }
 with open(path, 'w') as stream:
     stream.write(''.join(f'{key}={value}\n' for key, value in values.items()))
