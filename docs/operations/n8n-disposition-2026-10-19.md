@@ -1,5 +1,7 @@
 # n8n security disposition refresh — 2026-10-19
 
+**Architecture/caller follow-up:** see [exposure decision](n8n-exposure-decision-2026-10-19.md) and [scoped security closure](n8n-architecture-security-closure-2026-10-19.md). These narrow specific callers; no architecture adoption or global security PASS is claimed.
+
 ## Outcome: FAIL — material applicability remains unresolved
 
 The application publication is unchanged. This is a scoped n8n security assessment, not a production deployment or acceptance. No risk is accepted on the operator's behalf. The newer official stable image fixes many recorded dependencies and passes a synthetic queue regression, but neither assessed image has an adequately evidenced disposition for all material remaining attack paths. Do not select a production N8N_IMAGE merely because its count decreased.
