@@ -1,5 +1,7 @@
 # n8n security candidate assessment — 2026-10-14
 
+**Latest scoped refresh:** see [2026-10-19 disposition](n8n-disposition-2026-10-19.md). Official2.43.7 now contains patched compression but retains other material findings; no production version change was adopted.
+
 ## Release decision
 
 **BLOCKED. No assessed n8n artifact is approved for production.** The working local integration is preserved. No production image was published, no production deployment or callback was changed, and no live messages were sent during this assessment. Do not deploy the rejected npm assessment images. The production environment example now requires an explicit N8N_IMAGE rather than presenting the older 2.40.3 digest as reviewed; Compose already rejects an empty value. Existing protected local configuration is unaffected. Compose parse verification rejected the unset image (exit 1) and succeeded with an explicit assessment digest (exit 0); this was configuration parsing, not deployment.

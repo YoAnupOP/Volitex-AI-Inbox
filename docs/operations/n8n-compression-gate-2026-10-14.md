@@ -1,5 +1,7 @@
 # n8n compression denial-of-service release gate — 2026-10-14
 
+**Latest scoped refresh:** see [2026-10-19 disposition](n8n-disposition-2026-10-19.md). Official2.43.7 now contains patched compression but retains other material findings; no production version change was adopted.
+
 ## Decision
 
 **PASS with a required ingress mitigation; the vulnerable dependency remains in the official n8n image.** Do not expose n8n except through the guarded Coolify Traefik route. This closes the identified unauthenticated compression path for the intended deployment; it does not patch the image or clear its other security findings.
