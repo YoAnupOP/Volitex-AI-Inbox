@@ -1,7 +1,14 @@
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 # Production n8n deployment for Volitex. Coolify supplies every ${...} value
 # from its environment-variable UI. Do not add a repository .env.n8n file.
 x-n8n: &n8n
   image: ${N8N_IMAGE:?Set N8N_IMAGE to an immutable n8n image digest}
+  logging: *logging
   restart: unless-stopped
   environment:
     N8N_CUSTOM_EXTENSIONS: /opt/volitex/n8n-custom
@@ -71,6 +78,7 @@ x-n8n: &n8n
 services:
   n8n-postgres:
     image: ${N8N_POSTGRES_IMAGE:?Set N8N_POSTGRES_IMAGE to an immutable PostgreSQL image digest}
+    logging: *logging
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_POSTGRESDB_DATABASE:?Set DB_POSTGRESDB_DATABASE}
@@ -86,10 +94,11 @@ services:
 
   n8n-valkey:
     image: ${N8N_VALKEY_IMAGE:?Set N8N_VALKEY_IMAGE to an immutable Valkey image digest}
+    logging: *logging
     restart: unless-stopped
     environment:
       VALKEY_PASSWORD: ${QUEUE_BULL_REDIS_PASSWORD:?Set QUEUE_BULL_REDIS_PASSWORD}
-    command: ['sh', '-c', 'exec valkey-server --appendonly yes --requirepass "$$VALKEY_PASSWORD"']
+    command: ['sh', '-c', 'exec valkey-server --appendonly yes --appendfsync everysec --maxmemory-policy noeviction --requirepass "$$VALKEY_PASSWORD"']
     volumes:
       - n8n_valkey_data:/data
     healthcheck:

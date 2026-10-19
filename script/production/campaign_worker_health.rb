@@ -1,9 +1,10 @@
-# Container health check: verify this host has a recent campaign Sidekiq heartbeat.
+# Container health check: verify this host has a recent heartbeat for the required queue.
 require 'json'
 require 'socket'
 require 'redis'
 
 begin
+  queue = ENV.fetch('SIDEKIQ_HEALTH_QUEUE', 'campaigns')
   options = { url: ENV.fetch('REDIS_URL'), timeout: 2 }
   options[:password] = ENV.fetch('REDIS_PASSWORD', nil) unless ENV['REDIS_PASSWORD'].to_s.empty?
   redis = Redis.new(**options)
@@ -12,11 +13,11 @@ begin
     next false unless info
 
     process = JSON.parse(info)
-    process['hostname'] == Socket.gethostname && Array(process['queues']).include?('campaigns') &&
+    process['hostname'] == Socket.gethostname && Array(process['queues']).include?(queue) &&
       redis.hget(identity, 'beat').to_f > Time.now.to_f - 60
   end
-  abort 'Campaign worker heartbeat missing' unless healthy
+  abort 'Required worker heartbeat missing' unless healthy
 rescue StandardError => e
-  warn "Campaign worker heartbeat unavailable (#{e.class.name})"
+  warn "Worker heartbeat unavailable (#{e.class.name})"
   exit 1
 end

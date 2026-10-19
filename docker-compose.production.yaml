@@ -2,6 +2,11 @@ x-base: &base
   # Set this to a Volitex-owned OCI image pinned by digest. Never use a tag,
   # especially not `latest`, for a paying-client deployment.
   image: ${VOLITEX_IMAGE:?Set VOLITEX_IMAGE to a Volitex image digest}
+  logging:
+    driver: local
+    options:
+      max-size: "10m"
+      max-file: "5"
   env_file: .env
   volumes:
     - volitex_storage:/app/storage
@@ -43,7 +48,14 @@ services:
 
   sidekiq:
     <<: *base
+    healthcheck:
+      test: ["CMD", "bundle", "exec", "ruby", "script/production/campaign_worker_health.rb"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     environment:
+      SIDEKIQ_HEALTH_QUEUE: critical
       NODE_ENV: production
       RAILS_ENV: production
       INSTALLATION_ENV: docker
@@ -56,6 +68,9 @@ services:
   campaign-worker:
     <<: *base
     environment:
+      SIDEKIQ_CONCURRENCY: "2"
+      SIDEKIQ_DB_POOL: "2"
+      SIDEKIQ_HEALTH_QUEUE: campaigns
       NODE_ENV: production
       RAILS_ENV: production
       INSTALLATION_ENV: docker

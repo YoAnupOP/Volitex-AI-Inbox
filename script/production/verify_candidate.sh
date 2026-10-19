@@ -51,8 +51,8 @@ for attempt in $(seq 1 60); do
 done
 docker run --rm --network "$prefix" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails db:chatwoot_prepare
 docker run -d --name "$prefix-web" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails s -p 3000 -b 0.0.0.0 >/dev/null
-docker run -d --name "$prefix-worker" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq.yml >/dev/null
-docker run -d --name "$prefix-campaign-worker" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq_campaigns.yml >/dev/null
+docker run -d --name "$prefix-worker" --env SIDEKIQ_HEALTH_QUEUE=critical --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq.yml >/dev/null
+docker run -d --name "$prefix-campaign-worker" --env SIDEKIQ_CONCURRENCY=2 --env SIDEKIQ_DB_POOL=2 --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq_campaigns.yml >/dev/null
 ready=false
 for attempt in $(seq 1 90); do
   if docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health > "$scratch/health.json"; then ready=true; break; fi
@@ -86,6 +86,7 @@ docker exec "$prefix-web" sh -ec 'test "$(cat /app/storage/.volitex-verification
 docker exec "$prefix-web" curl --fail --silent http://127.0.0.1:3000/health >/dev/null
 test "$(docker inspect --format '{{.State.Running}}' "$prefix-worker")" = true
 test "$(docker inspect --format '{{.State.Running}}' "$prefix-campaign-worker")" = true
+docker exec "$prefix-worker" bundle exec ruby script/production/campaign_worker_health.rb
 docker exec "$prefix-campaign-worker" bundle exec ruby script/production/campaign_worker_health.rb
 docker stop --time 30 "$prefix-web" "$prefix-worker" "$prefix-campaign-worker" >/dev/null
 echo 'Candidate migration, web/worker boot, connectivity, restart and graceful stop checks passed.'

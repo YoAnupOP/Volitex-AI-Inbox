@@ -45,6 +45,7 @@ jobs:
         run: >-
           bundle exec rspec spec/services/whatsapp/campaign_dispatch_service_spec.rb
           spec/services/whatsapp/campaign_status_service_spec.rb spec/script/production/campaign_worker_health_spec.rb
+          spec/script/production/compose_spec.rb
           spec/services/whatsapp/oneoff_campaign_service_spec.rb
           spec/controllers/api/v1/accounts/campaign_delivery_controls_spec.rb
           spec/actions/contact_identify_action_spec.rb spec/builders/contact_inbox_with_contact_builder_spec.rb

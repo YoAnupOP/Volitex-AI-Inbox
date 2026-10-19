@@ -45,14 +45,27 @@ check_redis() {
   local redis_url="$2"
   local info
   local evicted_keys
+  local persistence
 
-  if ! info="$(redis-cli --no-auth-warning -u "$redis_url" INFO memory,stats)"; then
+  if ! info="$(redis-cli --no-auth-warning -u "$redis_url" INFO memory stats persistence)"; then
     failures+=("${name} Redis/Valkey check failed")
     return
   fi
 
   evicted_keys="$(printf '%s\n' "$info" | awk -F: '$1 == "evicted_keys" { print $2 }' | tr -d '\r')"
-  if [[ "${evicted_keys:-0}" -gt 0 ]]; then
+  if [[ ! "$evicted_keys" =~ ^[0-9]+$ ]]; then
+    failures+=("${name} Redis/Valkey INFO response is invalid or unauthorized")
+    return
+  fi
+
+  persistence="$(printf '%s\n' "$info" | tr -d '\r')"
+  if ! grep -qx 'aof_enabled:1' <<< "$persistence" || \
+     ! grep -qx 'aof_last_write_status:ok' <<< "$persistence" || \
+     ! grep -qx 'rdb_last_bgsave_status:ok' <<< "$persistence"; then
+    failures+=("${name} Redis/Valkey persistence is disabled, unavailable or failing")
+  fi
+
+  if [[ "$evicted_keys" -gt 0 ]]; then
     failures+=("${name} Redis/Valkey has evicted ${evicted_keys} keys")
   fi
 }

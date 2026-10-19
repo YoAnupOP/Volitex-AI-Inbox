@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Verify production monitor failure handling
+        run: node --test script/production/specs/monitor.test.cjs
       - name: Verify authenticated Inbox reply contract
         run: node --test script/production/specs/n8n_reply.test.cjs
 

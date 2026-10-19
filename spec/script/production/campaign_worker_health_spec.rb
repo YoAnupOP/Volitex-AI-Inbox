@@ -25,6 +25,20 @@ RSpec.describe 'Campaign worker heartbeat' do # rubocop:disable RSpec/DescribeCl
     end
   end
 
+  it 'accepts the ordinary worker only for its explicitly selected queue' do
+    allow(client).to receive(:hget).with('worker', 'info').and_return({ hostname: Socket.gethostname, queues: ['critical'] }.to_json)
+    with_modified_env REDIS_URL: 'redis://127.0.0.1:6379/13', SIDEKIQ_HEALTH_QUEUE: 'critical' do
+      expect { load path }.not_to raise_error
+    end
+  end
+
+  it 'rejects another host even when its queue and heartbeat match' do
+    allow(client).to receive(:hget).with('worker', 'info').and_return({ hostname: 'other-worker', queues: ['campaigns'] }.to_json)
+    with_modified_env REDIS_URL: 'redis://127.0.0.1:6379/13' do
+      expect { load path }.to raise_error(SystemExit)
+    end
+  end
+
   it 'does not mistake the ordinary worker for a campaign worker' do
     allow(client).to receive(:hget).with('worker', 'info').and_return({ hostname: Socket.gethostname, queues: ['critical'] }.to_json)
     with_modified_env REDIS_URL: 'redis://127.0.0.1:6379/13' do
