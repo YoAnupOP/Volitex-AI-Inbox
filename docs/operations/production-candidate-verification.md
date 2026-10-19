@@ -1,5 +1,7 @@
 # Production candidate verification — 2026-10-11
 
+**Latest reconciliation:** [2026-10-19 exact-source results](antigravity-reconciliation-2026-10-19.md) supersede historical candidate results below; publication and actual KVM acceptance remain separate.
+
 **Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
 
 ## Release decision

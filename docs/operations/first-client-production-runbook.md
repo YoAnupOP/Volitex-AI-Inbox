@@ -1,5 +1,7 @@
 # Volitex AI Inbox — First-client production operations runbook
 
+**Latest reconciliation:** [2026-10-19 exact-source results](antigravity-reconciliation-2026-10-19.md) supersede historical candidate results below; publication and actual KVM acceptance remain separate.
+
 **Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
 
 This is the authoritative operating procedure for taking the frozen Volitex AI Inbox codebase to the first paying client's live deployment. It is specific to this repository and the planned shared Hostinger KVM 4 architecture.
