@@ -549,7 +549,7 @@ N8N_DATABASE_URL=<private-url>
 VOLITEX_REDIS_URL=<private-url>
 N8N_REDIS_URL=<private-url>
 MONITOR_DISK_PATH=/
-SIDEKIQ_QUEUE_NAMES=critical high medium default mailers
+SIDEKIQ_QUEUE_NAMES="critical high medium default mailers campaigns"
 ```
 
 The script checks public health, DB connection headroom, Redis/Valkey connectivity/evictions, Sidekiq backlog, memory, unhealthy containers, and disk.
@@ -736,3 +736,5 @@ If using the existing Sentry integration, configure a protected SENTRY_DSN and `
 The current installation defaults already specify Volitex AI Inbox and `/brand-assets/` logos; dashboard/layout titles, English login/account strings, email templates and public favicon assets are branded. Existing DB overrides or cached installation settings can differ: inspect the running installation, then visually accept login, dashboard, Super Admin, a delivered test email, favicon and mobile/dark mode where supported. Internal Ruby constants, package namespaces, i18n keys, upstream attribution and API identifiers are not branding defects and must not be renamed indiscriminately.
 
 Normal client traffic requires an authorized pullable image, actual KVM TLS/private-network/guarded-n8n acceptance, migration and complete restore/reboot/alert tests, tenant/human-handoff checks and authorized channel-specific smoke tests. Campaigns additionally require the small opted-in approved-template live campaign, actual delivered/read/failed reconciliation, opt-out procedure, unknown-outcome review and measured KVM resource/queue recovery acceptance. Keep the campaign feature disabled until those separate gates pass. No production action or live traffic is authorized by this runbook.
+
+Rollback note: pair the previous application image with its matching Compose configuration. In particular, the older campaign-only health executable does not understand the new ordinary-worker queue selector; do not retain that new health command against an older image. Preserve the repaired host monitor, encryption keys and compatible recipient ledger; never downgrade to the pre-ledger sender or reset unknown outcomes. The legacy EE Docker Hub publisher is restricted to the official upstream repository. Volitex releases use only the explicit GHCR publication workflow; never merge or tag merely to publish.

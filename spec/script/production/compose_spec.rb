@@ -48,4 +48,11 @@ RSpec.describe 'Production deployment contracts' do # rubocop:disable RSpec/Desc
     expect(command).to include('--appendonly yes', '--appendfsync everysec', '--maxmemory-policy noeviction')
     expect(automation.dig('n8n-valkey', 'volumes')).to include('n8n_valkey_data:/data')
   end
+
+  it 'prevents the legacy upstream publisher from running in the Volitex repository' do
+    workflow = YAML.load_file(Rails.root.join('.github/workflows/publish_ee_docker.yml'))
+    workflow.fetch('jobs').each_value do |job|
+      expect(job.fetch('if')).to eq("github.repository == 'chatwoot/chatwoot'")
+    end
+  end
 end

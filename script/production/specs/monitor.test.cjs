@@ -5,7 +5,16 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-for (const scenario of ['healthy', 'eviction', 'disabled-aof', 'write-error', 'invalid', 'unreachable', 'alert-failure', 'docker-error']) {
+for (const scenario of [
+  'healthy',
+  'eviction',
+  'disabled-aof',
+  'write-error',
+  'invalid',
+  'unreachable',
+  'alert-failure',
+  'docker-error',
+]) {
   test(`monitor: ${scenario}`, () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'volitex-monitor-'));
     try {
@@ -31,29 +40,36 @@ echo 'rdb_last_bgsave_status:ok'
       for (const [name, body] of Object.entries(commands)) {
         fs.writeFileSync(path.join(dir, name), body, { mode: 0o700 });
       }
-      const result = spawnSync(process.env.BASH_EXECUTABLE || 'bash', ['-c', `
+      const result = spawnSync(
+        process.env.BASH_EXECUTABLE || 'bash',
+        [
+          '-c',
+          `
 if command -v cygpath >/dev/null; then TEST_BIN=$(cygpath -u "$TEST_BIN"); MONITOR_PATH=$(cygpath -u "$MONITOR_PATH"); TEST_ALERT=$(cygpath -u "$TEST_ALERT"); export TEST_ALERT; fi
 export PATH="$TEST_BIN:$PATH"
 exec bash "$MONITOR_PATH"
-`], {
-        encoding: 'utf8',
-        timeout: 10000,
-        env: {
-          ...process.env,
-          TEST_BIN: dir,
-          MONITOR_PATH: path.resolve('deployment/production/monitor.sh'),
-          TEST_ALERT: path.join(dir, 'alert'),
-          SCENARIO: scenario,
-          INBOX_HEALTH_URL: 'https://inbox.invalid/health',
-          N8N_HEALTH_URL: 'https://automation.invalid/healthz',
-          ALERT_WEBHOOK_URL: 'https://operator.invalid/alert',
-          VOLITEX_REDIS_URL: 'redis://test.invalid/0',
-          N8N_REDIS_URL: '',
-          VOLITEX_DATABASE_URL: '',
-          N8N_DATABASE_URL: '',
-          MEMORY_USED_ALERT_PERCENT: '101',
-        },
-      });
+`,
+        ],
+        {
+          encoding: 'utf8',
+          timeout: 10000,
+          env: {
+            ...process.env,
+            TEST_BIN: dir,
+            MONITOR_PATH: path.resolve('deployment/production/monitor.sh'),
+            TEST_ALERT: path.join(dir, 'alert'),
+            SCENARIO: scenario,
+            INBOX_HEALTH_URL: 'https://inbox.invalid/health',
+            N8N_HEALTH_URL: 'https://automation.invalid/healthz',
+            ALERT_WEBHOOK_URL: 'https://operator.invalid/alert',
+            VOLITEX_REDIS_URL: 'redis://test.invalid/0',
+            N8N_REDIS_URL: '',
+            VOLITEX_DATABASE_URL: '',
+            N8N_DATABASE_URL: '',
+            MEMORY_USED_ALERT_PERCENT: '101',
+          },
+        }
+      );
       assert.ifError(result.error);
       // Alert transport must also fail closed; never report a healthy monitor.
       const healthy = scenario === 'healthy';
