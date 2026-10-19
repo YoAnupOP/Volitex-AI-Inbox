@@ -114,7 +114,10 @@ check_unhealthy_containers() {
   command -v docker >/dev/null || return
 
   local unhealthy
-  unhealthy="$(docker ps --filter health=unhealthy --format '{{.Names}}' 2>/dev/null || true)"
+  if ! unhealthy="$(docker ps --filter health=unhealthy --format '{{.Names}}' 2>/dev/null)"; then
+    failures+=('Docker health inspection failed')
+    return
+  fi
   if [[ -n "$unhealthy" ]]; then
     failures+=("unhealthy containers: ${unhealthy//$'\n'/, }")
   fi

@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-for (const scenario of ['healthy', 'eviction', 'disabled-aof', 'write-error', 'invalid', 'unreachable', 'alert-failure']) {
+for (const scenario of ['healthy', 'eviction', 'disabled-aof', 'write-error', 'invalid', 'unreachable', 'alert-failure', 'docker-error']) {
   test(`monitor: ${scenario}`, () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'volitex-monitor-'));
     try {
@@ -13,7 +13,7 @@ for (const scenario of ['healthy', 'eviction', 'disabled-aof', 'write-error', 'i
         curl: '#!/bin/bash\n[[ "$*" != *operator.invalid* ]] || { echo alert >> "$TEST_ALERT"; [[ "$SCENARIO" != alert-failure ]]; }\n',
         jq: '#!/bin/bash\ncat >/dev/null; echo \'{"text":"test alert"}\'\n',
         awk: '#!/bin/bash\ncase "$1" in *MemAvailable*) echo 900;; *MemTotal*) echo 1000;; *) exec /usr/bin/awk "$@";; esac\n',
-        docker: '#!/bin/bash\nexit 0\n',
+        docker: '#!/bin/bash\n[[ "$SCENARIO" != docker-error ]]\n',
         df: '#!/bin/bash\nprintf "Filesystem 1024-blocks Used Available Capacity Mounted\\ntest 100 1 99 1%% /\\n"\n',
         'redis-cli': `#!/bin/bash
 if [[ "$*" == *llen* ]]; then echo 0; exit; fi
