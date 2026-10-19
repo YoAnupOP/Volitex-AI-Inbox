@@ -571,6 +571,12 @@ Its defaults are 85% memory, 85% disk, and 100 jobs per listed queue. They are e
 
 Add provider/external monitoring for CPU, network, disk IOPS, TLS/DNS expiry, n8n execution failures/queue age, PostgreSQL storage/locks/slow queries, Redis memory/evictions, Meta delivery errors, application errors, and webhook acknowledgement latency.
 
+## Publishing or replacing an active n8n workflow
+
+Pause Inbox automation delivery by stopping the ordinary Sidekiq service during the controlled update; queued jobs must stay in persistent Redis. Drain running n8n executions and reconcile any interrupted external effects, then stop main and all workers before importing a replacement graph. Use a one-shot n8n CLI container on the private n8n network with the same image, encrypted credentials key, database configuration and read-only custom-node mount to import and publish. Verify the published active-version graph contains the intended operations. Start main and workers, wait for both readiness checks, verify the authenticated workflow, then resume Inbox Sidekiq delivery. Keep human takeover available throughout.
+
+A repeat acceptance run observed the database holding the newly published graph while an execution still used the former staging operations after import/publish beside a running main. Do not treat a successful CLI import or main-only readiness as proof that every worker is executing the intended graph. The acceptance harness now uses the stopped-writer procedure and checks the active-version graph before resuming delivery.
+
 # Phase 7 — Ongoing operations
 
 ## Daily during first-client hyper-care

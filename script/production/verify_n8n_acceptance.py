@@ -294,6 +294,10 @@ try:
     RESULTS['candidate_execution_states'] = sql('n8n', 'SELECT status,count(*) FROM execution_entity GROUP BY status ORDER BY status')
     assert int(sql('n8n', "SELECT count(*) FROM execution_entity WHERE status IN ('error', 'crashed') AND COALESCE(\"stoppedAt\", \"startedAt\") >= now() - interval '5 minutes'")) > 0
     RESULTS['crashed_execution_monitor_query'] = 'PASS'
+    # Pause event delivery and stop all n8n writers before changing a published graph.
+    # Importing beside a running main can leave its old active graph in service.
+    command('docker', 'stop', '--time', '30', worker)
+    stop_n8n()
     # Exercise general production operations, not only the guarded smoke phrase.
     rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).enable_n8n!')
     workflow['nodes'][1]['parameters']['operation'] = 'authorize'
@@ -307,10 +311,16 @@ try:
         [{'node': 'Rejected automation', 'type': 'main', 'index': 0}],
     ]
     write_json('production-contract.json', workflow)
-    command('docker', 'exec', n8n_main, 'n8n', 'import:workflow', '--input=/fixtures/production-contract.json', '--userId=' + n8n_owner)
-    command('docker', 'exec', n8n_main, 'n8n', 'publish:workflow', '--id=VolitexStagingReply')
-    command('docker', 'restart', n8n_main, n8n_worker)
-    wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'production_contract_ready')
+    cli = ['docker', 'run', '--rm', '--network', N8N_NETWORK, '--env-file', str(SCRATCH / 'n8n.env'),
+           '-v', f'{RUNTIME_FIXTURES}:/fixtures:ro',
+           '-v', f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', NEW]
+    command(*cli, 'import:workflow', '--input=/fixtures/production-contract.json', '--userId=' + n8n_owner)
+    command(*cli, 'publish:workflow', '--id=VolitexStagingReply')
+    active_nodes = json.loads(sql("n8n", """SELECT h.nodes FROM workflow_history h JOIN workflow_entity w ON h."versionId"=w."activeVersionId" WHERE w.id='VolitexStagingReply'"""))
+    assert [node['parameters']['operation'] for node in active_nodes if node['type'] == 'CUSTOM.volitexReply'] == ['authorize', 'sendReply']
+    n8n_start(NEW)
+    command('docker', 'start', worker)
+    RESULTS['production_contract_ready'] = 'PASS'
     emit_event('Can I schedule a site visit?')
     wait_for(lambda: fake_state()['providerCalls'] == 5, 'ordinary_customer_configured_reply')
     assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'invalid') == '401'
