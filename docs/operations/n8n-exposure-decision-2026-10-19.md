@@ -1,5 +1,7 @@
 # n8n exposure architecture decision — 2026-10-19
 
+**Current follow-up:** [restricted profile selection and remaining release gates](n8n-restricted-profile-assessment-2026-10-19.md). Earlier unset-image/failure/architecture statements below are historical assessment stages, not the current selected package. No existing staging or production deployment was changed.
+
 Follow-up: the [private AgentBot transport](agentbot-private-transport-2026-10-19.md) is now implemented/tested in an isolated source branch. It is **not in the unchanged published Inbox image** and has not been adopted in staging/production. The analysis below records the original decision baseline; source compatibility evidence does not itself clear n8n advisories or authorize deployment.
 
 ## Recommendation: Option A, internal-only n8n — proposed, not applied

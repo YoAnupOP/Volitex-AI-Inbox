@@ -1,5 +1,7 @@
 # n8n architecture-aware security closure — 2026-10-19
 
+**Current follow-up:** [restricted profile selection and remaining release gates](n8n-restricted-profile-assessment-2026-10-19.md). Earlier unset-image/failure/architecture statements below are historical assessment stages, not the current selected package. No existing staging or production deployment was changed.
+
 Follow-up: [private AgentBot transport and isolated candidate acceptance](agentbot-private-transport-2026-10-19.md) implements the source-only transport exception and records additional compatibility checks. [Actual capability inventory](n8n-capabilities-2026-10-19.md) distinguishes the staging responder from the missing approved business workflow. Historical NOT RUN/absent statements below describe this report's original execution; use the follow-up for subsequent results. Published Inbox and existing staging remain unchanged.
 
 ## Verdict: FAIL for release; narrower caller-level exclusions established

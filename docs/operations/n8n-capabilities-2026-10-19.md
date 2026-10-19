@@ -1,5 +1,7 @@
 # Actual n8n capability inventory — 2026-10-19
 
+**Current follow-up:** [restricted profile selection and remaining release gates](n8n-restricted-profile-assessment-2026-10-19.md). Earlier unset-image/failure/architecture statements below are historical assessment stages, not the current selected package. No existing staging or production deployment was changed.
+
 ## Scope and conclusion
 
 Inspected repository deployment workflows/custom nodes, AgentBot listener/transport, ownership/message API, current security reports and read-only staging workflow metadata. **No approved first-client business/AI workflow is present in this repository or the inspected staging database.** The single staging workflow is a deterministic phrase responder. It is evidence for the integration contract, not a production capability specification.

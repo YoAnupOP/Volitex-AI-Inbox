@@ -1,5 +1,7 @@
 # n8n security candidate assessment — 2026-10-14
 
+**Current follow-up:** [restricted profile selection and remaining release gates](n8n-restricted-profile-assessment-2026-10-19.md). Earlier unset-image/failure/architecture statements below are historical assessment stages, not the current selected package. No existing staging or production deployment was changed.
+
 **Latest scoped refresh:** see [2026-10-19 disposition](n8n-disposition-2026-10-19.md). Official2.43.7 now contains patched compression but retains other material findings; no production version change was adopted.
 
 ## Release decision

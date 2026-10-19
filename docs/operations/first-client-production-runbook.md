@@ -313,7 +313,7 @@ The first response is the unauthenticated Rails health JSON containing status wo
 
 Create a second Coolify Docker Compose application from deployment/n8n-queue.compose.yaml. Copy the complete sanitized key set from deployment/.env.n8n.example into Coolify and replace placeholders. Do not create or commit deployment/.env.n8n.
 
-The current example deliberately leaves `N8N_IMAGE` empty: select and record the reviewed immutable n8n digest rather than reusing the historical 2.40.3/2.42.7 pins. Both main and worker receive the same image, DB, queue, N8N_ENCRYPTION_KEY, security, SMTP, and EXECUTIONS_MODE=queue settings. Start one worker at N8N_WORKER_CONCURRENCY=5 and record the PostgreSQL/Valkey image digests too.
+The example selects the tested immutable 2.43.8 digest only for the private operator-only HTTP/JSON profile in [the current assessment](n8n-restricted-profile-assessment-2026-10-19.md). This does not approve arbitrary nodes or public n8n access; complete the overall release and server acceptance gates before deployment. Both main and worker receive the same image, DB, queue, N8N_ENCRYPTION_KEY, security, SMTP, and EXECUTIONS_MODE=queue settings. Start one worker at N8N_WORKER_CONCURRENCY=5 and record the PostgreSQL/Valkey image digests too.
 
 **Private transport prerequisite:** the published source66 application image does not contain the private AgentBot transport. Do not point that image at a private hostname or enable `SAFE_FETCH_ALLOW_PRIVATE_NETWORK`. First build, verify and publish an application image containing the tested private transport. The application artifact and n8n security/version approval remain separate gates.
 

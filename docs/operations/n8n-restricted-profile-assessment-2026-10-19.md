@@ -1,6 +1,6 @@
 # Restricted n8n profile assessment — 2026-10-19
 
-Status: assessment evidence; release acceptance pending. `N8N_IMAGE` remains unset.
+Status: selected for the restricted pre-client deployment package after caller/policy and full built-image acceptance. Overall release acceptance remains pending exact-source CI, application registry publication and actual server gates. This is not a global security clearance or a production deployment approval.
 
 Candidate: official 2.43.8, `n8nio/n8n@sha256:a18edcf018198b33b5488fb47ededafe11e0b10d28f65b9535b7c447c9ce3b2c`.
 
@@ -31,4 +31,4 @@ The runtime probe resolves every allowed type through the actual installed execu
 
 ## Remaining acceptance
 
-Complete the general authenticated reply, upgrade/restore and interrupted-effect run on the final built application source; obtain exact-source CI results; retain raw scan artifacts and profile review. Only then select the deployment n8n pin. Actual VPS acceptance additionally requires tunnel/browser login, independent alerts, off-host backup restore, provider credentials and client-specific booking/CRM idempotency. None of those live checks is implied by local synthetic results.
+The corrected full run passed on application source 24be9585e9a0b6366dab4db6b938b19191859a79, with acceptance harness source 1e36d1fb57cde8375d7942499b0c4a6d3599ef5e: ordinary signed customer reply, upgrade/restore, interrupted-effect duplicate safety, queued recovery and human takeover. Exactly six intended provider effects. [Safe evidence](evidence/n8n-acceptance-24be9585e9-2026-10-19.json). The workflow update stops all writers, publishes offline and checks the active-version graph before resuming delivery. All 46 candidate critical/high identities match the retained inventory and their profile prerequisites/caller boundaries above. `N8N_IMAGE` now selects this tested digest for this profile only. Obtain final remote CI results and a transport-capable registry artifact before overall release. Actual VPS acceptance additionally requires tunnel/browser login, independent alerts, off-host backup restore, provider credentials and client-specific booking/CRM idempotency. None of those live checks is implied by local synthetic results.

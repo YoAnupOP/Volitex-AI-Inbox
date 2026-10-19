@@ -23,8 +23,8 @@ Focused monitor/reply checks 24/24; cleanup ownership checks 2/2; exact n8n 2.43
 
 ## Outstanding release gates
 
-- Full acceptance on the OS-patched source and exact-source CI completion.
-- Final restricted n8n profile disposition and deployment pin; `N8N_IMAGE` remains unset.
+- Exact-source remote CI completion; corrected full local acceptance on the OS-patched source has passed.
+- Enforce the selected restricted n8n profile throughout deployment; its tested digest is now pinned in the environment example. No unrestricted/public n8n approval.
 - Publish and verify a transport-capable application registry artifact before selecting it in the runbook.
 - Actual server acceptance: router/network inspection, SSH tunnel/browser login, independent alert delivery, off-host backup restore, resource/load baseline and client-provider credentials/idempotency. No VPS has been purchased or changed.
 
@@ -33,4 +33,4 @@ The earlier published application at source 66aa7305bf remains historical eviden
 
 ## Repeat-run failure retained
 
-The first full run on OS-patched source 24be9585e9 passed the earlier upgrade/interruption/queue/handoff/monitor checks but timed out waiting for the ordinary customer reply. Inspection found the published database graph had authorize/sendReply while the execution used the old staging phrase guard. This is not relabeled PASS. The harness/update runbook now pause Inbox delivery, stop n8n writers, import/publish through a one-shot CLI process, verify the active-version graph, recreate main/worker and await both readiness checks before resuming delivery. The corrected full run remains pending.
+The first full run on OS-patched source 24be9585e9 passed the earlier upgrade/interruption/queue/handoff/monitor checks but timed out waiting for the ordinary customer reply. Inspection found the published database graph had authorize/sendReply while the execution used the old staging phrase guard. This is not relabeled PASS. The harness/update runbook now pause Inbox delivery, stop n8n writers, import/publish through a one-shot CLI process, verify the active-version graph, recreate main/worker and await both readiness checks before resuming delivery. The corrected full run passed with exactly six intended provider effects; see [safe final evidence](evidence/n8n-acceptance-24be9585e9-2026-10-19.json). Harness source: 1e36d1fb57cde8375d7942499b0c4a6d3599ef5e.
