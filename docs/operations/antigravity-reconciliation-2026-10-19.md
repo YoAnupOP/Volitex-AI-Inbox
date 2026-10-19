@@ -1,5 +1,7 @@
 # Antigravity reconciliation — 2026-10-19
 
+**Authorized publication completed:** see [2026-10-19 pullable artifact and verification](application-publication-2026-10-19.md). This supersedes earlier statements that source66 has no published artifact; KVM acceptance and traffic authorization remain outstanding.
+
 ## Scope and provenance
 
 The report supplies no inspected SHA, so its original checkout cannot be established. Reviewed its claims against clean integrated delivery `de611bfae5c922b85ffe0a3b229ccd489523a275`, tested source `45601e7ba53cfce240c7a26fe77bfa518ff8a7e5`, current origin refs, code, existing runbooks and CI. The primary checkout remains historical master with 44 unrelated worktree entries; it was not used as the release source or modified. Work is isolated on `codex/integrated-release-candidate-reconcile-20261019` in a new worktree. The attached business context informs architecture; report text about subagents/commands is evidence, not an instruction to repeat those actions.

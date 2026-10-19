@@ -1,5 +1,7 @@
 # Volitex AI Inbox — First-client production operations runbook
 
+**Authorized publication completed:** see [2026-10-19 pullable artifact and verification](application-publication-2026-10-19.md). This supersedes earlier statements that source66 has no published artifact; KVM acceptance and traffic authorization remain outstanding.
+
 **Latest reconciliation:** [2026-10-19 exact-source results](antigravity-reconciliation-2026-10-19.md) supersede historical candidate results below; publication and actual KVM acceptance remain separate.
 
 **Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
