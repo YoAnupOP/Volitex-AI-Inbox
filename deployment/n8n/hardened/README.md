@@ -2,6 +2,8 @@
 
 This image runs upstream n8n 2.44.4 with a pinned security dependency overlay and a source backport. It is maintained by this repository; it is not an unmodified vendor image or approval for arbitrary n8n nodes.
 
+The rejected older npm assessment recipe has been removed from deployment source. Its historical findings remain in the operations evidence and Git history; this directory is the maintained build path.
+
 ## Changes
 
 - Copy the complete application from the immutable official n8n image. Preserve upstream application code, licensing, templates, node definitions and migrations.
