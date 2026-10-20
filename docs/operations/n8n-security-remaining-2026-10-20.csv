@@ -1,0 +1,15 @@
+ComponentType,PkgName,InstalledVersion,VulnerabilityID,Severity,FixedVersion,PrimaryURL
+alpine,libexpat,2.8.5-r0,CVE-2026-77214,HIGH,2.9.0-r0,https://avd.aquasec.com/nvd/cve-2026-77214
+alpine,tiff,4.7.1-r0,CVE-2026-4775,HIGH,4.7.2-r0,https://avd.aquasec.com/nvd/cve-2026-4775
+node-pkg,@simple-git/argv-parser,1.1.1,CVE-2026-102829,CRITICAL,2.0.1,https://avd.aquasec.com/nvd/cve-2026-102829
+node-pkg,braces,3.0.3,CVE-2026-93687,HIGH,,https://avd.aquasec.com/nvd/cve-2026-93687
+node-pkg,handlebars,4.7.9,CVE-2026-106445,CRITICAL,4.7.10,https://avd.aquasec.com/nvd/cve-2026-106445
+node-pkg,handlebars,4.7.9,CVE-2026-106446,CRITICAL,4.7.10,https://avd.aquasec.com/nvd/cve-2026-106446
+node-pkg,nodemailer,8.0.10,CVE-2026-82659,HIGH,9.0.1,https://avd.aquasec.com/nvd/cve-2026-82659
+node-pkg,nodemailer,8.0.10,GHSA-2x7j-588g-ccc2,HIGH,9.1.0,https://github.com/advisories/GHSA-2x7j-588g-ccc2
+node-pkg,nodemailer,8.0.10,GHSA-v53p-9fqp-m79j,HIGH,10.0.6,https://github.com/advisories/GHSA-v53p-9fqp-m79j
+node-pkg,simple-git,3.36.0,CVE-2026-102828,CRITICAL,4.0.1,https://avd.aquasec.com/nvd/cve-2026-102828
+node-pkg,simple-git,3.36.0,CVE-2026-102826,HIGH,4.0.0,https://avd.aquasec.com/nvd/cve-2026-102826
+node-pkg,simple-git,3.36.0,CVE-2026-102827,HIGH,4.0.0,https://avd.aquasec.com/nvd/cve-2026-102827
+node-pkg,toml,3.0.0,CVE-2026-63376,HIGH,4.1.2,https://avd.aquasec.com/nvd/cve-2026-63376
+node-pkg,toml,3.0.0,CVE-2026-77465,HIGH,4.2.0,https://avd.aquasec.com/nvd/cve-2026-77465
