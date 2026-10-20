@@ -55,13 +55,14 @@ begin
   campaign = FactoryBot.create(:campaign, account: account, inbox: channel.inbox, campaign_status: :processing,
                                           audience_snapshotted_at: Time.current,
                                           template_params: { name: 'hello', language: 'en', processed_params: { body: {} } })
-  recipients = 3.times.map do
+  recipients = Array.new(3) do
+    consent = { status: 'granted', source: 'synthetic test', inbox_id: channel.inbox.id, recorded_at: 1.day.ago.iso8601 }
     contact = FactoryBot.create(:contact, :with_phone_number, account: account,
-                                                              custom_attributes: { whatsapp_marketing_consent: { status: 'granted', source: 'synthetic test',
-                                                                                                                 inbox_id: channel.inbox.id, recorded_at: 1.day.ago.iso8601 } })
+                                                              custom_attributes: { whatsapp_marketing_consent: consent })
     campaign.campaign_recipients.create!(contact: contact, phone_number: contact.phone_number)
   end
-  worker = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-C', 'config/sidekiq_campaigns.yml', '-q', 'campaigns', '-c', '2',
+  worker = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-C', 'config/sidekiq_campaigns.yml',
+                         '-q', 'campaigns', '-c', '2',
                          out: "#{scratch}/campaign-worker.log", err: [:child, :out])
   pids << worker
   normal = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-q', 'critical', '-c', '1',
@@ -91,7 +92,8 @@ begin
   slow = false
   recipients.first.update!(claimed_at: 3.minutes.ago)
   campaign.update!(dispatch_scheduled_at: 3.minutes.ago)
-  worker = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-C', 'config/sidekiq_campaigns.yml', '-q', 'campaigns', '-c', '2',
+  worker = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-C', 'config/sidekiq_campaigns.yml',
+                         '-q', 'campaigns', '-c', '2',
                          out: "#{scratch}/restarted-worker.log", err: [:child, :out])
   pids << worker
   Campaigns::RecoverJob.perform_now
@@ -101,7 +103,7 @@ begin
   raise 'Campaign did not recover' unless campaign.completed_with_errors?
   raise 'Abandoned recipient was resent' unless recipients.first.reload.state == 'unknown'
   raise 'Pending recipients were lost' unless recipients.drop(1).all? { |recipient| recipient.reload.state == 'accepted' }
-  raise 'Duplicate provider call' unless mutex.synchronize { requests.values.all? { |count| count == 1 } && requests.size == 3 }
+  raise 'Duplicate provider call' unless mutex.synchronize { requests.values.all?(1) && requests.size == 3 }
 
   overlap = FactoryBot.create(:campaign, account: account, inbox: channel.inbox, campaign_status: :processing,
                                          audience_snapshotted_at: Time.current, template_params: campaign.template_params)
@@ -112,10 +114,11 @@ begin
   deadline = 60.seconds.from_now
   sleep 0.1 until overlap.reload.completed? || Time.current >= deadline
   raise 'Overlapping jobs did not finish' unless overlap.completed?
-  raise 'Overlapping jobs duplicated a send' unless mutex.synchronize { requests.size == 6 && requests.values.all? { |count| count == 1 } }
+  raise 'Overlapping jobs duplicated a send' unless mutex.synchronize { requests.size == 6 && requests.values.all?(1) }
 
   puts JSON.generate(result: 'PASS', recipients: 6, provider_calls: 6, accepted: 5, unknown: 1,
-                     duplicate_calls: 0, lost_pending: 0, stale_jobs_replayed: 5, overlapping_jobs: 5, critical_job_latency_seconds: normal_latency.round(3),
+                     duplicate_calls: 0, lost_pending: 0, stale_jobs_replayed: 5, overlapping_jobs: 5,
+                     critical_job_latency_seconds: normal_latency.round(3),
                      evidence_directory: scratch, provider: 'loopback fake Meta', redis: 'real', workers: 'real Sidekiq processes')
 ensure
   pids.each do |pid|

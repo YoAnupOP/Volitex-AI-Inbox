@@ -14,6 +14,14 @@
 - Ruby and frontend lint fixes are reviewed separately from application acceptance. No lint/security gate is disabled.
 - The full development/build dependency audit is separate and still reports findings, including the test runner's tinypool dependency. Production audit success is not a clean full-graph audit. Do not run untrusted test/configuration code or treat development tools as a production service.
 
+## Final lint and publication follow-up
+
+Automation ownership actions follow the existing controller-concern pattern; WhatsApp requests share the same existing HTTParty transport, headers, serialization and bounded timeouts. Provider errors normalize string/symbol keys before interpretation. Contact sorting retains its sanitized SQL and ordering. The account/AgentBot/credential Rake tasks are split by responsibility under the same task names. Existing integrated recovery assertions are retained with aggregated failure reporting; capacity fixture setup uses `let` and `before`, with clock cleanup in `after`.
+
+The targeted static Ruby lint run covers eighteen affected files and reports no offenses. This uses the repository's RuboCop/plugin versions in an isolated tooling bundle under local Ruby 3.4.4; required application Ruby 3.4.11 and full-repository checks remain the responsibility of exact-source CI. The public signed Meta callback controller joins the existing public-controller exemption for authenticated-controller inheritance; it retains its signature validation and does not inherit authenticated application callbacks. No application acceptance or security job is disabled.
+
+Image publication now requires **all four** exact-source workflows: non-production candidate, migration compatibility, campaign lifecycle and full CE. Earlier three-gate artifacts do not imply clearance under this stronger gate. New refactors and dependency updates require completed CI and a verified newly published digest before deployment.
+
 ## Security boundaries and remaining work
 
 The [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) lists no patched version as of this check. It remains in build tooling, where repository-controlled patterns are used. Do not compile customer-supplied Tailwind configuration or patterns. Production dependency audit success does not assert that the full development/build dependency graph is vulnerability-free.

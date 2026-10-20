@@ -35,20 +35,22 @@ RSpec.describe 'Production deployment contracts' do # rubocop:disable RSpec/Desc
   end
 
   it 'keeps n8n private and shares only the ordinary Inbox worker and n8n main on the automation bridge' do
-    automation.each_value { |service| expect(service.fetch('ports', [])).to be_empty }
-    expect(automation.dig('n8n-main', 'image')).to eq(automation.dig('n8n-worker', 'image'))
-    expect(automation.dig('n8n-main', 'labels')).to include('traefik.enable=false')
-    expect(automation.dig('n8n-main', 'networks').keys).to contain_exactly('default', 'automation')
-    expect(automation.dig('n8n-main', 'networks', 'automation', 'ipv4_address')).to start_with('${N8N_PRIVATE_IP:?')
-    expect(automation.dig('n8n-main', 'env_file')).to eq('./n8n/runtime-policy.env')
-    expect(automation.dig('n8n-worker', 'env_file')).to eq('./n8n/runtime-policy.env')
-    expect(application.dig('sidekiq', 'networks')).to contain_exactly('default', 'automation')
-    %w[migrate rails campaign-worker].each do |name|
-      expect(application.fetch(name).fetch('networks', [])).not_to include('automation')
-    end
-    %w[n8n-worker n8n-postgres n8n-valkey].each do |name|
-      expect(automation.fetch(name).fetch('labels', [])).to be_empty
-      expect(automation.fetch(name).fetch('networks', {})).not_to have_key('automation')
+    aggregate_failures do
+      automation.each_value { |service| expect(service.fetch('ports', [])).to be_empty }
+      expect(automation.dig('n8n-main', 'image')).to eq(automation.dig('n8n-worker', 'image'))
+      expect(automation.dig('n8n-main', 'labels')).to include('traefik.enable=false')
+      expect(automation.dig('n8n-main', 'networks').keys).to contain_exactly('default', 'automation')
+      expect(automation.dig('n8n-main', 'networks', 'automation', 'ipv4_address')).to start_with('${N8N_PRIVATE_IP:?')
+      expect(automation.dig('n8n-main', 'env_file')).to eq('./n8n/runtime-policy.env')
+      expect(automation.dig('n8n-worker', 'env_file')).to eq('./n8n/runtime-policy.env')
+      expect(application.dig('sidekiq', 'networks')).to contain_exactly('default', 'automation')
+      %w[migrate rails campaign-worker].each do |name|
+        expect(application.fetch(name).fetch('networks', [])).not_to include('automation')
+      end
+      %w[n8n-worker n8n-postgres n8n-valkey].each do |name|
+        expect(automation.fetch(name).fetch('labels', [])).to be_empty
+        expect(automation.fetch(name).fetch('networks', {})).not_to have_key('automation')
+      end
     end
   end
 

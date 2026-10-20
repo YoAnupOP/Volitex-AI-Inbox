@@ -23,12 +23,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
       template: template_body
     }
 
-    response = HTTParty.post(
-      "#{phone_id_path}/messages",
-      headers: api_headers,
-      body: request_body.to_json,
-      **http_timeouts
-    )
+    response = post_message(request_body)
 
     process_response(response, message)
   end
@@ -67,8 +62,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     return true unless whatsapp_channel.provider_config_changed?
 
     phone_response = HTTParty.get("#{business_account_path}/phone_numbers?fields=id&limit=100&access_token=#{config['api_key']}", **http_timeouts)
-    ids = phone_response.parsed_response.is_a?(Hash) ? Array(phone_response.parsed_response['data']) : []
-    return true if phone_response.success? && ids.any? { |number| number['id'] == config['phone_number_id'].to_s }
+    return true if phone_response.success? && matching_phone_number?(phone_response, config['phone_number_id'])
 
     log_transfer_failure('phone_number_id_check', phone_response)
   end
@@ -95,6 +89,15 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   private
+
+  def post_message(body)
+    HTTParty.post("#{phone_id_path}/messages", headers: api_headers, body: body.to_json, **http_timeouts)
+  end
+
+  def matching_phone_number?(response, phone_number_id)
+    ids = response.parsed_response.is_a?(Hash) ? Array(response.parsed_response['data']) : []
+    ids.any? { |number| number['id'] == phone_number_id.to_s }
+  end
 
   # Only saves dropping the embedded_signup source marker are transfer attempts; creation/rotation failures are setup errors. Returns false.
   def log_transfer_failure(check, response)
@@ -127,17 +130,14 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   end
 
   def send_text_message(phone_number, message)
-    response = HTTParty.post(
-      "#{phone_id_path}/messages",
-      headers: api_headers,
-      body: {
+    response = post_message(
+      {
         messaging_product: 'whatsapp',
         context: whatsapp_reply_context(message),
         **recipient_params(phone_number),
         text: { body: message.outgoing_content },
         type: 'text'
-      }.to_json,
-      **http_timeouts
+      }
     )
 
     process_response(response, message)
@@ -148,17 +148,14 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
     normalize_opus_content_type(attachment)
     type = %w[image audio video].include?(attachment.file_type) ? attachment.file_type : 'document'
     type_content = build_attachment_content(type, attachment, message)
-    response = HTTParty.post(
-      "#{phone_id_path}/messages",
-      headers: api_headers,
-      body: {
+    response = post_message(
+      {
         :messaging_product => 'whatsapp',
         :context => whatsapp_reply_context(message),
         **recipient_params(phone_number),
         'type' => type,
         type.to_s => type_content
-      }.to_json,
-      **http_timeouts
+      }
     )
 
     process_response(response, message)
@@ -199,10 +196,7 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   def template_body_parameters(template_info)
     template_body = {
       name: template_info[:name],
-      language: {
-        policy: 'deterministic',
-        code: template_info[:lang_code]
-      }
+      language: { policy: 'deterministic', code: template_info[:lang_code] }
     }
 
     # Enhanced template parameters structure
@@ -245,16 +239,13 @@ class Whatsapp::Providers::WhatsappCloudService < Whatsapp::Providers::BaseServi
   def send_interactive_text_message(phone_number, message)
     payload = create_payload_based_on_items(message)
 
-    response = HTTParty.post(
-      "#{phone_id_path}/messages",
-      headers: api_headers,
-      body: {
+    response = post_message(
+      {
         messaging_product: 'whatsapp',
         **recipient_params(phone_number),
         interactive: payload,
         type: 'interactive'
-      }.to_json,
-      **http_timeouts
+      }
     )
 
     process_response(response, message)

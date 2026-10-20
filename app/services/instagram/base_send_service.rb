@@ -39,7 +39,7 @@ class Instagram::BaseSendService < Base::SendOnChannelService
   end
 
   def replied_message
-    return unless message.content_attributes&.dig('in_reply_to').present?
+    return if message.content_attributes&.dig('in_reply_to').blank?
 
     @replied_message ||= message.conversation.messages.find_by(id: message.content_attributes['in_reply_to'])
   end

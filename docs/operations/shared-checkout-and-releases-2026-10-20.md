@@ -20,11 +20,11 @@ The synthetic node preview was moved to a persistent preview volume and a read-o
 
 ## Release ownership
 
-Master pushes run the existing candidate, migration and campaign gates. The publication workflow listens for successful master gate completions and requires all three latest exact-source workflow runs to be successful. A missing, pending or failed gate prevents publication; a manual dispatch without green gates fails.
+Master pushes run the candidate, migration, campaign and full CE gates. The publication workflow listens for successful master gate completions and requires all four latest exact-source workflow runs to be successful. A missing, pending or failed gate prevents publication; a manual dispatch without green gates fails.
 
 Publication is restricted to this repository's trusted master events or the explicitly authorized manual workflow. It checks out the exact source SHA, serializes publication per SHA, reuses an existing exact-source image, and otherwise builds, verifies production boot/recovery, scans and publishes the same image. Critical/high application scan findings block publication. The registry image's embedded source marker is checked against the selected commit, and an immutable reference is saved in the publication-evidence artifact. Only the current master source may update the convenience `master` image tag. Production deployment must use an immutable digest.
 
-This is image publication only. No VPS deployment, credential installation, client-provider acceptance or unconditional production-readiness claim follows from a successful publication. Baseline full-suite/lint failures documented in earlier readiness reports are not relabeled green by these focused gates.
+This is image publication only. No VPS deployment, credential installation, client-provider acceptance or unconditional production-readiness claim follows from a successful publication. Earlier publication used three focused gates while full CE failures remained documented. The subsequent readiness fix additionally requires full CE success; earlier artifacts do not establish that stronger four-gate clearance.
 
 ## Verification at consolidation
 

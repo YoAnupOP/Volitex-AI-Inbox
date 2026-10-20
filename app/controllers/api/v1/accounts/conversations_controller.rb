@@ -3,6 +3,7 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
   include DateRangeHelper
   include HmacConcern
   include Api::V1::Accounts::QuickMenuSending
+  include Api::V1::Accounts::AutomationOwnershipActions
 
   before_action :conversation, except: [:index, :meta, :search, :create, :filter]
   before_action :inbox, :contact, :contact_inbox, only: [:create]
@@ -128,29 +129,6 @@ class Api::V1::Accounts::ConversationsController < Api::V1::Accounts::BaseContro
     last_incoming_message = @conversation.messages.incoming.last
     last_seen_at = last_incoming_message.created_at - 1.second if last_incoming_message.present?
     update_last_seen_on_conversation(last_seen_at, true)
-  end
-
-  def custom_attributes
-    attributes = params.permit(custom_attributes: {})[:custom_attributes].to_h
-    if attributes.keys.intersect?(Conversations::AutomationOwnershipService::RESERVED_ATTRIBUTE_KEYS)
-      return render json: { error: 'Automation ownership can only be changed with toggle_ai_mode.' }, status: :unprocessable_entity
-    end
-
-    @conversation.custom_attributes = attributes
-    @conversation.save!
-  end
-
-  # This is the only supported ownership transition for the Volitex n8n control plane.
-  def toggle_ai_mode
-    ai_mode = params[:ai_mode].to_s == 'true'
-    ownership = Conversations::AutomationOwnershipService.new(conversation: @conversation, actor: Current.user)
-    ai_mode ? ownership.enable_n8n! : ownership.handoff_to_human!
-
-    render json: {
-      ai_mode: ai_mode,
-      automation_owner: @conversation.reload.custom_attributes['automation_owner'],
-      conversation_id: @conversation.id
-    }
   end
 
   def destroy

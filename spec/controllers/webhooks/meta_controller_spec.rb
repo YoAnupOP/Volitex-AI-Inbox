@@ -42,28 +42,30 @@ RSpec.describe 'Webhooks::MetaController', type: :request do
   end
 
   it 'processes a signed callback, erases channel data, and exposes completion status' do
-    message = create(:message, account: account, inbox: inbox, conversation: conversation, sender: contact)
+    aggregate_failures do
+      message = create(:message, account: account, inbox: inbox, conversation: conversation, sender: contact)
 
-    post '/webhooks/meta/data_deletion', params: { signed_request: signed_request_for(meta_user_id) }
+      post '/webhooks/meta/data_deletion', params: { signed_request: signed_request_for(meta_user_id) }
 
-    expect(response).to have_http_status(:ok)
-    confirmation_code = response.parsed_body.fetch('confirmation_code')
-    expect(response.parsed_body.fetch('url')).to end_with("/data-deletion/#{confirmation_code}")
-    expect(MetaDataDeletionRequest.find_by!(confirmation_code: confirmation_code).status).to eq('pending')
+      expect(response).to have_http_status(:ok)
+      confirmation_code = response.parsed_body.fetch('confirmation_code')
+      expect(response.parsed_body.fetch('url')).to end_with("/data-deletion/#{confirmation_code}")
+      expect(MetaDataDeletionRequest.find_by!(confirmation_code: confirmation_code).status).to eq('pending')
 
-    perform_enqueued_jobs
+      perform_enqueued_jobs
 
-    request = MetaDataDeletionRequest.find_by!(confirmation_code: confirmation_code)
-    expect(request.status).to eq('completed')
-    expect(Message.find_by(id: message.id)).to be_nil
-    expect(Inbox.find_by(id: inbox.id)).to be_nil
-    expect(contact.reload.phone_number).to be_nil
-    expect(contact.email).to be_nil
+      request = MetaDataDeletionRequest.find_by!(confirmation_code: confirmation_code)
+      expect(request.status).to eq('completed')
+      expect(Message.find_by(id: message.id)).to be_nil
+      expect(Inbox.find_by(id: inbox.id)).to be_nil
+      expect(contact.reload.phone_number).to be_nil
+      expect(contact.email).to be_nil
 
-    get "/data-deletion/#{confirmation_code}"
+      get "/data-deletion/#{confirmation_code}"
 
-    expect(response).to have_http_status(:ok)
-    expect(response.parsed_body).to include('confirmation_code' => confirmation_code, 'status' => 'completed')
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include('confirmation_code' => confirmation_code, 'status' => 'completed')
+    end
   end
 
   it 'rejects an invalid signed callback' do

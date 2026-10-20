@@ -19,23 +19,9 @@ class Whatsapp::HealthService
   HTTP_READ_TIMEOUT = 15
   MINIMUM_HEALTH_API_VERSION = 24.0
   PERSISTED_FIELDS = %i[
-    id
-    display_phone_number
-    verified_name
-    name_status
-    quality_rating
-    messaging_limit_tier
-    status
-    account_mode
-    code_verification_status
-    throughput_level
-    last_onboarded_time
-    is_on_biz_app
-    platform_type
-    business_account_id
-    business_account_name
-    business_portfolio_id
-    business_portfolio_name
+    id display_phone_number verified_name name_status quality_rating messaging_limit_tier status account_mode
+    code_verification_status throughput_level last_onboarded_time is_on_biz_app platform_type
+    business_account_id business_account_name business_portfolio_id business_portfolio_name
   ].freeze
   RISKY_QUALITY_RATINGS = %w[YELLOW RED].freeze
   RISKY_STATUSES = %w[BANNED RESTRICTED RATE_LIMITED FLAGGED DISCONNECTED DELETED].freeze

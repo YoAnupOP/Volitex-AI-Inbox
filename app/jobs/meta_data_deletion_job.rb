@@ -37,7 +37,7 @@ class MetaDataDeletionJob < ApplicationJob
       purge_messages!(message_ids)
       CsatSurveyResponse.where(conversation_id: conversation_ids).delete_all
       Conversation.where(id: conversation_ids).destroy_all
-      ContactInbox.where(id: contact_inboxes.select(:id)).destroy_all
+      contact_inboxes.destroy_all
       anonymize_contacts_without_other_inboxes!(contact_ids)
 
       # Destroying the inbox also removes the channel credentials and invokes

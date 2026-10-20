@@ -4,7 +4,7 @@ name: Publish Volitex AI Inbox image
 # This publishes an image; it never deploys to a server.
 on:
   workflow_run:
-    workflows: [Verify non-production candidate, Verify campaign lifecycle, Verify migration compatibility]
+    workflows: [Verify non-production candidate, Verify campaign lifecycle, Verify migration compatibility, Run Chatwoot CE spec]
     types: [completed]
     branches: [master]
   workflow_dispatch:
@@ -46,7 +46,7 @@ jobs:
           gh run list --repo "$GITHUB_REPOSITORY" --commit "$SOURCE_SHA" --limit 100 \
             --json workflowName,conclusion,status,createdAt > "$RUNNER_TEMP/gates.json"
           ready=true
-          for workflow in 'Verify non-production candidate' 'Verify campaign lifecycle' 'Verify migration compatibility'; do
+          for workflow in 'Verify non-production candidate' 'Verify campaign lifecycle' 'Verify migration compatibility' 'Run Chatwoot CE spec'; do
             if ! jq -e --arg workflow "$workflow" \
               '[.[] | select(.workflowName == $workflow)] | sort_by(.createdAt) | last | .status == "completed" and .conclusion == "success"' \
               "$RUNNER_TEMP/gates.json"; then
@@ -55,7 +55,7 @@ jobs:
           done
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           if [[ "$ready" != true ]]; then
-            echo 'Publication waits for all three exact-source gates.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Publication waits for all four exact-source gates.' >> "$GITHUB_STEP_SUMMARY"
             [[ "$EVENT_NAME" != workflow_dispatch ]]
           fi
 
@@ -80,7 +80,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           gh run list --repo "$GITHUB_REPOSITORY" --commit "$SOURCE_SHA" --limit 100 \
             --json workflowName,conclusion,status,createdAt > "$RUNNER_TEMP/gates.json"
-          for workflow in 'Verify non-production candidate' 'Verify campaign lifecycle' 'Verify migration compatibility'; do
+          for workflow in 'Verify non-production candidate' 'Verify campaign lifecycle' 'Verify migration compatibility' 'Run Chatwoot CE spec'; do
             jq -e --arg workflow "$workflow" \
               '[.[] | select(.workflowName == $workflow)] | sort_by(.createdAt) | last | .status == "completed" and .conclusion == "success"' \
               "$RUNNER_TEMP/gates.json"

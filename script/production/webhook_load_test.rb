@@ -55,37 +55,40 @@ end
 def payload_for(channel, tenant, index)
   user_id = "load-test-user-#{tenant}-#{index}"
   message_id = "load-test-message-#{tenant}-#{index}"
+  channel == 'whatsapp' ? whatsapp_payload(tenant, index, user_id, message_id) : instagram_payload(tenant, index, user_id, message_id)
+end
 
-  if channel == 'whatsapp'
-    {
-      object: 'whatsapp_business_account',
-      entry: [{
-        id: "load-test-waba-#{tenant}",
-        changes: [{
-          field: 'messages',
-          value: {
-            metadata: { display_phone_number: tenant, phone_number_id: tenant },
-            contacts: [{ wa_id: user_id, profile: { name: 'Load Test' } }],
-            messages: [{ from: user_id, id: message_id, timestamp: Time.now.to_i.to_s, type: 'text', text: { body: "load test #{index}" } }]
-          }
-        }]
+def whatsapp_payload(tenant, index, user_id, message_id)
+  {
+    object: 'whatsapp_business_account',
+    entry: [{
+      id: "load-test-waba-#{tenant}",
+      changes: [{
+        field: 'messages',
+        value: {
+          metadata: { display_phone_number: tenant, phone_number_id: tenant },
+          contacts: [{ wa_id: user_id, profile: { name: 'Load Test' } }],
+          messages: [{ from: user_id, id: message_id, timestamp: Time.now.to_i.to_s, type: 'text', text: { body: "load test #{index}" } }]
+        }
       }]
-    }
-  else
-    {
-      object: 'instagram',
-      entry: [{
-        id: tenant,
-        time: Time.now.to_i,
-        messaging: [{
-          sender: { id: user_id },
-          recipient: { id: tenant },
-          timestamp: Time.now.to_i,
-          message: { mid: message_id, text: "load test #{index}" }
-        }]
+    }]
+  }
+end
+
+def instagram_payload(tenant, index, user_id, message_id)
+  {
+    object: 'instagram',
+    entry: [{
+      id: tenant,
+      time: Time.now.to_i,
+      messaging: [{
+        sender: { id: user_id },
+        recipient: { id: tenant },
+        timestamp: Time.now.to_i,
+        message: { mid: message_id, text: "load test #{index}" }
       }]
-    }
-  end
+    }]
+  }
 end
 
 requests = []
@@ -112,7 +115,7 @@ requests.each { |request| queue << request }
 results = []
 mutex = Mutex.new
 
-workers = [options[:concurrency], requests.length].min.times.map do
+workers = Array.new([options[:concurrency], requests.length].min) do
   Thread.new do
     loop do
       begin
@@ -143,7 +146,8 @@ workers = [options[:concurrency], requests.length].min.times.map do
 end
 workers.each(&:join)
 
-latencies = results.map { |result| result[:latency_ms] }.sort
+# This standalone stdlib script does not load ActiveSupport's Array#pluck.
+latencies = results.map { |result| result[:latency_ms] } # rubocop:disable Rails/Pluck.sort
 percentile = lambda do |fraction|
   latencies[[((latencies.length - 1) * fraction).round, 0].max]
 end

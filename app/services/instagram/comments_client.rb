@@ -178,8 +178,9 @@ class Instagram::CommentsClient
   def raise_error(response)
     body = response.parsed_response
     error = body.is_a?(Hash) ? body['error'] || body[:error] : nil
-    code = error&.dig('code') || error&.dig(:code)
-    message = error&.dig('message') || error&.dig(:message) || 'Instagram could not complete this request.'
+    error = error&.with_indifferent_access
+    code = error&.dig(:code)
+    message = error&.dig(:message) || 'Instagram could not complete this request.'
     rate_limited = response.code == 429 || RATE_LIMIT_ERROR_CODES.include?(code.to_i)
     status = rate_limited ? :too_many_requests : response.code
 
