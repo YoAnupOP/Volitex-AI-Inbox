@@ -52,7 +52,7 @@ jobs:
             aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
             image --scanners vuln --exit-code 0 \
             --format json --output /out/n8n-vulnerabilities.json "volitex-n8n:$GITHUB_SHA"
-          docker run --rm --network none \
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
             -v "$PWD/script/production/audit_n8n_runtime.mjs:/audit.mjs:ro" \
             -v "$RUNNER_TEMP/n8n-audit:/out" --entrypoint node "volitex-n8n:$GITHUB_SHA" \
             /audit.mjs /out/n8n-vulnerabilities.json /out/source-verification.json /out/security-summary.json "$GITHUB_SHA" "volitex-n8n:$GITHUB_SHA"

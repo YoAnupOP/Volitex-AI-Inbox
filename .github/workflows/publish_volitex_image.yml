@@ -166,7 +166,7 @@ jobs:
             --volume "$RUNNER_TEMP/publication-audit/n8n:/out" \
             aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
             image --scanners vuln --exit-code 0 --format json --output /out/image.json "$image"
-          docker run --rm --network none \
+          docker run --rm --network none --user "$(id -u):$(id -g)" \
             -v "$PWD/script/production/audit_n8n_runtime.mjs:/audit.mjs:ro" \
             -v "$RUNNER_TEMP/publication-audit/n8n:/out" --entrypoint node "$image" \
             /audit.mjs /out/image.json /out/source-verification.json /out/security-summary.json "$SOURCE_SHA" "$image"
