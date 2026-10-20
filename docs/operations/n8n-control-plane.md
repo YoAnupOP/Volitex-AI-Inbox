@@ -2,13 +2,13 @@
 
 Volitex AI Inbox uses a dedicated account-scoped `AgentBot` for n8n. Do not use an administrator or human-agent API token in n8n.
 
-Internal-only proposal: [private AgentBot transport and isolated acceptance](agentbot-private-transport-2026-10-19.md) documents the source-only, operator-bound alternative to the public destination below. It requires an exact account/bot/URL/IP binding through `N8N_AGENT_BOT_TRANSPORTS`, with the global private-network switch false. It is not included in the unchanged published Inbox artifact and has not changed staging. Do not merely point that artifact at a Docker hostname. See the [actual capability inventory](n8n-capabilities-2026-10-19.md) before treating the staging responder as a production workflow.
+The current deployment uses the implemented [private AgentBot transport](agentbot-private-transport-2026-10-19.md). Bind each account/bot/exact webhook URL/reserved private IP in `N8N_AGENT_BOT_TRANSPORTS` and keep `SAFE_FETCH_ALLOW_PRIVATE_NETWORK=false`. Use only the verified application and maintained n8n image references in the release kit; historical source-only statements in older evidence do not supersede a later exact-source publication. See the [current runtime security record](n8n-security-remediation-2026-10-20.md).
 
 ## Provisioning
 
-Run `bundle exec rails 'volitex:create_n8n_agent_bot[ACCOUNT_ID,https://automation.volitexai.tech/webhook/volitex-inbox]'` once per customer account. Copy the API token and signing secret from the authenticated dashboard directly into n8n credentials; do not print them in a shell, place them in a workflow node, or commit them. Attach that bot to each inbox that n8n will automate.
+Run `bundle exec rails 'volitex:create_n8n_agent_bot[ACCOUNT_ID,http://n8n-main:5678/webhook/account-ACCOUNT_ID]'` once per customer account. Copy the API token and signing secret from the authenticated dashboard directly into n8n credentials; do not print them in a shell, place them in a workflow node, or commit them. Reserve the private address, record the newly created bot ID and configure its exact account/bot/URL/IP binding before attaching that bot to an inbox or enabling AI. Use a distinct webhook route for each account.
 
-The destination is the active production webhook workflow on the private n8n queue deployment documented in [`.env.n8n.example`](../../deployment/.env.n8n.example). The Coolify proxy exposes only `n8n-main`; workers are never public endpoints.
+The destination is the active production webhook workflow on the private n8n queue deployment documented in [`.env.n8n.example`](../../deployment/.env.n8n.example). Neither main nor worker has a public router or host-port binding. Only ordinary Inbox Sidekiq reaches main over the dedicated automation bridge. Operator editor access uses the SSH-forward procedure in the production runbook.
 
 ## Inbox webhook authentication
 

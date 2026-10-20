@@ -14,7 +14,7 @@ class CleanupOwnershipTest(unittest.TestCase):
     def test_rejected_network_creation_never_removes_existing_network(self):
         source = subprocess.CompletedProcess([], 0, '0' * 40, '')
         denied = subprocess.CompletedProcess([], 1, '', 'synthetic collision')
-        with patch('sys.argv', [str(HARNESS), '--app-image', 'synthetic:source', '--source-sha', '0' * 40]), \
+        with patch('sys.argv', [str(HARNESS), '--app-image', 'synthetic:source', '--source-sha', '0' * 40, '--n8n-image', 'synthetic:n8n']), \
                 patch('subprocess.run', side_effect=[source, denied]) as calls, contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(RuntimeError):
                 runpy.run_path(str(HARNESS), run_name='__main__')
@@ -25,7 +25,7 @@ class CleanupOwnershipTest(unittest.TestCase):
         source = subprocess.CompletedProcess([], 0, '0' * 40, '')
         created = subprocess.CompletedProcess([], 0, 'synthetic-network', '')
         denied = subprocess.CompletedProcess([], 1, '', 'synthetic network setup failure')
-        with patch('sys.argv', [str(HARNESS), '--app-image', 'synthetic:source', '--source-sha', '0' * 40]), \
+        with patch('sys.argv', [str(HARNESS), '--app-image', 'synthetic:source', '--source-sha', '0' * 40, '--n8n-image', 'synthetic:n8n']), \
                 patch('subprocess.run', side_effect=[source, created, denied, created]) as calls, contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(RuntimeError):
                 runpy.run_path(str(HARNESS), run_name='__main__')
