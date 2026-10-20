@@ -2,7 +2,7 @@ name: Verify non-production candidate
 
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus, 'codex/upstream-maintenance-*', 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
+    branches: [master, codex/whatsapp-interactive-quick-menus, 'codex/upstream-maintenance-*', 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
   workflow_dispatch:
 
 permissions:

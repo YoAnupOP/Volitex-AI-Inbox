@@ -2,7 +2,7 @@ name: Verify migration compatibility
 
 on:
   push:
-    branches: [codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
+    branches: [master, codex/whatsapp-interactive-quick-menus, 'codex/integrated-release-candidate-*', 'codex/pre-client-readiness-*']
   workflow_dispatch:
 
 permissions:

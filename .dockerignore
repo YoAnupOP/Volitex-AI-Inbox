@@ -6,6 +6,10 @@ config/master.key
 config/credentials/*.key
 .env
 .env.*
+**/.env
+**/.env.*
+VolitexAI-Context.md
+.volitex-local*.yml
 docker-compose.*
 docker/Dockerfile
 docker/dockerfiles

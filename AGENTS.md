@@ -60,12 +60,16 @@
 - Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
 - Specs in parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting raised errors
 
-## Codex Worktree Workflow
+## Codex Shared Checkout and Release Workflow
 
-- Use a separate git worktree + branch per task to keep changes isolated.
-- Keep Codex-specific local setup under `.codex/` and use `Procfile.worktree` for worktree process orchestration.
-- The setup workflow in `.codex/environments/environment.toml` should dynamically generate per-worktree DB/port values (Rails, Vite, Redis DB index) to avoid collisions.
-- Start each worktree with its own Overmind socket/title so multiple instances can run at the same time.
+- The founder explicitly requests one shared checkout across all Codex chats: `C:/Users/Anup/Desktop/Volitex-AI-Inbox`, on `master`.
+- Reuse that checkout. Do not create another worktree or task branch unless the user explicitly requests one. If a chat starts in an older worktree, inspect its pending work and continue from the canonical checkout without discarding anything.
+- Serialize changes across chats. Inspect Git status before editing; do not overwrite, stash, reset, or commit another active chat's unfinished changes. Wait for an active writer to finish before changing shared files or Git state.
+- Before writing, atomically create `.codex/write.lock/` and record the owning chat and timestamp in `owner.json`. Reuse only your own lock; inspect the owning chat before clearing a stale lock, and never clear an active writer's lock. Release your lock when the task ends. Read-only chats do not need the lock.
+- Handle Git and release operations for the nontechnical founder. Commit reviewed task changes and normally push `master` when authorized work is complete; do not leave completed work stranded on a task branch. Never force-push `master`.
+- Required candidate, migration, and campaign CI runs gate image publication for the exact commit. Successful master gates automatically publish the checked application image; failures block publication. Do not bypass gates or describe a queued release as published.
+- Deployments use the verified immutable image digest. The `master` image tag is a convenience pointer, not a production pin. Image publication does not deploy to a server or establish live client readiness.
+- Keep private local configuration and recovery snapshots outside tracked source. Never commit `.env`, credentials, or founder context files containing private information.
 
 ## Commit Messages
 

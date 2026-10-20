@@ -110,3 +110,5 @@ CLAUDE.local.md
 .pnpm-store/*
 local/
 Procfile.worktree
+__pycache__/
+/VolitexAI-Context.md
