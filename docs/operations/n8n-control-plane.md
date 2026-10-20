@@ -1,6 +1,6 @@
 # n8n Inbox control plane
 
-Volitex uses a dedicated account-scoped `AgentBot` for n8n. Do not use an administrator or human-agent API token in n8n.
+Volitex AI Inbox uses a dedicated account-scoped `AgentBot` for n8n. Do not use an administrator or human-agent API token in n8n.
 
 Internal-only proposal: [private AgentBot transport and isolated acceptance](agentbot-private-transport-2026-10-19.md) documents the source-only, operator-bound alternative to the public destination below. It requires an exact account/bot/URL/IP binding through `N8N_AGENT_BOT_TRANSPORTS`, with the global private-network switch false. It is not included in the unchanged published Inbox artifact and has not changed staging. Do not merely point that artifact at a Docker hostname. See the [actual capability inventory](n8n-capabilities-2026-10-19.md) before treating the staging responder as a production workflow.
 
@@ -28,7 +28,7 @@ n8n must verify the signature against the exact unmodified request body, reject 
 2. Inbox delivers events to n8n asynchronously with the authenticated delivery ID and HMAC signature above. n8n verifies both before processing.
 3. n8n may create an outgoing message only while it is the assigned owner. It must send a unique `automation_delivery_id` for every attempted reply. Retries with the same ID return the original message rather than sending another one.
 4. A human takes over with the same toggle. The server atomically sets `automation_owner=human`, removes the bot assignment, and only then permits a human reply.
-5. If the Inbox-to-n8n webhook times out or finally fails after retry, Volitex revokes bot ownership and opens the conversation for human follow-up. n8n must never retry a reply after receiving a non-success response from the Inbox API.
+5. If the Inbox-to-n8n webhook times out or finally fails after retry, Volitex AI Inbox revokes bot ownership and opens the conversation for human follow-up. n8n must never retry a reply after receiving a non-success response from the Inbox API.
 
 The n8n message request is `POST /api/v1/accounts/:account_id/conversations/:conversation_id/messages` with the `api_access_token` request header set to the dedicated AgentBot token and JSON containing `content`, `message_type: "outgoing"`, and `automation_delivery_id`. A 200 response for an already-used delivery ID is success and must not cause another send.
 
@@ -38,7 +38,7 @@ An n8n-to-Inbox outgoing REST API failure is an automation/API failure: handle i
 
 `deployment/n8n/inbox-reply.workflow.json` uses the existing AgentBot outgoing webhook, not an additional account webhook. The Compose file loads the reviewed `deployment/n8n/custom` credential and node files on both main and worker. No npm package installation or secret-bearing workflow parameters are needed.
 
-Import the workflow inactive. Create the `Volitex account AgentBot` credential in n8n's encrypted credential store, set its trusted Inbox URL, account/inbox/bot IDs, account-scoped API token and signing secret, and select that credential in both custom nodes. The committed credential reference is a staging identifier, not a credential value. Import/publish with the existing n8n CLI or authenticated editor, then restart main/worker after CLI publication. Never export decrypted credentials into source control. Back up n8n PostgreSQL and preserve `N8N_ENCRYPTION_KEY` before changes.
+Import the workflow inactive. Create the `Volitex AI Inbox account AgentBot` credential in n8n's encrypted credential store, set its trusted Inbox URL, account/inbox/bot IDs, account-scoped API token and signing secret, and select that credential in both custom nodes. The committed credential reference is a staging identifier, not a credential value. Import/publish with the existing n8n CLI or authenticated editor, then restart main/worker after CLI publication. Never export decrypted credentials into source control. Back up n8n PostgreSQL and preserve `N8N_ENCRYPTION_KEY` before changes.
 
 Sequence: raw-body Webhook → Validate webhook → Respond to Webhook → Send reply. Validation authenticates exact bytes, applies a five-minute timestamp bound, and checks credential-bound account/inbox context. Invalid authentication returns 401; foreign context returns 403. The signed receiver acknowledges valid events before calling the Inbox API, so subsequent API failure cannot become an Inbox webhook-failure handoff signal.
 

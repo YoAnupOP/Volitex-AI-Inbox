@@ -1,4 +1,4 @@
-name: Publish Volitex Inbox image
+name: Publish Volitex AI Inbox image
 
 # The founder authorizes automatic publication of verified master commits.
 # This publishes an image; it never deploys to a server.

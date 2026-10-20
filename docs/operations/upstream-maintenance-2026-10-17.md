@@ -37,7 +37,7 @@ Captain-specific UI parts of #14050 and Enterprise feature gates were not ported
 
 The existing GHSA-to-Linear workflow reads **this repository's private/triage advisories**, not published upstream Chatwoot advisories. Its workflow API returns 404 on the current default branch. It is not evidence of active upstream monitoring. No Dependabot/Renovate configuration was found. Default-branch alerts do not substitute for scanning the actual release image/source.
 
-Before establishing the long-term release branch, review old publishing workflows: some publish on `develop`/`master`, while Volitex publication runs on `master`. Do not change the default branch or merge there without explicitly deciding the release branch and disabling/restricting unintended publishers. This report did not change those settings or publish anything.
+Before establishing the long-term release branch, review old publishing workflows: some publish on `develop`/`master`, while Volitex AI Inbox publication runs on `master`. Do not change the default branch or merge there without explicitly deciding the release branch and disabling/restricting unintended publishers. This report did not change those settings or publish anything.
 
 Maintenance procedure (weekly and before each release):
 
@@ -47,7 +47,7 @@ gh api repos/chatwoot/chatwoot/security-advisories --jq '.[]|{ghsa_id,severity,v
 git fetch --no-tags upstream refs/tags/<reviewed-stable-tag>:refs/remotes/upstream/<reviewed-stable-tag>
 ```
 
-Review version ranges **and actual patched code**: this fork already carries some later fixes and misses others. Inventory relevant security/provider/migration changes, backport in a dedicated branch, preserve local tenant/webhook/credential/campaign behavior, run focused regressions and build/scan/boot the exact new image. No automatic production updates. Upstream 4.18 also changes campaign analytics and BSUID-only handling; these are not claimed ported here. Compare against the Volitex recipient ledger and sending lifecycle before adoption; current marketing eligibility requires a phone destination. Pin the accepted artifact, test backup/restore and deploy with rollback evidence.
+Review version ranges **and actual patched code**: this fork already carries some later fixes and misses others. Inventory relevant security/provider/migration changes, backport in a dedicated branch, preserve local tenant/webhook/credential/campaign behavior, run focused regressions and build/scan/boot the exact new image. No automatic production updates. Upstream 4.18 also changes campaign analytics and BSUID-only handling; these are not claimed ported here. Compare against the Volitex AI Inbox recipient ledger and sending lifecycle before adoption; current marketing eligibility requires a phone destination. Pin the accepted artifact, test backup/restore and deploy with rollback evidence.
 
 ## Launch impact
 

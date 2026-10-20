@@ -1,7 +1,7 @@
 class VolitexInbox {
   constructor() {
     this.name = 'volitexInbox';
-    this.displayName = 'Volitex account AgentBot';
+    this.displayName = 'Volitex AI Inbox account AgentBot';
     this.properties = [
       {
         displayName: 'Inbox URL',

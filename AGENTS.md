@@ -119,4 +119,5 @@ Practical checklist for any change impacting core logic or public APIs
 
 ## Branding / White-labeling note
 
+- The product name is **Volitex AI Inbox**. Use the full name in product labels, workflow titles and operational documentation. Preserve existing internal identifiers, repository paths, domains and API contracts.
 - For user-facing strings that currently contain "Chatwoot" but should adapt to branded/self-hosted installs, prefer applying `replaceInstallationName` from `shared/composables/useBranding` in the UI layer (for example tooltip and suggestion labels) instead of adding hardcoded brand-specific copy.

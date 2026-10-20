@@ -1,6 +1,6 @@
 # Staging webhook load test
 
-This harness measures acknowledgement latency and HTTP error rate against an isolated staging deployment. It does not produce a safe production capacity number and refuses the production Volitex hostnames unless explicitly overridden.
+This harness measures acknowledgement latency and HTTP error rate against an isolated staging deployment. It does not produce a safe production capacity number and refuses the production Volitex AI Inbox hostnames unless explicitly overridden.
 
 Use test WhatsApp phone-number IDs or Instagram account IDs that already exist in the staging database. The app secret is read from an environment variable so it does not appear in shell history or process arguments.
 

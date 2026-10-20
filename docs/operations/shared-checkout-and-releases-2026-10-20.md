@@ -29,3 +29,15 @@ This is image publication only. No VPS deployment, credential installation, clie
 ## Verification at consolidation
 
 Git confirms one registered checkout and preserved archive refs. The workflow YAML and shell syntax are inspected before commit. Existing application acceptance/security evidence remains in the readiness reports. The new master workflow run and registry publication must be checked after push; queued/running jobs are not reported as published images.
+
+## Publication confirmed — October 20
+
+The repository default branch was still `develop`, so the publisher's new `workflow_run` trigger on master was not being loaded from the default branch. The default branch is now `master`. The first publication was explicitly dispatched after all three exact-source gates passed.
+
+[Publication run 39383998421](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39383998421) completed successfully for source `a807ca9e159027f5857f21ed195d1dd92a5cb637`. It built, verified, scanned and pushed the application, then checked the registry image's embedded source marker. Verified immutable reference:
+
+```text
+ghcr.io/yoanupop/volitex-ai-inbox@sha256:e43de8261c311ca31eea2ba656fba6b62643f846cacdea9540090677c68d42f6
+```
+
+This confirms publication of that source, not later naming edits. Full CE CI remains failed. The restricted n8n profile retains the dependency findings recorded in its assessment; the application's publication scan does not scan or clear the separate n8n image. Actual KVM deployment, complete off-server restore, reboot/recovery, alert delivery, capacity measurement and client calendar/CRM/channel acceptance remain outstanding. A single KVM remains a shared outage domain with no automatic high availability.

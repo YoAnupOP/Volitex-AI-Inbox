@@ -179,13 +179,13 @@ async function processEvent(
 class VolitexReply {
   constructor() {
     this.description = {
-      displayName: 'Volitex authenticated reply',
+      displayName: 'Volitex AI Inbox authenticated reply',
       name: 'volitexReply',
       group: ['transform'],
       version: 1,
       description:
         'Verify Inbox HMAC and tenant context, then reply through its assigned AgentBot',
-      defaults: { name: 'Volitex authenticated reply' },
+      defaults: { name: 'Volitex AI Inbox authenticated reply' },
       inputs: ['main'],
       outputs: ['main', 'main'],
       outputNames: ['Authorized / Result', 'Rejected'],
@@ -270,7 +270,7 @@ class VolitexReply {
       response.statusCode >= 400 || response.status === 'inbox_api_rejected'
         ? 'warn'
         : 'info';
-    this.logger[logLevel]('Volitex Inbox automation', {
+    this.logger[logLevel]('Volitex AI Inbox automation', {
       executionId: this.getExecutionId(),
       accountId: credentials.accountId,
       ...response,

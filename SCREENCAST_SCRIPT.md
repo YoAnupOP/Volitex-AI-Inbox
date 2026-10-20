@@ -3,14 +3,14 @@
 > **Status:** Final pre-submission script, aligned to a code-verified audit of the deployed app.
 > **Meta rule:** ONE video per permission. Do NOT combine permissions in one video. Five clips, 45–90 seconds each.
 > **Recording:** 1080p, English UI, narrate slowly in English. Show the Volitex AI Inbox UI (https://inbox.volitexai.tech) AND the native WhatsApp/Instagram client side by side where required.
-> **Do NOT say:** "should work", "can be used to", hypotheticals. Do NOT show n8n/Groq/AI automation/internal code. Do NOT imply Volitex is a Meta Business Partner / Tech Provider / Solution Partner (App Review approval grants none of those — separate programs).
+> **Do NOT say:** "should work", "can be used to", hypotheticals. Do NOT show n8n/Groq/AI automation/internal code. Do NOT imply Volitex AI Inbox is a Meta Business Partner / Tech Provider / Solution Partner (App Review approval grants none of those — separate programs).
 
 ---
 
 ## PREREQUISITES (all must be true before recording)
 
 - [ ] **BLOCKER FIX SHIPPED:** Instagram inbox settings page shows a read-only **Instagram Account ID** field next to the username/inbox name on `inbox.volitexai.tech` (data source: `inbox.instagram_id`, already stored in DB and returned by the inbox API — a UI field must render it). Verify it is visible in production before recording Video 3.
-- [ ] Heroku app loads over HTTPS with no warnings; Volitex branding only (no Chatwoot strings); language set to English; bookmarks bar hidden; zoom 100%.
+- [ ] Heroku app loads over HTTPS with no warnings; Volitex AI Inbox branding only (no Chatwoot strings); language set to English; bookmarks bar hidden; zoom 100%.
 - [ ] WhatsApp inbox connected via manual setup; webhook verified (green) in Meta dashboard; message delivery tested end-to-end recently.
 - [ ] WhatsApp business-initiated send (sidebar compose → template) rehearsed successfully. **If it fails rehearsal, cut Video 1 Part 2 — receive + reply alone satisfies the requirement.**
 - [ ] WhatsApp templates synced at least once (Settings → Inboxes → WhatsApp inbox → Configuration → Sync Templates) so the template picker is populated.
@@ -19,7 +19,7 @@
 - [ ] Instagram OAuth login flow rehearsed so the PERMISSION GRANT SCREEN actually appears during recording. Reauthorize of an already-authorized account may skip the grant screen — use a fresh IG Business account connection, or first remove the app from the IG account's Facebook Settings → "Apps and websites" so the consent screen reappears. If V3 captures the full grant, V4/V5 may use a short reauthorize with narration referring back to V3.
 - [ ] IG post with at least two public comments from a test account (for Video 5).
 - [ ] A second phone/account ready as the "customer" (WhatsApp) and a personal IG account ready as the "commenting customer".
-- [ ] Logged into Volitex as an agent; all notifications muted; close unrelated tabs/windows.
+- [ ] Logged into Volitex AI Inbox as an agent; all notifications muted; close unrelated tabs/windows.
 - [ ] Meta App Dashboard session logged in (needed for videos 2 and 4: WhatsApp Manager, API Integration Helper).
 
 ---
@@ -31,8 +31,8 @@
 
 **Actions**
 1. Customer phone: send a WhatsApp message to the business number ("Hi, I'm interested in your service").
-2. Volitex: message appears in real time in the WhatsApp inbox conversation list. Open it.
-3. Volitex: agent clicks "Assign to me", types a normal reply ("Thanks for reaching out — how can we help?"), sends.
+2. Volitex AI Inbox: message appears in real time in the WhatsApp inbox conversation list. Open it.
+3. Volitex AI Inbox: agent clicks "Assign to me", types a normal reply ("Thanks for reaching out — how can we help?"), sends.
 4. Customer phone: reply arrives and displays in WhatsApp.
 5. *(Optional — only if rehearsal passed)* Sidebar compose button (pen icon) → select customer → select WhatsApp inbox → choose an approved template → send. Customer phone: template message receives.
 
@@ -43,8 +43,8 @@
 > "Volitex AI Inbox uses whatsapp_business_messaging to receive incoming WhatsApp messages from customers in real time and to send human-agent replies back to customers on WhatsApp. Volitex AI Inbox is our client-facing inbox platform that manages WhatsApp Business conversations for onboarded businesses. Messaging is performed through the WhatsApp Cloud API using the connected business phone number."
 
 **Evidence the reviewer must see**
-- Incoming message visible in Volitex, then on the phone.
-- Agent typing and sending inside Volitex.
+- Incoming message visible in Volitex AI Inbox, then on the phone.
+- Agent typing and sending inside Volitex AI Inbox.
 - Phone screen showing the received reply.
 
 ---
@@ -52,13 +52,13 @@
 ## VIDEO 2 — whatsapp_business_management (~60 sec)
 
 **Requirement:** Demonstrate creating a message template **on the app or the WhatsApp Manager**.
-**Route:** Create the template in the WhatsApp Manager (explicitly allowed), then show Volitex managing the WABA assets and syncing the template.
+**Route:** Create the template in the WhatsApp Manager (explicitly allowed), then show Volitex AI Inbox managing the WABA assets and syncing the template.
 
 **Actions**
 1. business.facebook.com → WhatsApp Manager → Message Templates → **Create template**: set name, category, language, body. Submit. Show it in the template list.
-2. Volitex: Settings → Inboxes → [WhatsApp inbox] → open the **Account Health** tab: show Phone Number, Phone Number ID, Business Account ID, status/quality fields (these are the managed WABA assets).
-3. Volitex: **Configuration** tab → click **Sync Templates**.
-4. Volitex: open a WhatsApp conversation → template icon in the reply box → the just-synced template appears in the picker.
+2. Volitex AI Inbox: Settings → Inboxes → [WhatsApp inbox] → open the **Account Health** tab: show Phone Number, Phone Number ID, Business Account ID, status/quality fields (these are the managed WABA assets).
+3. Volitex AI Inbox: **Configuration** tab → click **Sync Templates**.
+4. Volitex AI Inbox: open a WhatsApp conversation → template icon in the reply box → the just-synced template appears in the picker.
 
 **Narration**
 > "We create a message template in the WhatsApp Manager. In Volitex AI Inbox we manage the connected WhatsApp Business Account — here you can see the phone number, the phone number ID, and the business account ID — and we sync the approved message templates. The synced template is immediately available for our agents to use in conversations. This uses the whatsapp_business_management permission."
@@ -68,7 +68,7 @@
 
 **Evidence the reviewer must see**
 - Template creation form and submission in WhatsApp Manager.
-- Asset fields (phone number ID, business account ID) rendered in Volitex.
+- Asset fields (phone number ID, business account ID) rendered in Volitex AI Inbox.
 - Sync Templates click → success toast → template visible in the conversation template picker.
 
 ---
@@ -80,10 +80,10 @@
 **Actions**
 
 *Part 1 — Login & grant (0–40s)*
-1. Volitex: Settings → Inboxes → Add Inbox → Instagram → **Connect Instagram** (use a spare business IG account, or: open the existing IG inbox → Reauthorize, which shows the same full login + grant screens without deleting conversations).
+1. Volitex AI Inbox: Settings → Inboxes → Add Inbox → Instagram → **Connect Instagram** (use a spare business IG account, or: open the existing IG inbox → Reauthorize, which shows the same full login + grant screens without deleting conversations).
 2. Instagram/Facebook login screen: log in.
 3. Permission grant screen: show the requested permissions, click Continue/Allow.
-4. Redirect back to Volitex: inbox created successfully.
+4. Redirect back to Volitex AI Inbox: inbox created successfully.
 
 *Part 2 — Metadata (40–75s)*
 5. Open the newly connected Instagram inbox (inbox list + inbox settings).
@@ -114,8 +114,8 @@
 
 *Part 2 — Receive + send DM (15–55s)*
 2. Personal IG account: send a DM to the business account.
-3. Volitex: DM appears in the Instagram inbox conversation.
-4. Volitex: agent replies "Thanks for reaching out — how can we help?".
+3. Volitex AI Inbox: DM appears in the Instagram inbox conversation.
+4. Volitex AI Inbox: agent replies "Thanks for reaching out — how can we help?".
 5. Personal IG account (Instagram app on phone): reply visible in the Instagram inbox.
 
 *Part 3 — cURL via API Integration Helper (55–90s)*
@@ -130,13 +130,13 @@
 > "Volitex AI Inbox uses instagram_business_manage_messages to view, manage, and respond to Instagram direct messages. Our platform receives incoming DMs in real time through Instagram webhooks and sends agent replies through the Instagram Graph API messaging endpoint — the same request shown as a cURL command generated from Meta's API Integration Helper."
 
 **Evidence the reviewer must see**
-- Grant screen showing the permission; DM visible in Volitex; agent reply sent; phone showing the reply in the IG inbox; the generated cURL on screen.
+- Grant screen showing the permission; DM visible in Volitex AI Inbox; agent reply sent; phone showing the reply in the IG inbox; the generated cURL on screen.
 
 ---
 
 ## VIDEO 5 — instagram_business_manage_comments (~90 sec)
 
-**Requirement:** Login/permission grant; create a new comment; update an existing comment; delete a comment; show each result both in Volitex and the native Instagram app.
+**Requirement:** Login/permission grant; create a new comment; update an existing comment; delete a comment; show each result both in Volitex AI Inbox and the native Instagram app.
 
 > **API fact (be precise, do not overclaim):** The Instagram API offers create, reply, delete, and hide/unhide for comments. There is **no text-edit endpoint**. The supported "update an existing comment" operation is toggling visibility via the update endpoint (`hide=true/false`). Do NOT narrate delete + recreate as an update.
 
@@ -147,18 +147,18 @@
 
 *Part 2 — Create (10–35s)*
 2. Personal IG account: post a new comment on one of the business posts.
-3. Volitex: open the Instagram inbox → **Comments** workspace (in the Instagram conversation) or Settings → Inboxes → IG inbox → **Comments** tab. The new comment appears under the media item. The same event also appears in the conversation list with the **"Instagram Comment"** badge.
-4. Volitex: reply to the comment from the Comments Manager.
+3. Volitex AI Inbox: open the Instagram inbox → **Comments** workspace (in the Instagram conversation) or Settings → Inboxes → IG inbox → **Comments** tab. The new comment appears under the media item. The same event also appears in the conversation list with the **"Instagram Comment"** badge.
+4. Volitex AI Inbox: reply to the comment from the Comments Manager.
 5. Native Instagram app: open the post → the reply is visible under the comment.
 
 *Part 3 — Update (35–60s)*
 6. Narrate: "The Instagram API supports updating an existing comment through its update operation — toggling whether the comment is hidden."
-7. Volitex: click **Hide** on an existing comment. Show the comment marked hidden in Volitex.
+7. Volitex AI Inbox: click **Hide** on an existing comment. Show the comment marked hidden in Volitex AI Inbox.
 8. Native Instagram app: open the post → the comment is no longer publicly displayed.
-9. Volitex: click **Unhide** → native app shows it back.
+9. Volitex AI Inbox: click **Unhide** → native app shows it back.
 
 *Part 4 — Delete (60–90s)*
-10. Volitex: click **Delete** on a comment → it disappears from the Comments Manager (and optionally from the conversation's comment thread).
+10. Volitex AI Inbox: click **Delete** on a comment → it disappears from the Comments Manager (and optionally from the conversation's comment thread).
 11. Native Instagram app: open the post → the comment is gone.
 
 **Narration**
@@ -170,7 +170,7 @@
 > **Implementation note for the review team:** the Instagram API does not provide a text-edit operation for comments; the update operation our platform demonstrates is the API-supported visibility update (hide/unhide).
 
 **Evidence the reviewer must see**
-- Grant screen; comment appearing in Volitex (Manager + badge); reply sent and visible on the native post; hide → hidden in native app → unhide → back; delete → removed in native app.
+- Grant screen; comment appearing in Volitex AI Inbox (Manager + badge); reply sent and visible on the native post; hide → hidden in native app → unhide → back; delete → removed in native app.
 
 ---
 
