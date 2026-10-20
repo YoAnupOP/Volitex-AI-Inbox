@@ -1,3 +1,8 @@
 # Shell scripts run by Linux containers and production tooling must use LF.
 *.sh text eol=lf
 /docker/entrypoints/helpers/pg_database_url.rb text eol=lf
+
+# Keep Ruby and frontend source consistent across Windows and Linux CI.
+*.rb text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
