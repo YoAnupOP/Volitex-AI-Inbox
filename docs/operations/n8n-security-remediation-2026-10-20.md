@@ -18,6 +18,14 @@ The final local full-acceptance run and remote exact-source gates are separate f
 
 Residual lower-severity scope: MongoDB/Redis LangChain, Markdown and related SDK/node capabilities remain outside the approved node registry. The core flatted-data reader uses the patched Assembler and plain streaming JSON parser; it does not use JSONC parsing or stream-json pick/ignore/filter/replace filters implicated by the other two stream-json advisories. Element Plus remains an operator-editor dependency; no arbitrary untrusted link/markdown workflow capability is approved. These facts are limits of this restricted profile, not proof that every bundled frontend or optional node is vulnerability-free. All findings remain in scan artifacts and upgrades still require review.
 
+## Database/queue image follow-up
+
+The broader n8n stack audit also found outdated Debian companion images: PostgreSQL had 2 critical/89 high and Valkey had 3 critical/56 high occurrences. These are package findings, including helper binaries, not evidence of a demonstrated live database exploit. The latest official PostgreSQL Alpine image still bundled an obsolete Go-based gosu helper. The maintained companion recipes now use official PostgreSQL 17.11 and Valkey 8.1.10 Alpine bases, apply the available zlib patch and use Alpine's C su-exec for PostgreSQL's fixed user-drop command. Local complete scans of both final companion images report **zero findings at every severity** against the same October 20 database. No suppression is used.
+
+The release pipeline now builds, source-marks, scans and archives both companion images alongside n8n, requires full acceptance, and publishes them only after all exact-source gates pass. The full harness performs real old-Debian-to-fresh-cluster PostgreSQL logical restore and same-major Valkey AOF-state migration before authenticated replies, queue recovery, human takeover and old-application/key restoration. Production and candidate n8n custom extension code is also baked into the immutable image and checked by exact source hashes; only the legacy migration baseline mounts extension source.
+
+The recipe and [migration boundary](../../deployment/n8n/hardened/README.md) supersede the old companion pins. Never change an existing PostgreSQL data volume's image from Debian to Alpine in place. New KVM deployments use fresh volumes. Final exact-source CI/publication evidence remains the adoption gate; local scan summaries and earlier application-only passes do not substitute for it.
+
 ## Historical stock-image assessment
 
 ## Release remains blocked

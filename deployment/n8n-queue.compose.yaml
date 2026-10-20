@@ -123,7 +123,6 @@ services:
         ipv4_address: ${N8N_PRIVATE_IP:?Reserve a private n8n-main IP for the AgentBot transport}
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./n8n/custom:/opt/volitex/n8n-custom:ro
     depends_on:
       n8n-postgres:
         condition: service_healthy
@@ -138,8 +137,6 @@ services:
   n8n-worker:
     <<: *n8n
     command: ['worker', '--concurrency=${N8N_WORKER_CONCURRENCY:?Set N8N_WORKER_CONCURRENCY}']
-    volumes:
-      - ./n8n/custom:/opt/volitex/n8n-custom:ro
     depends_on:
       n8n-postgres:
         condition: service_healthy

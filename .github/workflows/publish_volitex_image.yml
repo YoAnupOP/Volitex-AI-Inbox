@@ -91,6 +91,8 @@ jobs:
           owner="$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
           echo "name=ghcr.io/${owner}/volitex-ai-inbox" >> "$GITHUB_OUTPUT"
           echo "n8n_name=ghcr.io/${owner}/volitex-ai-n8n" >> "$GITHUB_OUTPUT"
+          echo "postgres_name=ghcr.io/${owner}/volitex-ai-n8n-postgres" >> "$GITHUB_OUTPUT"
+          echo "valkey_name=ghcr.io/${owner}/volitex-ai-n8n-valkey" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -170,6 +172,17 @@ jobs:
             -v "$PWD/script/production/audit_n8n_runtime.mjs:/audit.mjs:ro" \
             -v "$RUNNER_TEMP/publication-audit/n8n:/out" --entrypoint node "$image" \
             /audit.mjs /out/image.json /out/source-verification.json /out/security-summary.json "$SOURCE_SHA" "$image"
+          for service in postgres valkey; do
+            image="volitex-n8n-$service:$SOURCE_SHA"
+            out="$RUNNER_TEMP/publication-audit/n8n-$service"
+            mkdir -p "$out"
+            test "$(docker run --rm --network none --entrypoint cat "$image" "/opt/volitex/$service-source-sha")" = "$SOURCE_SHA"
+            docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro --volume "$out:/out" \
+              aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+              image --scanners vuln --exit-code 0 --format json --output /out/image.json "$image"
+            jq -e --arg image "$image" '.ArtifactName == $image' "$out/image.json"
+            jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$out/image.json"
+          done
       - name: Publish the tested image without rebuilding
         if: steps.existing.outputs.exists == 'false'
         env:
@@ -177,19 +190,28 @@ jobs:
           NAME: ${{ steps.image-name.outputs.name }}
         run: |
           docker push "$IMAGE"
-      - name: Publish the checked n8n image without rebuilding
+      - name: Publish the checked n8n stack without rebuilding
         env:
           SOURCE_SHA: ${{ needs.gates.outputs.source_sha }}
-          NAME: ${{ steps.image-name.outputs.n8n_name }}
+          N8N_NAME: ${{ steps.image-name.outputs.n8n_name }}
+          POSTGRES_NAME: ${{ steps.image-name.outputs.postgres_name }}
+          VALKEY_NAME: ${{ steps.image-name.outputs.valkey_name }}
         run: |
-          docker tag "volitex-n8n:$SOURCE_SHA" "$NAME:$SOURCE_SHA"
-          docker push "$NAME:$SOURCE_SHA"
-          digest="$(docker buildx imagetools inspect "$NAME:$SOURCE_SHA" --format '{{.Manifest.Digest}}')"
-          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
-          test "$(docker run --rm --network none --entrypoint cat "$NAME@$digest" /opt/volitex/security/source-sha)" = "$SOURCE_SHA"
-          echo "$NAME@$digest" | tee "$RUNNER_TEMP/publication-audit/n8n/immutable-reference.txt"
-          echo "n8n source: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
-          cat "$RUNNER_TEMP/publication-audit/n8n/immutable-reference.txt" >> "$GITHUB_STEP_SUMMARY"
+          for service in n8n n8n-postgres n8n-valkey; do
+            case "$service" in
+              n8n) name="$N8N_NAME"; marker=/opt/volitex/security/source-sha ;;
+              n8n-postgres) name="$POSTGRES_NAME"; marker=/opt/volitex/postgres-source-sha ;;
+              n8n-valkey) name="$VALKEY_NAME"; marker=/opt/volitex/valkey-source-sha ;;
+            esac
+            docker tag "volitex-$service:$SOURCE_SHA" "$name:$SOURCE_SHA"
+            docker push "$name:$SOURCE_SHA"
+            digest="$(docker buildx imagetools inspect "$name:$SOURCE_SHA" --format '{{.Manifest.Digest}}')"
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            test "$(docker run --rm --network none --entrypoint cat "$name@$digest" "$marker")" = "$SOURCE_SHA"
+            echo "$name@$digest" | tee "$RUNNER_TEMP/publication-audit/$service/immutable-reference.txt"
+            echo "$service source: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/publication-audit/$service/immutable-reference.txt" >> "$GITHUB_STEP_SUMMARY"
+          done
       - name: Verify registry source and record the immutable image
         env:
           IMAGE: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}

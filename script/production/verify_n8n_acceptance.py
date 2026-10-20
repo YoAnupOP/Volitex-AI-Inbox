@@ -22,6 +22,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app-image', required=True)
 parser.add_argument('--source-sha', required=True)
 parser.add_argument('--n8n-image', required=True)
+parser.add_argument('--n8n-postgres-image', required=True)
+parser.add_argument('--n8n-valkey-image', required=True)
 args = parser.parse_args()
 APP = args.app_image
 SOURCE_SHA = args.source_sha
@@ -29,9 +31,11 @@ if not re.fullmatch(r'[0-9a-f]{40}', SOURCE_SHA):
     parser.error('--source-sha must be a full lowercase Git SHA')
 OLD = 'n8nio/n8n@sha256:c34ee9107a42b837e25cec0c8a927ab90a45b776aa2ccbf15e5b9cda466fad2c'
 NEW = args.n8n_image
-PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
+LEGACY_PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
+PG = args.n8n_postgres_image
 APP_PG = 'pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2'
-REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
+LEGACY_REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
+REDIS = args.n8n_valkey_image
 FAKE_NODE = 'node@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20'
 PREFIX = f'volitex-acceptance-{os.getpid()}'
 SCRATCH = Path(tempfile.mkdtemp(prefix=PREFIX + '-'))
@@ -53,6 +57,7 @@ ROLE_NETWORKS = {
     'n8n-worker': (N8N_NETWORK, '172.30.247.'),
 }
 RESULTS = {'application_image': APP, 'application_source': SOURCE_SHA, 'candidate_n8n_image': NEW,
+           'candidate_n8n_postgres_image': PG, 'candidate_n8n_valkey_image': REDIS,
            'runtime_policy_sha256': hashlib.sha256((ROOT / 'deployment/n8n/runtime-policy.env').read_bytes()).hexdigest()}
 
 
@@ -144,11 +149,13 @@ def n8n_start(image, database='n8n', suffix=''):
     global n8n_main, n8n_worker
     config = dict(n8n_env, DB_POSTGRESDB_DATABASE=database)
     env = write_env('n8n.env', config)
-    mounts = [f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', f'{RUNTIME_FIXTURES}:/fixtures:ro',
-              f'{PREFIX}-n8n-data{suffix}:/home/node/.n8n']
+    shared_mounts = [f'{RUNTIME_FIXTURES}:/fixtures:ro']
+    if image == OLD:
+        shared_mounts.append(f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro')
+    mounts = shared_mounts + [f'{PREFIX}-n8n-data{suffix}:/home/node/.n8n']
     n8n_main = start('n8n-main', image, '172.30.248.10', env, mounts, ['start'], 'probe-n8n')
     wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'n8n_readiness')
-    n8n_worker = start('n8n-worker', image, '172.30.248.11', env, mounts[:2], ['worker', '--concurrency=2'])
+    n8n_worker = start('n8n-worker', image, '172.30.248.11', env, shared_mounts, ['worker', '--concurrency=2'])
     wait_for(lambda: command('docker', 'exec', n8n_worker, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'worker_readiness')
 
 
@@ -167,13 +174,13 @@ try:
     for network, subnet in ((APP_NETWORK, '172.30.246.0/24'), (N8N_NETWORK, '172.30.247.0/24'), (PREFIX, '172.30.248.0/24')):
         command('docker', 'network', 'create', '--internal', '--subnet', subnet, network)
         NETWORKS.append(network)
-    for name in ('app-db', 'n8n-db', 'redis', 'app-redis', 'app-storage', 'n8n-data', 'n8n-data-restore'):
+    for name in ('app-db', 'n8n-db', 'n8n-db-upgraded', 'redis', 'app-redis', 'app-storage', 'n8n-data', 'n8n-data-restore'):
         command('docker', 'volume', 'create', PREFIX + '-' + name)
     password = secrets.token_hex(24)
     db_env = write_env('db.env', {'POSTGRES_PASSWORD': password})
-    n8n_db = start('n8n-db', PG, '172.30.248.5', db_env, [f'{PREFIX}-n8n-db:/var/lib/postgresql/data'], alias='probe-n8n-db')
+    n8n_db = start('n8n-db', LEGACY_PG, '172.30.248.5', db_env, [f'{PREFIX}-n8n-db:/var/lib/postgresql/data'], alias='probe-n8n-db')
     app_db = start('app-db', APP_PG, '172.30.248.6', db_env, [f'{PREFIX}-app-db:/var/lib/postgresql/data'], alias='probe-app-db')
-    redis = start('redis', REDIS, '172.30.248.7', mounts=[f'{PREFIX}-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-redis')
+    redis = start('redis', LEGACY_REDIS, '172.30.248.7', mounts=[f'{PREFIX}-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-redis')
     start('app-redis', REDIS, '172.30.248.8', mounts=[f'{PREFIX}-app-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-app-redis')
     fake = start('fake', FAKE_NODE, '172.30.248.30', mounts=[f'{FIXTURES}:/code:ro', f'{SCRATCH}:/state'], args=['node', '/code/fake.cjs'], alias='probe-fake')
     for db in (app_db, n8n_db):
@@ -244,6 +251,31 @@ try:
     os.chmod(SCRATCH / 'prior.dump', 0o600)
     RESULTS['prior_backup_sha256'] = hashlib.sha256(backup).hexdigest()
     command('docker', 'run', '--rm', '-v', PREFIX + '-n8n-data:/from:ro', '-v', str(SCRATCH) + ':/out', 'alpine:3.23', 'tar', 'cf', '/out/prior-data.tar', '-C', '/from', '.')
+    # A libc/distro change requires logical restore into a fresh cluster. Keep
+    # the original database volume intact; never attach it to the Alpine image.
+    command('docker', 'stop', '--time', '30', n8n_db)
+    command('docker', 'rm', n8n_db)
+    CONTAINERS.remove(n8n_db)
+    n8n_db = start('n8n-db', PG, '172.30.248.5', db_env,
+                   [f'{PREFIX}-n8n-db-upgraded:/var/lib/postgresql/data'], alias='probe-n8n-db')
+    wait_for(lambda: 'accepting connections' in command('docker', 'exec', n8n_db, 'pg_isready', '-U', 'postgres', check=False), 'new_postgres_ready')
+    sql('postgres', 'CREATE DATABASE n8n')
+    command('docker', 'cp', str(SCRATCH / 'prior.dump'), n8n_db + ':/tmp/prior.dump')
+    command('docker', 'exec', n8n_db, 'pg_restore', '--exit-on-error', '-U', 'postgres', '-d', 'n8n', '/tmp/prior.dump')
+    RESULTS['postgres_logical_migration_into_fresh_cluster'] = 'PASS'
+    # Redis/Valkey AOF is portable across these same-major images. Prove it
+    # with persisted state while all application/n8n queue writers are stopped.
+    command('docker', 'exec', redis, 'valkey-cli', 'SET', 'volitex:migration:canary', 'preserved')
+    command('docker', 'exec', redis, 'valkey-cli', 'LPUSH', 'volitex:migration:list', 'queued')
+    command('docker', 'stop', '--time', '30', redis)
+    command('docker', 'rm', redis)
+    CONTAINERS.remove(redis)
+    redis = start('redis', REDIS, '172.30.248.7', mounts=[f'{PREFIX}-redis:/data'],
+                  args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-redis')
+    wait_for(lambda: command('docker', 'exec', redis, 'valkey-cli', 'PING', check=False) == 'PONG', 'new_valkey_ready')
+    assert command('docker', 'exec', redis, 'valkey-cli', 'GET', 'volitex:migration:canary') == 'preserved'
+    assert command('docker', 'exec', redis, 'valkey-cli', 'LPOP', 'volitex:migration:list') == 'queued'
+    RESULTS['valkey_aof_state_migration'] = 'PASS'
     n8n_start(NEW)
     command('docker', 'start', worker)
     emit_event()
@@ -316,7 +348,7 @@ try:
     write_json('production-contract.json', workflow)
     cli = ['docker', 'run', '--rm', '--network', N8N_NETWORK, '--env-file', str(SCRATCH / 'n8n.env'),
            '-v', f'{RUNTIME_FIXTURES}:/fixtures:ro',
-           '-v', f'{ROOT}/deployment/n8n/custom:/opt/volitex/n8n-custom:ro', NEW]
+           NEW]
     command(*cli, 'import:workflow', '--input=/fixtures/production-contract.json', '--userId=' + n8n_owner)
     command(*cli, 'publish:workflow', '--id=VolitexStagingReply')
     active_nodes = json.loads(sql("n8n", """SELECT h.nodes FROM workflow_history h JOIN workflow_entity w ON h."versionId"=w."activeVersionId" WHERE w.id='VolitexStagingReply'"""))

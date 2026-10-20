@@ -4,6 +4,18 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
 const root = '/usr/local/lib/node_modules/n8n';
+const custom = {
+  'VolitexReply.node.js':
+    'd2dc164a4f8a21fd2a6afbdb447ba5ea178d64b8b94557975051c46d290a6af3',
+  'VolitexInbox.credentials.js':
+    '71c10dfa6f679f59e04083bfb7f4709c614a53629d7e76e3f362e7594bf02119',
+};
+for (const [file, expected] of Object.entries(custom)) {
+  const actual = createHash('sha256')
+    .update(fs.readFileSync('/opt/volitex/n8n-custom/' + file))
+    .digest('hex');
+  assert.equal(actual, expected, `Unverified custom extension: ${file}`);
+}
 const manifest = JSON.parse(
   fs.readFileSync('/opt/volitex/security/manifest.json', 'utf8')
 );

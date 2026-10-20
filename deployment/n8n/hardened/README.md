@@ -11,7 +11,16 @@ This image runs upstream n8n 2.44.4 with a pinned security dependency overlay an
 - Backport a fixed 128-level AST depth bound to braces 3.0.3 parsing, compilation, expansion and stringification. Both brace/parenthesis parsing and direct AST calls are bounded. The patch fails if any pristine source hash or patch anchor differs. Package name/version and raw scanner finding remain unchanged. An independent verifier checks the four exact patched source hashes; security regressions exercise both string and AST entry points.
 - Apply available same-major fixes for Hono 4.13.7, ip-address 10.7.1, Moment 2.31.0, Multer 2.4.0 and qs 6.16.0, plus Alpine zlib 1.3.2-r1.
 - Backport JSON.parse-compatible own-property handling for `__proto__` to stream-json 1.9.1 Assembler (CVE-2026-104183), preserving its CommonJS API. Both ordinary and reviver paths and the actual core flatted-data reader are tested.
+- Bake the two Volitex custom extension files into the image and verify their exact source hashes. Production and candidate acceptance do not mount replacement extension source from the host.
 - Run as UID 1000. The deployment adds init, drops capabilities, prevents privilege escalation and limits PIDs. No npm/yarn installer is shipped.
+
+## Database and queue companions
+
+`Postgres.Dockerfile` uses immutable official PostgreSQL 17.11 / Alpine 3.24, applies zlib 1.3.2-r1 and uses Alpine su-exec 0.3-r0 for the entrypoint's fixed postgres-user exec. It removes the obsolete Go-based gosu executable; no database binary or data format is rewritten. `Valkey.Dockerfile` uses immutable official Valkey 8.1.10 / Alpine and applies the same zlib patch. Each has its own source marker. The initial local scans report zero known findings for both companion images; fresh CI and publication scans remain required.
+
+For a **new deployment**, create clean volumes with these published images. For an **existing Debian PostgreSQL deployment**, stop/drain all writers, preserve backups and the encryption key, and logically dump/restore into a fresh cluster. **Never attach the old Debian PGDATA volume directly to the Alpine image.** The acceptance harness starts with the old Debian image, backs up actual n8n workflows/credentials, restores into a fresh maintained PostgreSQL volume, and then verifies signed replies and application/database/key rollback. It also migrates persisted same-major Valkey AOF state with all writers stopped and verifies string/list state before resuming queue work. Existing workstation staging volumes are not used or modified.
+
+All three maintained images are saved in the checksummed acceptance archive and separately scanned with no companion-image vulnerability exceptions. Publication exports `n8n/immutable-reference.txt`, `n8n-postgres/immutable-reference.txt` and `n8n-valkey/immutable-reference.txt`; use all three references in the deployment environment.
 
 ## Evidence and release gates
 
