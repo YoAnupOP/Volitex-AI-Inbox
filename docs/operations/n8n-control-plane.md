@@ -36,7 +36,7 @@ An n8n-to-Inbox outgoing REST API failure is an automation/API failure: handle i
 
 ## Implemented staging workflow
 
-`deployment/n8n/inbox-reply.workflow.json` uses the existing AgentBot outgoing webhook, not an additional account webhook. The Compose file loads the reviewed `deployment/n8n/custom` credential and node files on both main and worker. No npm package installation or secret-bearing workflow parameters are needed.
+`deployment/n8n/inbox-reply.workflow.json` uses the existing AgentBot outgoing webhook, not an additional account webhook. The maintained immutable image contains the reviewed `deployment/n8n/custom` credential and node files at `/opt/volitex/n8n-custom` on both main and worker; production Compose does not mount replacement source from the host. No npm package installation or secret-bearing workflow parameters are needed.
 
 Import the workflow inactive. Create the `Volitex AI Inbox account AgentBot` credential in n8n's encrypted credential store, set its trusted Inbox URL, account/inbox/bot IDs, account-scoped API token and signing secret, and select that credential in both custom nodes. The committed credential reference is a staging identifier, not a credential value. Import/publish with the existing n8n CLI or authenticated editor, then restart main/worker after CLI publication. Never export decrypted credentials into source control. Back up n8n PostgreSQL and preserve `N8N_ENCRYPTION_KEY` before changes.
 

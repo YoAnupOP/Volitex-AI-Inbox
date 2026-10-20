@@ -1,28 +1,16 @@
 # Volitex AI Inbox — First-client production operations runbook
 
-## Current release checkpoint — October 20, 2026
+## Current verified release — October 20, 2026
 
-This checkpoint supersedes the historical artifact/source-only statements below. Source `a37256c7163c0da89512a5dc8452d73f55d3dad0` passed its three release gates and [registry publication](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39387150131). Its verified immutable image is:
+The deployment baseline is source `1ea83b0832faeafbbf867496b69f75f6a992ffb8` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361108), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360732), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360698), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361168). [Publication run 39424886778](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39424886778) published all four images in the table below. Their embedded source markers match this commit. This includes the private AgentBot transport, credential/idempotency controls and maintained n8n stack.
 
-```text
-ghcr.io/yoanupop/volitex-ai-inbox@sha256:40d4e658cc7bb153a106f5edcbfdec10514aea4c18543c672a672789544d7f93
-```
+**Release status:** exact-source CI verified and published for the private, operator-managed HTTP/JSON n8n profile. The deployment kit is prepared; live deployment status is **NOT_DEPLOYED**. Actual KVM networking/TLS, private-editor login, off-host backups, restore/reboot/alerts, measured capacity and client acceptance must pass before client traffic. A successful image publication does not perform these steps.
 
-That image includes the private AgentBot transport and full product display name. Later readiness fixes require their own completed exact-source gates and published digest before adoption. [CI for source b72258f9d3](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39393632580) passed all sixteen backend groups and the frontend test suite; its overall result remains failed due to lint and dependency jobs. Follow-up lint/dependency/restore changes are not claimed verified by that earlier run.
+**Security scope:** n8n has zero unresolved Critical/High findings after two exact-source-verified backports. The raw scan retains one High, eleven Medium and one Low finding; the verified braces High and stream-json Medium fixes are recorded separately. Ten unresolved Medium and one Low remain documented under the restricted capability profile. The maintained n8n PostgreSQL and Valkey publication scans have zero findings. This is not a vulnerability-free claim. See the [security remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md).
 
-n8n now requires the maintained runtime from `deployment/n8n/hardened`, not the vulnerable stock image. The deployment example deliberately requires the verified immutable n8n reference from the successful exact-source publication artifact/release kit. See the [current security remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md). Local experimental recovery/security checks do not establish final-image publication or actual server acceptance. Old deployment kits containing the stock image are superseded only after a new verified kit is exported. Actual KVM, restore/reboot/alerts, measured capacity and client-specific booking/provider acceptance remain outstanding.
+**Client scope:** appointment booking with calendar/CRM integration; providers are chosen per client. `deployment/n8n/inbox-reply.workflow.json` is a fixed-reply integration test, not an accepted booking workflow. Configure and accept each client's workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md).
 
-**Authorized publication completed:** see [2026-10-19 pullable artifact and verification](application-publication-2026-10-19.md). This supersedes earlier statements that source66 has no published artifact; KVM acceptance and traffic authorization remain outstanding.
-
-**Pre-client scope confirmed on 2026-10-19:** appointment booking with calendar/CRM integration; providers are chosen per client. The current staging workflow is a fixed reply integration test, not a booking workflow. Prepare the platform integration and security controls before the first sale; configure and accept each client's provider workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md). The [private AgentBot transport and isolated recovery checks](agentbot-private-transport-2026-10-19.md) are newer source changes not included in the published application image below. n8n version/capability approval and a verified artifact containing any adopted transport change are pre-KVM work. Publication of the application image alone does not clear these gates.
-
-**Latest reconciliation:** [2026-10-19 exact-source results](antigravity-reconciliation-2026-10-19.md) supersede historical candidate results below; publication and actual KVM acceptance remain separate.
-
-**Current integrated candidate:** see [2026-10-17 candidate evidence](integrated-release-candidate-2026-10-17.md) for the exact campaign + maintenance source, current CI results, publication boundary and remaining KVM/client acceptance gates. Historical artifacts below must not be substituted for this candidate.
-
-This is the authoritative operating procedure for taking the frozen Volitex AI Inbox codebase to the first paying client's live deployment. It is specific to this repository and the planned shared Hostinger KVM 4 architecture.
-
-It is not another readiness audit. It describes the manual work that remains after the code and release artifact are prepared.
+This is the current operating procedure for the planned shared Hostinger KVM 4 deployment. Older dated audit/publication reports are historical evidence; their image pins, source-only verdicts and public n8n instructions do not override this release or the actual Compose files.
 
 ## Operating position
 
@@ -65,22 +53,28 @@ Never put a real secret in this document, Git, a workflow file, a shell command,
 
 Codex can automate repository changes, CI/test execution, image/digest verification, compose/configuration inspection, non-secret templates, release records, and post-deployment diagnostic commands when access is provided. You personally must buy the VPS, control provider billing, enter production secrets, operate Coolify/Hostinger/Meta/n8n dashboards, approve client data and prompts, perform destructive or externally visible recovery actions, and obtain client sign-off.
 
-## Frozen release and exact production artifact
+## Verified release and deployment kit
 
-### Published application artifact (2026-10-19)
+Use these four immutable references together for this release:
 
-The artifact below was published and pulled back for verification from the exact source recorded here. Its build, boot, migration, storage, worker recovery and scan evidence is in the [publication record](application-publication-2026-10-19.md). It does not contain the later private AgentBot transport change. Adopting that change requires a new verified application artifact before private n8n delivery can be deployed.
+| Coolify variable | Published immutable image |
+| --- | --- |
+| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:82d0da5993c4572fc7a84331c1033eebfe97d14d45277350ca1f8cab6a2dfa93` |
+| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:8c5387a96dcfb9c1eebeb944d02ecd4a8ed9953881bbb34f400bac56a604d72a` |
+| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:f5e4fe82aa1cafcaa2829ea56f783b1258c7544b8f0a861ac8dc7a49d098e869` |
+| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:b35c85884b1ed88de5016a785afcb4a1b29886cfebd09f6c43836a3921e849f4` |
 
-| Item             | Value                                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------- |
-| Git branch       | codex/integrated-release-candidate-reconcile-20261019                                                        |
-| Git commit       | 66aa7305bf724823a7f9ac6a16488d81dcd583dd                                                                  |
-| Volitex AI Inbox image    | ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4 |
-| Coolify variable | VOLITEX_IMAGE set to the full image reference above                                                       |
+The maintained stack runs n8n 2.44.4, PostgreSQL 17.11 and Valkey 8.1.10. These PostgreSQL/Valkey references are for n8n's dedicated services; provision Inbox's pgvector-capable database and separate queue as described below. Do not substitute upstream images, mutable tags or CI build-manifest digests for these published references.
 
-The image was published from the final commit and its embedded /app/.git_sha matches that commit. Do not use latest, a mutable branch tag, or a Chatwoot image.
+On the founder's workstation, `C:/Users/Anup/.codex/releases/Volitex-AI-Inbox/latest.json` locates the current exported ZIP and its SHA256. Check that its release source is the commit above, verify the ZIP checksum, then run `sha256sum -c SHA256SUMS` inside the extracted kit. Keep the complete kit with the protected change record. It contains:
 
-The repository-wide Linux CI baseline is not completely green because of pre-existing test, lint, and JavaScript-audit failures. The production-critical focused tests and Ruby dependency audit passed. Record the baseline commit and image digest in the production change record; do not represent it as a clean all-CI release.
+- `release.json`: source, completed gates, publication URL, security findings and acceptance limits.
+- `release-images.env`: all four immutable references, without credentials.
+- `deployment/.env.n8n.example`: all three maintained n8n image pins already filled; remaining server/secret placeholders still need configuration.
+- `verification/publication/`: registry references, per-image metadata and n8n source/security verification.
+- `verification/n8n-acceptance.json`: exact-source integration, upgrade and recovery evidence.
+
+The Git source example intentionally uses image placeholders; copy the verified kit's pins or the table above into Coolify. Do not blindly deploy Git `master`: a later documentation or code commit is not this verified image source. Check `/app/.git_sha` for Inbox and the runtime source markers described in the maintained-image documentation. All four images were anonymously pullable when verified; recheck access from the actual server before deployment. Future releases require all four exact-source gates and a successful publication job before replacing these pins and exporting a new kit.
 
 # Phase 0 — Before buying the KVM 4
 
@@ -88,8 +82,8 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.1 Done now
 
-- [ALREADY DONE] The published Volitex AI Inbox application source is 66aa7305bf724823a7f9ac6a16488d81dcd583dd; later private transport changes are source-only until separately built and verified.
-- [ALREADY DONE] The immutable GHCR artifact is published and recorded above.
+- [ALREADY DONE] The published release source is `1ea83b0832faeafbbf867496b69f75f6a992ffb8`; the private AgentBot transport and maintained n8n stack are included.
+- [ALREADY DONE] All four immutable GHCR artifacts and the verified deployment kit are recorded above.
 - [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; the campaign feature remains disabled until its separate acceptance gates pass.
 - [ALREADY DONE] WhatsApp and Instagram webhook controllers validate Meta signatures, enqueue work, and acknowledge accepted deliveries. WhatsApp uses /webhooks/whatsapp/:phone_number; Instagram uses /webhooks/instagram.
 - [ALREADY DONE] WhatsApp webhook work is on a high-priority Sidekiq queue. Queue order is in config/sidekiq.yml.
@@ -98,7 +92,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 - [ALREADY DONE] WhatsApp credentials and Instagram/Facebook OAuth tokens are protected by Active Record encryption when the three encryption keys are configured. WhatsApp sensitive provider configuration is separate from queryable routing metadata.
 - [ALREADY DONE] deployment/n8n-queue.compose.yaml defines separate n8n PostgreSQL, n8n Valkey, n8n main, and n8n worker services. Its environment contract is deployment/.env.n8n.example.
 - [ALREADY DONE] The repository contains backup_postgres.sh, restore_postgres_backup.sh, monitor.sh, check_postgres_extensions.sh, and the staging webhook load-test harness.
-- [CODEX AUTOMATABLE] Rerun Ruby and JavaScript dependency audits for the selected candidate. Historical audit results do not clear current advisories.
+- [ONGOING] Review new advisories before deployment and on every upgrade; the completed release scans above do not clear future advisories.
 
 ## 0.2 Not needed yet
 
@@ -207,7 +201,7 @@ Attach inbox to Rails port 3000 and enable Coolify TLS. Do not assign any n8n se
 **Type:** [MANUAL] [ONE-TIME] [INFRASTRUCTURE-LEVEL]
 
 1. Create a private persistent PostgreSQL service with database volitex_inbox_production and role volitex_inbox restricted to that database.
-2. Use a pgvector-capable immutable image. The reviewed baseline records pgvector/pgvector@sha256:cf134a767f474095eeba57e0117be8e568e011a63f33fbf252f14c9b760f8e6f; record the actual deployed digest.
+2. Use a pgvector-capable immutable image. The exact-source Inbox/n8n acceptance uses `pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2` (`APP_PG` in `script/production/verify_n8n_acceptance.py`). This is compatibility evidence, not the clean n8n PostgreSQL security scan. Review its current scan and record the actual selected Inbox database digest before deployment; do not reuse the n8n PostgreSQL image, which does not supply pgvector.
 3. Configure shared_preload_libraries=pg_stat_statements and private readiness equivalent to:
 
 ```bash
@@ -246,7 +240,7 @@ Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox V
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
 ```dotenv
-VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4
+VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:82d0da5993c4572fc7a84331c1033eebfe97d14d45277350ca1f8cab6a2dfa93
 RAILS_ENV=production
 NODE_ENV=production
 INSTALLATION_ENV=docker
@@ -265,6 +259,11 @@ POSTGRES_PASSWORD=<volitex-postgres-secret>
 REDIS_URL=redis://:<volitex-valkey-secret>@<private-volitex-valkey-host>:6379/0
 RAILS_MAX_THREADS=5
 SIDEKIQ_CONCURRENCY=8
+SIDEKIQ_DB_POOL=8
+WEB_CONCURRENCY=0
+VOLITEX_AUTOMATION_NETWORK=volitex-automation
+SAFE_FETCH_ALLOW_PRIVATE_NETWORK=false
+N8N_AGENT_BOT_TRANSPORTS=[]
 
 ACTIVE_STORAGE_SERVICE=s3_compatible
 STORAGE_ACCESS_KEY_ID=<object-storage-access-key>
@@ -304,7 +303,7 @@ WHATSAPP_CONFIGURATION_ID=<embedded-signup-configuration-id>
 WHATSAPP_API_VERSION=v24.0
 ```
 
-Never create a populated .env in Git. Deploy and let the migrate service run bundle exec rails db:chatwoot_prepare. Rails and Sidekiq depend on migration success.
+The Inbox Compose file uses `env_file: .env`; provide a protected, untracked `.env` in the deployment directory (or verify Coolify materializes that file). Setting interpolation variables alone does not replace this file. Never commit a populated `.env`. Confirm the actual containers receive the required settings. Deploy and let the migrate service run bundle exec rails db:chatwoot_prepare. Rails and Sidekiq depend on migration success.
 
 The application services share the Compose `volitex_storage` volume at `/app/storage`. This prevents local attachments from disappearing during container replacement when `ACTIVE_STORAGE_SERVICE=local`. Record and back up the actual Coolify volume name if using local storage. The intended S3-compatible configuration still requires its own object-store backup and restore verification; the local volume test does not validate S3 credentials or availability.
 
@@ -325,9 +324,13 @@ The first response is the unauthenticated Rails health JSON containing status wo
 
 Create a second Coolify Docker Compose application from deployment/n8n-queue.compose.yaml. Copy the complete sanitized key set from deployment/.env.n8n.example into Coolify and replace placeholders. Do not create or commit deployment/.env.n8n.
 
-Set N8N_IMAGE to the maintained runtime immutable reference in the successful publication-evidence/n8n/immutable-reference.txt artifact or verified release kit. The stock n8nio/n8n image is not an approved substitute. See the [current security remediation record](n8n-security-remediation-2026-10-20.md). Complete the security, exact-source compatibility and server acceptance gates before deployment. Both main and worker receive the same image, DB, queue, N8N_ENCRYPTION_KEY, security, SMTP, and EXECUTIONS_MODE=queue settings. Start one worker at N8N_WORKER_CONCURRENCY=5 and record the PostgreSQL/Valkey image digests too.
+Set **all three** `N8N_IMAGE`, `N8N_POSTGRES_IMAGE` and `N8N_VALKEY_IMAGE` to the verified table/kit references. The selected release has completed its exact-source gates and publication; server acceptance is still required. Both main and worker receive the same maintained n8n image, DB, queue, `N8N_ENCRYPTION_KEY`, security, SMTP and `EXECUTIONS_MODE=queue` settings. Start one worker at `N8N_WORKER_CONCURRENCY=5`; each process has `DB_POSTGRESDB_POOL_SIZE=5`. The stock `n8nio/n8n` image is not an approved substitute.
 
-**Private transport prerequisite:** the published source66 application image does not contain the private AgentBot transport. Do not point that image at a private hostname or enable `SAFE_FETCH_ALLOW_PRIVATE_NETWORK`. First build, verify and publish an application image containing the tested private transport. The application artifact and n8n security/version approval remain separate gates.
+Preserve the relative directory layout: Compose loads `./n8n/runtime-policy.env` beside it. Both custom extension files are **baked into the immutable image** at `/opt/volitex/n8n-custom`; do not add a host-source mount or install community packages. Main alone mounts `n8n_data:/home/node/.n8n`; the worker does not share this home volume. Both use `init: true`, drop all capabilities, prevent privilege escalation and limit PIDs to 256. Retain the versioned 18-node/module policy. Only trusted operators may author workflows; provider/calendar/CRM integrations use reviewed HTTP APIs in this profile.
+
+**Volume rule:** on a new KVM, create fresh `n8n_postgres_data`, `n8n_valkey_data` and `n8n_data` volumes. For an existing deployment using the old Debian PostgreSQL image, drain and stop writers, preserve backups and keys, and logically dump/restore into a **fresh** maintained PostgreSQL cluster. Never attach the old Debian PGDATA volume directly to the Alpine image. Preserve the old database/backup for recovery. Same-major Valkey AOF migration requires stopped writers, consistent persisted data, correct ownership and a verified queue recovery before resuming. See [restore and upgrade](#62-restore); do not perform a database-family change by merely swapping image pins on an existing volume.
+
+The verified Inbox image includes private AgentBot transport. Keep `SAFE_FETCH_ALLOW_PRIVATE_NETWORK=false`; configure only exact per-account bot/URL/IP bindings as described in Phase 4. Do not create a global private-network exception.
 
 Before either Compose application is deployed, select a non-conflicting RFC1918 subnet and create one dedicated internal Docker bridge. For example, only after confirming that the example subnet is unused:
 
@@ -355,7 +358,7 @@ ssh -N -L 127.0.0.1:5678:172.28.8.10:5678 <operator>@<server>
 curl --fail --silent --show-error http://localhost:5678/healthz/readiness >/dev/null
 ```
 
-Set the n8n owner password and MFA, confirm SMTP recovery, verify tunnel/browser recovery, and run n8n audit. The Compose healthcheck uses /healthz/readiness internally. Add operator-controlled N8N_AGENT_BOT_TRANSPORTS bindings to the protected Inbox environment using each account/bot/secret, its exact private webhook URL and the reserved main IP; see the private transport report. Credentials and IP bindings must not be selected from customer input. n8n-to-Inbox requests continue to use the fixed public Inbox HTTPS origin and scoped bot credentials.
+Set the n8n owner password and MFA, confirm SMTP recovery, verify tunnel/browser recovery, and run n8n audit. The Compose healthcheck uses /healthz/readiness internally. Add operator-controlled N8N_AGENT_BOT_TRANSPORTS bindings to the protected Inbox environment using each account/bot identity, its exact private webhook URL and the reserved main IP; see the private transport report. Credentials and IP bindings must not be selected from customer input. n8n-to-Inbox requests continue to use the fixed public Inbox HTTPS origin and scoped bot credentials.
 
 # Phase 3 — Meta production configuration
 
@@ -448,8 +451,16 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 From the running Volitex AI Inbox release container:
 
 ```bash
-bundle exec rails 'volitex:create_n8n_agent_bot[<ACCOUNT_ID>,http://n8n-main:5678/webhook/volitex-inbox-<AGENT_BOT_ID>]'
+bundle exec rails 'volitex:create_n8n_agent_bot[ACCOUNT_ID,http://n8n-main:5678/webhook/account-ACCOUNT_ID]'
 ```
+
+Replace `ACCOUNT_ID` in both places with the actual numeric account ID. Use a unique per-account route; the bot ID is obtained after creation. Before attaching the bot or enabling AI, set the protected Inbox environment's `N8N_AGENT_BOT_TRANSPORTS` to an exact binding, for example:
+
+```json
+[{"account_id":1,"agent_bot_id":7,"url":"http://n8n-main:5678/webhook/account-1","ip_addresses":["172.28.8.10"]}]
+```
+
+Replace both IDs, the route and reserved IP with the actual values. Apply the environment to the Inbox services, restart the ordinary Sidekiq worker so it loads the binding, and verify the route resolves to exactly that reserved main IP. Keep `SAFE_FETCH_ALLOW_PRIVATE_NETWORK=false`. The binding contains no signing secret; store secrets only in the dedicated credentials below.
 
 Retrieve token and signing secret from the authenticated Inbox dashboard and enter them directly into dedicated n8n credentials. Do not print them in a shell or put them in a workflow node.
 
@@ -585,7 +596,7 @@ Add provider/external monitoring for CPU, network, disk IOPS, TLS/DNS expiry, n8
 
 ## Publishing or replacing an active n8n workflow
 
-Pause Inbox automation delivery by stopping the ordinary Sidekiq service during the controlled update; queued jobs must stay in persistent Redis. Drain running n8n executions and reconcile any interrupted external effects, then stop main and all workers before importing a replacement graph. Use a one-shot n8n CLI container on the private n8n network with the same image, encrypted credentials key, database configuration and read-only custom-node mount to import and publish. Verify the published active-version graph contains the intended operations. Start main and workers, wait for both readiness checks, verify the authenticated workflow, then resume Inbox Sidekiq delivery. Keep human takeover available throughout.
+Pause Inbox automation delivery by stopping the ordinary Sidekiq service during the controlled update; queued jobs must stay in persistent Redis. Drain running n8n executions and reconcile any interrupted external effects, then stop main and all workers before importing a replacement graph. Use a one-shot n8n CLI container on the private n8n network with the same maintained image (including its baked custom nodes), encrypted credentials key, runtime policy and database configuration to import and publish. Verify the published active-version graph contains the intended operations. Start main and workers, wait for both readiness checks, verify the authenticated workflow, then resume Inbox Sidekiq delivery. Keep human takeover available throughout.
 
 A repeat acceptance run observed the database holding the newly published graph while an execution still used the former staging operations after import/publish beside a running main. Do not treat a successful CLI import or main-only readiness as proof that every worker is executing the intended graph. The acceptance harness now uses the stopped-writer procedure and checks the active-version graph before resuming delivery.
 
@@ -618,9 +629,9 @@ Review CPU/RAM/disk trends, PostgreSQL connections/locks/slow queries, Redis mem
 
 For an app-only regression, redeploy the previous known-good digest. Do not roll back across migration or credential-encryption boundaries without matching backup and keys.
 
-The Quick Menu candidate also includes `20261011000000`, which repairs the n8n delivery uniqueness index in databases initialized from a schema that omitted it. Back up before upgrade. The concurrent index migration stops on duplicate deliveries or an invalid existing index without deleting data; inspect and resolve intentionally before retrying. Its down migration is deliberately irreversible so rollback cannot remove idempotency protection. Preserve the compatible schema during an app-only rollback, or use a separately approved restore/forward-fix plan. Quick Menu rollback itself deletes saved menus.
+The verified release also includes `20261011000000`, which repairs the n8n delivery uniqueness index in databases initialized from a schema that omitted it. Back up before upgrade. The concurrent index migration stops on duplicate deliveries or an invalid existing index without deleting data; inspect and resolve intentionally before retrying. Its down migration is deliberately irreversible so rollback cannot remove idempotency protection. Preserve the compatible schema during an app-only rollback, or use a separately approved restore/forward-fix plan. Quick Menu rollback itself deletes saved menus.
 
-The candidate requires all three Active Record encryption variables during production startup and runs `bundle check` without installing dependencies. A missing key or missing gem is a deployment failure to correct in configuration/build; do not bypass these checks. The actual asset-precompile task has a narrowly scoped key exemption and is not a runtime readiness check.
+The release requires all three Active Record encryption variables during production startup and runs `bundle check` without installing dependencies. A missing key or missing gem is a deployment failure to correct in configuration/build; do not bypass these checks. The actual asset-precompile task has a narrowly scoped key exemption and is not a runtime readiness check.
 
 # Phase 8 — Additional clients on shared infrastructure
 
@@ -697,8 +708,8 @@ Recovery time and recovery-point objectives are not promises until restore and V
 # Phase 11 — Final chronological checklist
 
 1. [MANUAL] [ONGOING] Organize credentials, Meta access, domains, client materials, pricing, and operators.
-2. [ALREADY DONE] Record published application source 66aa7305bf724823a7f9ac6a16488d81dcd583dd; verify a new artifact before adopting later private transport source changes.
-3. [ALREADY DONE] Record immutable image ghcr.io/yoanupop/volitex-ai-inbox@sha256:a64c40f71683d2da9473bfed66d6531ff92e55539d29432ec75fc6950a89b5b4.
+2. [ALREADY DONE] Record verified release source `1ea83b0832faeafbbf867496b69f75f6a992ffb8` and its four successful gates.
+3. [ALREADY DONE] Record all four immutable images and verify the deployment kit checksums from the release section above.
 4. [MANUAL] Finalize packages, features, pricing, contract, and demo.
 5. [MANUAL] Begin sales/outreach.
 6. [MANUAL] [PER CLIENT] Client signs.
@@ -712,7 +723,7 @@ Recovery time and recovery-point objectives are not promises until restore and V
 14. [MANUAL] Confirm migration, Rails, Sidekiq, object storage, SMTP, and logs.
 15. [MANUAL] Deploy n8n queue mode with immutable dependency images.
 16. [MANUAL] Confirm n8n health, MFA, SMTP recovery, audit, and volumes.
-17. [MANUAL] [PER META ASSET] Configure Meta domains, redirects, permissions, webhooks, and remediated secrets.
+17. [MANUAL] [PER META ASSET] Configure Meta domains, redirects, permissions, webhooks, and production credentials.
 18. [MANUAL] [PER CLIENT] Create account, teams, inboxes, and permissions.
 19. [MANUAL] [PER META ASSET] Connect WhatsApp and/or Instagram.
 20. [MANUAL] [PER CLIENT] Create AgentBot and tenant workflow.
@@ -725,22 +736,22 @@ Recovery time and recovery-point objectives are not promises until restore and V
 
 # Final distinction
 
-“Volitex AI Inbox is technically production-ready” means the frozen repository, security fixes, webhook handling, tenant controls, deployment definitions, backup/restore tooling, monitoring tooling, and immutable image are prepared for deployment. That is the current target state.
+“Volitex AI Inbox is technically production-ready” means the frozen repository, security fixes, webhook handling, tenant controls, deployment definitions, backup/restore tooling, monitoring tooling, and immutable image are prepared for deployment. That is the verified release status above, within its documented private n8n capability and security scope.
 
 “Volitex AI Inbox is actually deployed and operating in production for a paying client” means the KVM 4 exists and the real deployment has passed infrastructure, Meta, backup, monitoring, smoke, failure, reboot, and client-acceptance checks. That state does not exist until the manual first-client sequence is completed.
 
-Preparation is a release-specific gate. The current candidate is not cleared merely because this runbook exists. The first real deployment requires the candidate verification record, careful operator execution, and measured validation of the single-VPS failure domain.
+Preparation is a release-specific gate supported by the exact-source evidence above. Later commits require their own gates; this runbook does not approve arbitrary source changes. The first real deployment requires the release verification record, careful operator execution, and measured validation of the single-VPS failure domain.
 
 
-## 2026-10-19 operational reconciliation
+## Operational configuration requirements
 
-The Antigravity report describes an older/different tree. Use `docker/Dockerfile` and `docker-compose.production.yaml`, not development Compose or an upstream image. Publication still requires explicit authorization. All application processes and migration use the same required `VOLITEX_IMAGE`; set it to the authorized Volitex AI Inbox GHCR digest, never a tag. The required interpolation has no fallback, but Compose does not validate registry ownership: the operator must verify the published digest and `/app/.git_sha`. A prior CI build-manifest digest is not a pullable release.
+Use `docker/Dockerfile` and `docker-compose.production.yaml`, not development Compose or an upstream image. The verified publication is recorded above; future publication remains gated. All application processes and migration use the same required `VOLITEX_IMAGE`; set it to the authorized Volitex AI Inbox GHCR digest, never a tag. The required interpolation has no fallback, but Compose does not validate registry ownership: the operator must verify the published digest and `/app/.git_sha`. A prior CI build-manifest digest is not a pullable release.
 
 ### Initial shared-host concurrency and database budget
 
 Do not increase Puma to 2-4 processes solely because multiple tenants share the service. Begin with one Puma process (`WEB_CONCURRENCY=0`), `RAILS_MAX_THREADS=5`, and ordinary `SIDEKIQ_CONCURRENCY=8`, `SIDEKIQ_DB_POOL=8` from the protected deployment environment. Campaigns remain a separate two-thread, one-CPU/1536-MiB worker; Compose explicitly sets its concurrency and DB pool to 2. No concurrency was increased by this reconciliation.
 
-Application pool upper bounds for one replica of each service are 5 web + 8 ordinary + 2 campaign = 15 connections. Temporarily allow up to 5 for migration and 5 for an operator console: 25. This is a configured pool budget, not measured throughput or guaranteed simultaneous demand. n8n's main and worker each use `DB_POSTGRESDB_POOL_SIZE=5`: another 10 if both databases share one PostgreSQL server. Otherwise budget each PostgreSQL server separately. Reserve additional connections for Coolify, backups, monitoring, administrative access and PostgreSQL reserved slots. Record actual `SHOW max_connections` and `pg_stat_activity` before launch. Do not raise max_connections blindly.
+Application pool upper bounds for one replica of each service are 5 web + 8 ordinary + 2 campaign = 15 connections. Temporarily allow up to 5 for migration and 5 for an operator console: 25. This is a configured pool budget, not measured throughput or guaranteed simultaneous demand. n8n's main and worker each use `DB_POSTGRESDB_POOL_SIZE=5`: budget 10 application connections on their dedicated PostgreSQL server, plus its backup/monitor/admin reserve. Do not combine it with the Inbox database. Reserve additional connections for Coolify, backups, monitoring, administrative access and PostgreSQL reserved slots. Record actual `SHOW max_connections` and `pg_stat_activity` before launch. Do not raise max_connections blindly.
 
 Every additional replica or Puma child multiplies its own pool; clustered Puma may also retain a parent/preload connection pool. Recalculate conservatively before changing WEB_CONCURRENCY. Measure RSS, CPU, queue age, DB checkout waits, webhook latency and ordinary-agent responsiveness under the intended initial workload before tuning. A 4-vCPU/16-GB host is a bounded shared starting point, not unlimited capacity.
 
