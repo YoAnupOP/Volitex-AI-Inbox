@@ -14,8 +14,7 @@ class PublicController < ActionController::Base
     return if @portal.present?
 
     render json: {
-      error: "Domain: #{domain} is not registered with us. \
-      Please send us an email at support@volitexai.tech with the custom domain name and account API key"
+      error: "Domain: #{domain} is not registered with us. Contact your administrator to configure this help center domain."
     }, status: :unauthorized and return
   end
 

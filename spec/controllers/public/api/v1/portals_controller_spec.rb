@@ -33,8 +33,9 @@ RSpec.describe Public::Api::V1::PortalsController, type: :request do
       expect(response).to have_http_status(:unauthorized)
       json_response = response.parsed_body
 
-      expect(json_response['error']).to eql "Domain: www.example.com is not registered with us. \
-      Please send us an email at support@chatwoot.com with the custom domain name and account API key"
+      expect(json_response['error']).to eql(
+        'Domain: www.example.com is not registered with us. Contact your administrator to configure this help center domain.'
+      )
     end
 
     context 'when portal has a logo' do

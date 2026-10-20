@@ -86,7 +86,7 @@ class ChatwootHub
     {}
   end
 
-  def self.register_instance(company_name, owner_name, owner_email)
+  def self.register_instance(_company_name, _owner_name, _owner_email)
     {}
   end
 
@@ -103,7 +103,7 @@ class ChatwootHub
     RestClient.post(push_notification_url, info.merge(instance_config).to_json, { content_type: :json, accept: :json })
   end
 
-  def self.emit_event(event_name, event_data)
+  def self.emit_event(_event_name, _event_data)
     {}
   end
 end

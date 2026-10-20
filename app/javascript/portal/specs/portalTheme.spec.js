@@ -46,8 +46,8 @@ describe('portalThemeHelper', () => {
   });
 
   describe('#setPortalHoverColor', () => {
-    it('should apply dark hover color in dark theme', () => {
-      const hoverColor = adjustColorForContrast('#ff5733', '#151718');
+    it('keeps the light hover color when dark theme is requested', () => {
+      const hoverColor = adjustColorForContrast('#ff5733', 'white');
       setPortalHoverColor('dark');
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
         '--dynamic-hover-color',
@@ -56,7 +56,7 @@ describe('portalThemeHelper', () => {
     });
 
     it('should apply light hover color in light theme', () => {
-      const hoverColor = adjustColorForContrast('#ff5733', '#ffffff');
+      const hoverColor = adjustColorForContrast('#ff5733', 'white');
       setPortalHoverColor('light');
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
         '--dynamic-hover-color',
@@ -122,11 +122,12 @@ describe('portalThemeHelper', () => {
   });
 
   describe('#switchTheme', () => {
-    it('should set theme to system theme and update classes', () => {
+    it('uses light theme even when the system prefers dark', () => {
       window.matchMedia = vi.fn().mockReturnValue({ matches: true });
       switchTheme('system');
-      expect(localStorage.theme).toBeUndefined();
-      expect(document.documentElement.classList).toContain('dark');
+      expect(localStorage.theme).toBe('light');
+      expect(document.documentElement.classList).toContain('light');
+      expect(document.documentElement.classList).not.toContain('dark');
     });
 
     it('should set theme to light theme and update classes', () => {
@@ -135,10 +136,11 @@ describe('portalThemeHelper', () => {
       expect(document.documentElement.classList).toContain('light');
     });
 
-    it('should set theme to dark theme and update classes', () => {
+    it('normalizes a dark theme request to light', () => {
       switchTheme('dark');
-      expect(localStorage.theme).toBe('dark');
-      expect(document.documentElement.classList).toContain('dark');
+      expect(localStorage.theme).toBe('light');
+      expect(document.documentElement.classList).toContain('light');
+      expect(document.documentElement.classList).not.toContain('dark');
     });
   });
 
@@ -219,39 +221,34 @@ describe('portalThemeHelper', () => {
       window.matchMedia = vi.fn().mockReturnValue(mediaQuery);
     });
 
-    it('adds a listener to the media query', () => {
+    it('does not subscribe to system theme changes', () => {
       initializeMediaQueryListener();
-      expect(window.matchMedia).toHaveBeenCalledWith(
-        '(prefers-color-scheme: dark)'
-      );
-      expect(mediaQuery.addEventListener).toHaveBeenCalledWith(
-        'change',
-        expect.any(Function)
-      );
+      expect(window.matchMedia).not.toHaveBeenCalled();
+      expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
     });
 
-    it('does not switch theme if local storage theme is light or dark', () => {
+    it('preserves light theme without registering a listener', () => {
       localStorage.theme = 'light';
       initializeMediaQueryListener();
-      mediaQuery.matches = true;
-      mediaQuery.addEventListener.mock.calls[0][1]();
       expect(localStorage.theme).toBe('light');
+      expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
     });
 
-    it('switches to dark theme if system preference changes to dark and no theme is set in local storage', () => {
-      localStorage.removeItem('theme');
-      initializeMediaQueryListener();
+    it('does not apply the system dark preference', () => {
       mediaQuery.matches = true;
-      mediaQuery.addEventListener.mock.calls[0][1]();
-      expect(document.documentElement.classList).toContain('dark');
+      switchTheme();
+      initializeMediaQueryListener();
+      expect(document.documentElement.classList).toContain('light');
+      expect(document.documentElement.classList).not.toContain('dark');
+      expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
     });
 
-    it('switches to light theme if system preference changes to light and no theme is set in local storage', () => {
-      localStorage.removeItem('theme');
-      initializeMediaQueryListener();
+    it('keeps light theme when the system preference is light', () => {
       mediaQuery.matches = false;
-      mediaQuery.addEventListener.mock.calls[0][1]();
+      switchTheme();
+      initializeMediaQueryListener();
       expect(document.documentElement.classList).toContain('light');
+      expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
     });
   });
 
@@ -264,15 +261,12 @@ describe('portalThemeHelper', () => {
       expect(document.documentElement.classList).not.toContain('dark');
     });
 
-    it('sets the theme to the system theme', () => {
+    it('initializes light theme regardless of the system preference', () => {
       initializeTheme();
-      expect(localStorage.theme).toBeUndefined();
-      const prefersDarkMode = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches;
-      expect(document.documentElement.classList.contains('light')).toBe(
-        !prefersDarkMode
-      );
+      expect(localStorage.theme).toBe('light');
+      expect(document.documentElement.classList).toContain('light');
+      expect(document.documentElement.classList).not.toContain('dark');
+      expect(window.matchMedia).not.toHaveBeenCalled();
     });
 
     it('sets the theme to the light theme', () => {
@@ -283,12 +277,13 @@ describe('portalThemeHelper', () => {
       expect(document.documentElement.classList.contains('light')).toBe(true);
     });
 
-    it('sets the theme to the dark theme', () => {
+    it('replaces a saved dark preference with light theme', () => {
       localStorage.theme = 'dark';
       document.documentElement.classList.add('dark');
       initializeTheme();
-      expect(localStorage.theme).toBe('dark');
-      expect(document.documentElement.classList.contains('dark')).toBe(true);
+      expect(localStorage.theme).toBe('light');
+      expect(document.documentElement.classList.contains('light')).toBe(true);
+      expect(document.documentElement.classList.contains('dark')).toBe(false);
     });
   });
 });

@@ -4,7 +4,9 @@ import { LOCAL_STORAGE_KEYS } from 'dashboard/constants/localStorage';
 export const setColorTheme = () => {
   let theme = LocalStorage.get(LOCAL_STORAGE_KEYS.COLOR_SCHEME);
   if (!theme || theme === 'auto') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)'
+    ).matches;
     theme = prefersDark ? 'dark' : 'light';
   }
   if (theme === 'dark') {

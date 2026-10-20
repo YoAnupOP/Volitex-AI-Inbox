@@ -7,19 +7,30 @@ class InstagramComments extends ApiClient {
   }
 
   media(inboxId, after) {
-    return axios.get(`${this.url}/media`, { params: { inbox_id: inboxId, after } });
+    return axios.get(`${this.url}/media`, {
+      params: { inbox_id: inboxId, after },
+    });
   }
 
   list(inboxId, mediaId, after) {
-    return axios.get(this.url, { params: { inbox_id: inboxId, media_id: mediaId, after } });
+    return axios.get(this.url, {
+      params: { inbox_id: inboxId, media_id: mediaId, after },
+    });
   }
 
   create(inboxId, mediaId, message) {
-    return axios.post(this.url, { inbox_id: inboxId, media_id: mediaId, message });
+    return axios.post(this.url, {
+      inbox_id: inboxId,
+      media_id: mediaId,
+      message,
+    });
   }
 
   reply(inboxId, commentId, message) {
-    return axios.post(`${this.url}/${commentId}/reply`, { inbox_id: inboxId, message });
+    return axios.post(`${this.url}/${commentId}/reply`, {
+      inbox_id: inboxId,
+      message,
+    });
   }
 
   setVisibility(inboxId, commentId, hide) {
@@ -27,7 +38,9 @@ class InstagramComments extends ApiClient {
   }
 
   delete(inboxId, commentId) {
-    return axios.delete(`${this.url}/${commentId}`, { params: { inbox_id: inboxId } });
+    return axios.delete(`${this.url}/${commentId}`, {
+      params: { inbox_id: inboxId },
+    });
   }
 }
 

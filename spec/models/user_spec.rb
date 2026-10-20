@@ -172,7 +172,7 @@ RSpec.describe User do
 
         expect(uri).to include('otpauth://totp/')
         expect(uri).to include(CGI.escape(user.email))
-        expect(uri).to include('Chatwoot')
+        expect(URI.decode_www_form(URI.parse(uri).query).to_h['issuer']).to eq('Volitex AI Inbox')
       end
     end
 

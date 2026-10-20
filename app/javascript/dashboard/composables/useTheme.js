@@ -8,13 +8,15 @@ export const useTheme = () => {
   const getThemeFromStorage = () => {
     let theme = LocalStorage.get(LOCAL_STORAGE_KEYS.COLOR_SCHEME);
     if (!theme || theme === 'auto') {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
       theme = prefersDark ? 'dark' : 'light';
     }
     return theme;
   };
 
-  const setTheme = (theme) => {
+  const setTheme = theme => {
     activeTheme.value = theme;
     if (theme === 'dark') {
       document.body.classList.add('dark');
