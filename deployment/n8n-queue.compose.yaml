@@ -4,13 +4,17 @@ x-logging: &logging
     max-size: "10m"
     max-file: "5"
 
-# Production n8n deployment for Volitex. Coolify supplies every ${...} value
+# Production n8n deployment for Volitex AI Inbox. Coolify supplies every ${...} value
 # from its environment-variable UI. Do not add a repository .env.n8n file.
 x-n8n: &n8n
   image: ${N8N_IMAGE:?Set N8N_IMAGE to an immutable n8n image digest}
   env_file: ./n8n/runtime-policy.env
   logging: *logging
   restart: unless-stopped
+  init: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 256
   environment:
     N8N_CUSTOM_EXTENSIONS: /opt/volitex/n8n-custom
     DB_TYPE: ${DB_TYPE:?Set DB_TYPE}

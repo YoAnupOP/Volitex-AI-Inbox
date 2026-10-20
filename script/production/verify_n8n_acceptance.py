@@ -21,13 +21,14 @@ FIXTURES = ROOT / 'script/production/specs/n8n_acceptance'
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app-image', required=True)
 parser.add_argument('--source-sha', required=True)
+parser.add_argument('--n8n-image', required=True)
 args = parser.parse_args()
 APP = args.app_image
 SOURCE_SHA = args.source_sha
 if not re.fullmatch(r'[0-9a-f]{40}', SOURCE_SHA):
     parser.error('--source-sha must be a full lowercase Git SHA')
 OLD = 'n8nio/n8n@sha256:c34ee9107a42b837e25cec0c8a927ab90a45b776aa2ccbf15e5b9cda466fad2c'
-NEW = 'n8nio/n8n@sha256:c72fa9f1bd9b59626deeb284824c0495625c3f6d894d395d27e241bf192d9900'
+NEW = args.n8n_image
 PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
 APP_PG = 'pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2'
 REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
@@ -85,6 +86,8 @@ def start(role, image, ip, env=None, mounts=(), args=(), alias=None, entrypoint=
     name = PREFIX + '-' + role
     network, subnet = ROLE_NETWORKS[role]
     options = ['docker', 'create', '--name', name, '--network', network, '--ip', subnet + ip.rsplit('.', 1)[1]]
+    if role in ('n8n-main', 'n8n-worker'):
+        options += ['--init', '--cap-drop=ALL', '--security-opt=no-new-privileges:true', '--pids-limit=256']
     if alias:
         options += ['--network-alias', alias]
     if env:

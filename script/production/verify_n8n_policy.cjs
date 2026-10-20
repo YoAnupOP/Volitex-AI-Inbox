@@ -112,7 +112,7 @@ async function verify() {
     );
   }
   const forbiddenImports = Object.keys(require.cache).filter(filename =>
-    /\/node_modules\/(?:simple-git|@simple-git\/argv-parser|toml|snowflake-sdk|gm|@confluentinc\/kafka-javascript)\//.test(
+    /\/node_modules\/(?:simple-git|@simple-git\/argv-parser|toml|snowflake-sdk|gm|showdown|markdown-it|element-plus|@langchain\/(?:mongodb|redis)|@confluentinc\/kafka-javascript)\//.test(
       filename
     )
   );

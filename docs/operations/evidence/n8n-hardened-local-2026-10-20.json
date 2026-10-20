@@ -1,0 +1,35 @@
+{
+  "scope": "experimental local build from uncommitted hardened-runtime recipe; source marker is not release provenance",
+  "date_utc": "2026-10-20",
+  "image_name": "volitex-n8n-security:final-candidate",
+  "image_id": "sha256:a46f57bc62f1ad4ae0cec78c74208b703d3db1dbbd870e39da9fb6c272298d24",
+  "raw_report_sha256": "be0d71e188760e51826c2053363d32b2c48f7bb2a81f854bb1d9216f2cf21f0d",
+  "raw_findings_by_severity": {
+    "MEDIUM": 11,
+    "LOW": 1,
+    "HIGH": 1
+  },
+  "unresolved_critical_high": 0,
+  "verified_backports": [
+    {
+      "package": "braces",
+      "advisory": "CVE-2026-93687",
+      "severity": "HIGH"
+    },
+    {
+      "package": "stream-json",
+      "advisory": "CVE-2026-104183",
+      "severity": "MEDIUM"
+    }
+  ],
+  "retained_lower_severity_count": 11,
+  "runtime_regressions": {
+    "passed": 8,
+    "failed": 0
+  },
+  "monitor_reply_audit_linux_checks": {
+    "passed": 25,
+    "failed": 0
+  },
+  "exact_source_remote_acceptance": "pending CI; consult publication evidence before adoption"
+}

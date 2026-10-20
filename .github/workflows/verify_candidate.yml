@@ -9,52 +9,73 @@ permissions:
   contents: read
 
 jobs:
-  n8n-security:
+  n8n-runtime:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Scan the exact deployment n8n image
-        run: |
-          image=$(sed -n 's/^N8N_IMAGE=//p' deployment/.env.n8n.example)
-          [[ "$image" =~ ^n8nio/n8n@sha256:[a-f0-9]{64}$ ]]
-          mkdir -p "$RUNNER_TEMP/n8n-audit"
-          docker pull "$image"
-          docker run --rm \
-            --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-            --volume "$RUNNER_TEMP/n8n-audit:/out" \
-            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
-            image --scanners vuln --exit-code 0 \
-            --format json --output /out/n8n-vulnerabilities.json "$image"
-          echo "n8n image: $image" >> "$GITHUB_STEP_SUMMARY"
-          jq '[.Results[]?.Vulnerabilities[]?] | group_by(.Severity) | map({severity: .[0].Severity, count: length})' "$RUNNER_TEMP/n8n-audit/n8n-vulnerabilities.json" >> "$GITHUB_STEP_SUMMARY"
-          jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$RUNNER_TEMP/n8n-audit/n8n-vulnerabilities.json"
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the maintained n8n runtime
+        uses: docker/build-push-action@v6
         with:
-          name: n8n-image-vulnerabilities
-          path: ${{ runner.temp }}/n8n-audit/n8n-vulnerabilities.json
-          if-no-files-found: error
-
-  n8n-policy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify actual n8n node and module restrictions
-        env:
-          N8N_ASSESSMENT_IMAGE: n8nio/n8n@sha256:c72fa9f1bd9b59626deeb284824c0495625c3f6d894d395d27e241bf192d9900
+          context: deployment/n8n/hardened
+          load: true
+          push: false
+          tags: volitex-n8n:${{ github.sha }}
+          build-args: GIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=n8n-runtime-amd64
+          cache-to: type=gha,mode=max,scope=n8n-runtime-amd64
+      - name: Verify patched source and actual runtime behavior
         run: |
-          docker pull "$N8N_ASSESSMENT_IMAGE"
+          image="volitex-n8n:$GITHUB_SHA"
+          test "$(docker run --rm --network none --entrypoint cat "$image" /opt/volitex/security/source-sha)" = "$GITHUB_SHA"
+          mkdir -p "$RUNNER_TEMP/n8n-audit"
+          docker run --rm --network none \
+            -v "$PWD/deployment/n8n/hardened/verify-runtime.mjs:/verify-runtime.mjs:ro" \
+            --entrypoint node "$image" /verify-runtime.mjs > "$RUNNER_TEMP/n8n-audit/source-verification.json"
           docker run --rm --network none \
             --env-file deployment/n8n/runtime-policy.env \
             -e N8N_CUSTOM_EXTENSIONS=/opt/volitex/n8n-custom \
             -v "$PWD/deployment/n8n/custom:/opt/volitex/n8n-custom:ro" \
             -v "$PWD/script/production/verify_n8n_policy.cjs:/probe.cjs:ro" \
-            --entrypoint node "$N8N_ASSESSMENT_IMAGE" /probe.cjs
+            --entrypoint node "$image" /probe.cjs
+          for spec in n8n_core_boundaries.cjs n8n_hardened_runtime.test.cjs; do
+            docker run --rm --network none \
+              -v "$PWD/script/production/specs/$spec:/probe.cjs:ro" \
+              --entrypoint node "$image" --test /probe.cjs
+          done
+      - name: Audit every runtime package and retain backport evidence
+        run: |
+          docker run --rm \
+            --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+            --volume "$RUNNER_TEMP/n8n-audit:/out" \
+            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+            image --scanners vuln --exit-code 0 \
+            --format json --output /out/n8n-vulnerabilities.json "volitex-n8n:$GITHUB_SHA"
           docker run --rm --network none \
-            -v "$PWD/script/production/specs/n8n_core_boundaries.cjs:/probe.cjs:ro" \
-            --entrypoint node "$N8N_ASSESSMENT_IMAGE" --test /probe.cjs
+            -v "$PWD/script/production/audit_n8n_runtime.mjs:/audit.mjs:ro" \
+            -v "$RUNNER_TEMP/n8n-audit:/out" --entrypoint node "volitex-n8n:$GITHUB_SHA" \
+            /audit.mjs /out/n8n-vulnerabilities.json /out/source-verification.json /out/security-summary.json "$GITHUB_SHA" "volitex-n8n:$GITHUB_SHA"
+          cat "$RUNNER_TEMP/n8n-audit/security-summary.json" >> "$GITHUB_STEP_SUMMARY"
+      - name: Save the checked image for acceptance and publication
+        run: |
+          docker save "volitex-n8n:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/n8n-runtime.tar.gz"
+          cd "$RUNNER_TEMP"
+          sha256sum n8n-runtime.tar.gz > n8n-runtime.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: n8n-runtime-image
+          path: |
+            ${{ runner.temp }}/n8n-runtime.tar.gz
+            ${{ runner.temp }}/n8n-runtime.tar.gz.sha256
+          retention-days: 7
+          compression-level: 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: n8n-image-vulnerabilities
+          path: ${{ runner.temp }}/n8n-audit
+          if-no-files-found: error
 
   n8n-contract:
     runs-on: ubuntu-latest
@@ -63,12 +84,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Verify security gate rejects unverified findings
+        run: node --test script/production/specs/n8n_security_gate.test.cjs
       - name: Verify production monitor failure handling
         run: node --test script/production/specs/monitor.test.cjs
       - name: Verify authenticated Inbox reply contract
         run: node --test script/production/specs/n8n_reply.test.cjs
 
   candidate:
+    needs: n8n-runtime
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -93,10 +117,19 @@ jobs:
           echo "Commit: $GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
           echo "Build digest: ${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
           docker image inspect "volitex-candidate:$GITHUB_SHA" --format 'Local image ID: {{.Id}}' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/download-artifact@v4
+        with:
+          name: n8n-runtime-image
+          path: ${{ runner.temp }}/n8n-runtime
+      - name: Load the already checked n8n image
+        run: |
+          cd "$RUNNER_TEMP/n8n-runtime"
+          sha256sum -c n8n-runtime.tar.gz.sha256
+          gzip -dc n8n-runtime.tar.gz | docker load
       - name: Verify isolated production boot
         run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA"
       - name: Verify private n8n upgrade, ownership and interrupted reply recovery
-        run: python3 script/production/verify_n8n_acceptance.py --app-image "volitex-candidate:$GITHUB_SHA" --source-sha "$GITHUB_SHA"
+        run: python3 script/production/verify_n8n_acceptance.py --app-image "volitex-candidate:$GITHUB_SHA" --source-sha "$GITHUB_SHA" --n8n-image "volitex-n8n:$GITHUB_SHA"
       - name: Audit candidate image runtime packages
         if: always() && steps.build.outcome == 'success'
         run: |

@@ -1,5 +1,25 @@
 # n8n security remediation — October 20, 2026
 
+## Maintained runtime follow-up
+
+The stock-image findings below are historical evidence. The replacement candidate is now built from `deployment/n8n/hardened/Dockerfile`; the deployment example requires its **verified immutable publication reference**, never the stock image or a mutable local tag. See the [maintained runtime recipe and release process](../../deployment/n8n/hardened/README.md).
+
+The first experimental image removed all four critical findings and nine of the ten high occurrences; the sole remaining high record is braces. That record is addressed with a source backport, including exact original/patched hashes and string/direct-AST regression tests; the original version and raw finding remain visible. An independent source verifier plus a fail-closed audit gate replaces blanket finding suppression. An additional core stream-json prototype-handling backport and available same-major request/IP/mailer fixes are included in the final candidate and require their own verification.
+
+Initial local checks: six dependency/mailer/template/parser regressions passed, three existing core-boundary checks passed, all eighteen allowed node types and disabled modules passed. Full disposable acceptance passed against the previously verified application source `24be9585e9a0b6366dab4db6b938b19191859a79`: signed replies, invalid/foreign-tenant rejection, interrupted-effect deduplication, queue recovery, human takeover, and old-image/database/key restoration, with exactly six fake provider effects. This was an experimental locally built runtime, not a published exact-source release. Later final-image and remote exact-source results must supersede it before adoption.
+
+Publication now consumes the same checksummed runtime archive used by acceptance, verifies its source, obtains a fresh scan and publishes without rebuilding. Remaining medium/low findings stay visible; no claim of a vulnerability-free arbitrary-node runtime is made. Actual KVM and client-provider acceptance are separate.
+
+## Final local candidate evidence
+
+The final experimental image reports **0 critical / 1 high / 11 medium / 1 low** against the same October 20 database. Its high braces record and one medium stream-json prototype record have exact hash-verified source fixes. The release audit reports **0 unresolved critical/high and 2 verified backports**; ten medium and one low findings remain visible, not silently cleared. Eight final dependency/core-mailer/template/parser regressions pass. The monitor, reply contract and fail-closed audit checks pass 25/25 in the Linux runtime; invoking the shell-dependent monitor suite directly from Windows failed because that shell lacked `cygpath`, so that run is not counted as a product failure or a passing check.
+
+The final local full-acceptance run and remote exact-source gates are separate from the earlier experimental acceptance above. Publication remains pending those gates. New production Compose hardening (init, dropped capabilities, no-new-privileges and PID bound) is also applied by the CI acceptance harness.
+
+Residual lower-severity scope: MongoDB/Redis LangChain, Markdown and related SDK/node capabilities remain outside the approved node registry. The core flatted-data reader uses the patched Assembler and plain streaming JSON parser; it does not use JSONC parsing or stream-json pick/ignore/filter/replace filters implicated by the other two stream-json advisories. Element Plus remains an operator-editor dependency; no arbitrary untrusted link/markdown workflow capability is approved. These facts are limits of this restricted profile, not proof that every bundled frontend or optional node is vulnerability-free. All findings remain in scan artifacts and upgrades still require review.
+
+## Historical stock-image assessment
+
 ## Release remains blocked
 
 The deployment example and existing compatibility checks now select official stable **2.44.4**, immutable image `n8nio/n8n@sha256:c72fa9f1bd9b59626deeb284824c0495625c3f6d894d395d27e241bf192d9900`. This is a security upgrade candidate, **not production approval**. No running staging database or client service was upgraded. Previously exported deployment kits still contain the old image and must not be described as patched.
