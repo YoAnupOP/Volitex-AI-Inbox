@@ -34,14 +34,14 @@ namespace :volitex do
     puts "Encrypted credentials for #{migrated} WhatsApp channel(s)."
   end
 
-  desc "Create a new account with an admin user and all default features enabled"
+  desc 'Create a new account with an admin user and all default features enabled'
   task :create_account, [:account_name, :email, :password] => :environment do |_t, args|
-    account_name = args[:account_name] || "New Account"
+    account_name = args[:account_name] || 'New Account'
     email = args[:email]
     password = args[:password]
 
     if email.blank? || password.blank?
-      puts "Usage: rails volitex:create_account[\"Account Name\",email@example.com,yourpassword]"
+      puts 'Usage: rails volitex:create_account["Account Name",email@example.com,yourpassword]'
       next
     end
 

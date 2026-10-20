@@ -6,3 +6,9 @@
 *.rb text eol=lf
 *.js text eol=lf
 *.vue text eol=lf
+*.rake text eol=lf
+*.jbuilder text eol=lf
+*.ru text eol=lf
+/Gemfile text eol=lf
+/Rakefile text eol=lf
+/Capfile text eol=lf

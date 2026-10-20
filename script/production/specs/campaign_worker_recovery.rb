@@ -10,7 +10,9 @@ require 'factory_bot_rails'
 require 'sidekiq/api'
 require 'socket'
 require 'tmpdir'
-abort 'Disposable test database required' unless ActiveRecord::Base.connection_db_config.database.match?(/\A(?:chatwoot_test|volitex_(?:ui_check|campaign_specs)_\d+)\z/)
+unless ActiveRecord::Base.connection_db_config.database.match?(/\A(?:chatwoot_test|volitex_(?:ui_check|campaign_specs)_\d+)\z/)
+  abort 'Disposable test database required'
+end
 abort 'Redis logical database must be empty' unless Redis.new(url: redis_uri.to_s).dbsize.zero?
 
 scratch = Dir.mktmpdir('volitex-campaign-worker-')
@@ -47,15 +49,16 @@ pids = []
 begin
   account = FactoryBot.create(:account)
   account.enable_features!(:whatsapp_campaign)
-  channel = FactoryBot.create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', phone_number: "+1999#{Time.now.to_i}#{rand(100)}", validate_provider_config: false, sync_templates: false)
+  channel = FactoryBot.create(:channel_whatsapp, account: account, provider: 'whatsapp_cloud', phone_number: "+1999#{Time.now.to_i}#{rand(100)}",
+                                                 validate_provider_config: false, sync_templates: false)
   channel.update!(message_templates: [{ name: 'hello', language: 'en', status: 'APPROVED', category: 'MARKETING' }])
   campaign = FactoryBot.create(:campaign, account: account, inbox: channel.inbox, campaign_status: :processing,
-                                         audience_snapshotted_at: Time.current,
-                                         template_params: { name: 'hello', language: 'en', processed_params: { body: {} } })
+                                          audience_snapshotted_at: Time.current,
+                                          template_params: { name: 'hello', language: 'en', processed_params: { body: {} } })
   recipients = 3.times.map do
     contact = FactoryBot.create(:contact, :with_phone_number, account: account,
-                                         custom_attributes: { whatsapp_marketing_consent: { status: 'granted', source: 'synthetic test',
-                                                                                           inbox_id: channel.inbox.id, recorded_at: 1.day.ago.iso8601 } })
+                                                              custom_attributes: { whatsapp_marketing_consent: { status: 'granted', source: 'synthetic test',
+                                                                                                                 inbox_id: channel.inbox.id, recorded_at: 1.day.ago.iso8601 } })
     campaign.campaign_recipients.create!(contact: contact, phone_number: contact.phone_number)
   end
   worker = Process.spawn('bundle', 'exec', 'sidekiq', '-r', './script/production/specs/campaign_worker_boot.rb', '-C', 'config/sidekiq_campaigns.yml', '-q', 'campaigns', '-c', '2',
@@ -68,17 +71,20 @@ begin
   sleep 0.1 until Sidekiq::ProcessSet.new.size >= 2 || Time.current >= deadline
   raise 'Worker startup failed' unless Sidekiq::ProcessSet.new.size >= 2
   raise 'Worker health check failed' unless system('bundle', 'exec', 'ruby', 'script/production/campaign_worker_health.rb')
+
   campaign.enqueue_dispatch
   original_token = campaign.reload.dispatch_token
   deadline = 20.seconds.from_now
   sleep 0.05 until mutex.synchronize { requests.values.sum.positive? } || Time.current >= deadline
   raise 'Provider was never reached' unless mutex.synchronize { requests.values.sum == 1 }
   raise 'Send intent was not committed' unless recipients.first.reload.state == 'sending'
+
   started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   CampaignVerificationProbeJob.perform_later("#{scratch}/normal-probe")
   sleep 0.05 until File.exist?("#{scratch}/normal-probe") || Process.clock_gettime(Process::CLOCK_MONOTONIC) - started > 5
   normal_latency = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   raise 'Campaign blocked critical queue' unless File.exist?("#{scratch}/normal-probe")
+
   Process.kill('KILL', worker)
   Process.wait(worker)
   pids.delete(worker)
@@ -96,8 +102,9 @@ begin
   raise 'Abandoned recipient was resent' unless recipients.first.reload.state == 'unknown'
   raise 'Pending recipients were lost' unless recipients.drop(1).all? { |recipient| recipient.reload.state == 'accepted' }
   raise 'Duplicate provider call' unless mutex.synchronize { requests.values.all? { |count| count == 1 } && requests.size == 3 }
+
   overlap = FactoryBot.create(:campaign, account: account, inbox: channel.inbox, campaign_status: :processing,
-                                        audience_snapshotted_at: Time.current, template_params: campaign.template_params)
+                                         audience_snapshotted_at: Time.current, template_params: campaign.template_params)
   recipients.each { |recipient| overlap.campaign_recipients.create!(contact: recipient.contact, phone_number: recipient.phone_number) }
   overlap.enqueue_dispatch
   overlap_token = overlap.reload.dispatch_token
@@ -106,6 +113,7 @@ begin
   sleep 0.1 until overlap.reload.completed? || Time.current >= deadline
   raise 'Overlapping jobs did not finish' unless overlap.completed?
   raise 'Overlapping jobs duplicated a send' unless mutex.synchronize { requests.size == 6 && requests.values.all? { |count| count == 1 } }
+
   puts JSON.generate(result: 'PASS', recipients: 6, provider_calls: 6, accepted: 5, unknown: 1,
                      duplicate_calls: 0, lost_pending: 0, stale_jobs_replayed: 5, overlapping_jobs: 5, critical_job_latency_seconds: normal_latency.round(3),
                      evidence_directory: scratch, provider: 'loopback fake Meta', redis: 'real', workers: 'real Sidekiq processes')

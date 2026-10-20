@@ -30,7 +30,10 @@ OptionParser.new do |parser|
   parser.on('--timeout SECONDS', Integer, 'HTTP timeout per request') { |value| options[:timeout] = value }
   parser.on('--secret-env NAME', 'Environment variable containing the Meta app secret') { |value| options[:secret_env] = value }
   parser.on('--allow-public-host', 'Explicitly allow a public Volitex hostname; never use for production') { options[:allow_public_host] = true }
-  parser.on('-h', '--help', 'Show help') { puts parser; exit }
+  parser.on('-h', '--help', 'Show help') do
+    puts parser
+    exit
+  end
 end.parse!
 
 abort 'Set --base-url' unless options[:base_url]

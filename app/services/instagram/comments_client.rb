@@ -9,7 +9,7 @@ class Instagram::CommentsClient
     'id,text,timestamp,hidden,like_count,parent_id,from{id,username}',
     'replies{id,text,timestamp,hidden,like_count,parent_id,from{id,username}}'
   ].join(',').freeze
-  RATE_LIMIT_ERROR_CODES = [4, 17, 32, 613, 80007].freeze
+  RATE_LIMIT_ERROR_CODES = [4, 17, 32, 613, 80_007].freeze
 
   class RequestError < StandardError
     attr_reader :status, :retry_after

@@ -197,7 +197,11 @@ const toggleAiMode = async () => {
       />
       <ConversationCallButton :inbox="inbox" :chat="currentChat" />
       <button
-        v-tooltip="isAiMode ? $t('CONVERSATION.HEADER.AI_MODE_ON') : $t('CONVERSATION.HEADER.AI_MODE_OFF')"
+        v-tooltip="
+          isAiMode
+            ? $t('CONVERSATION.HEADER.AI_MODE_ON')
+            : $t('CONVERSATION.HEADER.AI_MODE_OFF')
+        "
         class="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors"
         :class="
           isAiMode

@@ -1,5 +1,17 @@
 # Volitex AI Inbox — First-client production operations runbook
 
+## Current release checkpoint — October 20, 2026
+
+This checkpoint supersedes the historical artifact/source-only statements below. Source `a37256c7163c0da89512a5dc8452d73f55d3dad0` passed its three release gates and [registry publication](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39387150131). Its verified immutable image is:
+
+```text
+ghcr.io/yoanupop/volitex-ai-inbox@sha256:40d4e658cc7bb153a106f5edcbfdec10514aea4c18543c672a672789544d7f93
+```
+
+That image includes the private AgentBot transport and full product display name. Later readiness fixes require their own completed exact-source gates and published digest before adoption. [CI for source b72258f9d3](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39393632580) passed all sixteen backend groups and the frontend test suite; its overall result remains failed due to lint and dependency jobs. Follow-up lint/dependency/restore changes are not claimed verified by that earlier run.
+
+n8n remains pinned to the assessed 2.43.8 digest and operator-only HTTP/JSON profile. Official latest-release metadata was checked on October 20 and still selected 2.43.8. Its retained image findings and caller restrictions remain documented in the [restricted profile assessment](n8n-restricted-profile-assessment-2026-10-19.md). Application publication does not clear the separate n8n image. Actual KVM, restore/reboot/alerts, measured capacity and client-specific booking/provider acceptance are outstanding; do not mark them complete from CI alone.
+
 **Authorized publication completed:** see [2026-10-19 pullable artifact and verification](application-publication-2026-10-19.md). This supersedes earlier statements that source66 has no published artifact; KVM acceptance and traffic authorization remain outstanding.
 
 **Pre-client scope confirmed on 2026-10-19:** appointment booking with calendar/CRM integration; providers are chosen per client. The current staging workflow is a fixed reply integration test, not a booking workflow. Prepare the platform integration and security controls before the first sale; configure and accept each client's provider workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md). The [private AgentBot transport and isolated recovery checks](agentbot-private-transport-2026-10-19.md) are newer source changes not included in the published application image below. n8n version/capability approval and a verified artifact containing any adopted transport change are pre-KVM work. Publication of the application image alone does not clear these gates.
@@ -545,7 +557,7 @@ export AGE_IDENTITY='/etc/volitex/backup-age-key.txt'
 deployment/production/restore_postgres_backup.sh '<UTC-timestamp>/volitex.dump.age' '<latest-schema-version>'
 ```
 
-The script decrypts, validates, restores with pg_restore --clean --if-exists, and checks schema_migrations. For n8n restore its dump into an isolated n8n database and verify workflows/credentials with retained N8N_ENCRYPTION_KEY; do not apply the Volitex AI Inbox schema-version argument to n8n. Destroy the isolated restore DB after evidence is recorded.
+The script decrypts, validates and restores with pg_restore --clean --if-exists. The schema-version argument additionally checks the Rails schema_migrations table. For n8n, use the same script against an isolated n8n database with its dump and omit that Rails-only argument. Then start the pinned n8n version against the restored database and verify workflows/credentials with the retained N8N_ENCRYPTION_KEY. A successful archive restore alone is not application acceptance. Destroy the isolated restore DB after evidence is recorded.
 
 ## 6.3 Monitoring
 

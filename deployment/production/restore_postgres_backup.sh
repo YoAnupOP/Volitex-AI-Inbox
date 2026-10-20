@@ -26,10 +26,13 @@ age --decrypt --identity "$AGE_IDENTITY" --output "$dump_file" "$encrypted_file"
 pg_restore --list "$dump_file" >/dev/null
 pg_restore --clean --if-exists --no-owner --no-privileges --dbname "$RESTORE_DATABASE_URL" "$dump_file"
 
-schema_version="$(psql "$RESTORE_DATABASE_URL" -Atc 'SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1;')"
-if [[ -n "$expected_schema_version" && "$schema_version" != "$expected_schema_version" ]]; then
-  echo "restored schema ${schema_version}, expected ${expected_schema_version}" >&2
-  exit 1
+if [[ -n "$expected_schema_version" ]]; then
+  schema_version="$(psql "$RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc 'SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1;')"
+  if [[ "$schema_version" != "$expected_schema_version" ]]; then
+    echo "restored schema ${schema_version}, expected ${expected_schema_version}" >&2
+    exit 1
+  fi
+  echo "restore verified: schema ${schema_version}"
+else
+  echo 'database archive restored; application-level acceptance is still required'
 fi
-
-echo "restore verified: schema ${schema_version}"

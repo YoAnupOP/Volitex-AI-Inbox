@@ -40,7 +40,10 @@ const { accountsCount, usersCount, inboxesCount, conversationsCount } =
 <template>
   <div class="w-full h-full">
     <header class="main-content__header" role="banner">
-      <h1 id="page-title" class="main-content__page-title text-slate-900 dark:text-slate-100">
+      <h1
+        id="page-title"
+        class="main-content__page-title text-slate-900 dark:text-slate-100"
+      >
         {{ 'Admin Dashboard' }}
       </h1>
     </header>
@@ -48,20 +51,30 @@ const { accountsCount, usersCount, inboxesCount, conversationsCount } =
     <section class="main-content__body main-content__body--flush">
       <div class="report--list">
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">{{ accountsCount }}</div>
+          <div class="metric text-slate-900 dark:text-slate-100">
+            {{ accountsCount }}
+          </div>
           <div class="text-slate-700 dark:text-slate-300">{{ 'Accounts' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">{{ usersCount }}</div>
+          <div class="metric text-slate-900 dark:text-slate-100">
+            {{ usersCount }}
+          </div>
           <div class="text-slate-700 dark:text-slate-300">{{ 'Users' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">{{ inboxesCount }}</div>
+          <div class="metric text-slate-900 dark:text-slate-100">
+            {{ inboxesCount }}
+          </div>
           <div class="text-slate-700 dark:text-slate-300">{{ 'Inboxes' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">{{ conversationsCount }}</div>
-          <div class="text-slate-700 dark:text-slate-300">{{ 'Conversations' }}</div>
+          <div class="metric text-slate-900 dark:text-slate-100">
+            {{ conversationsCount }}
+          </div>
+          <div class="text-slate-700 dark:text-slate-300">
+            {{ 'Conversations' }}
+          </div>
         </div>
       </div>
     </section>

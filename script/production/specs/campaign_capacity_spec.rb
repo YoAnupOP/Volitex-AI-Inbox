@@ -57,7 +57,7 @@ RSpec.describe 'Synthetic WhatsApp campaign capacity', type: :job do
       size.times do
         dispatch_started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         Whatsapp::CampaignDispatchService.new(campaign: campaign).perform
-        dispatch_latencies << Process.clock_gettime(Process::CLOCK_MONOTONIC) - dispatch_started
+        dispatch_latencies << (Process.clock_gettime(Process::CLOCK_MONOTONIC) - dispatch_started)
         travel 1.second
       end
       Whatsapp::CampaignDispatchService.new(campaign: campaign).perform
@@ -72,7 +72,9 @@ RSpec.describe 'Synthetic WhatsApp campaign capacity', type: :job do
       dispatch_sorted = dispatch_latencies.sort
       expect(campaign.campaign_recipients.where(state: 'accepted').count).to eq(size)
       travel_back
-      puts({ recipients: size, test_adapter_jobs: enqueued_jobs.size, campaign_dispatch_jobs: enqueued_jobs.count { |job| job[:job] == Campaigns::DispatchJob }, adapter: 'ActiveJob test + direct dispatcher, accelerated clock', provider: 'mocked', enqueue_seconds: enqueue_seconds,
+      campaign_dispatch_jobs = enqueued_jobs.count { |job| job[:job] == Campaigns::DispatchJob }
+      puts({ recipients: size, test_adapter_jobs: enqueued_jobs.size, campaign_dispatch_jobs: campaign_dispatch_jobs,
+             adapter: 'ActiveJob test + direct dispatcher, accelerated clock', provider: 'mocked', enqueue_seconds: enqueue_seconds,
              snapshot_seconds: snapshot_seconds, processing_seconds: elapsed, recipients_per_second: size / elapsed, cpu_seconds: cpu_seconds,
              peak_process_rss_kib: File.read('/proc/self/status')[/VmHWM:\s+(\d+)/, 1].to_i,
              account_read_p95_ms: sorted[(sorted.length * 0.95).floor] * 1_000,
