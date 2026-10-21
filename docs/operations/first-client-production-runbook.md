@@ -332,6 +332,20 @@ Preserve the relative directory layout: Compose loads `./n8n/runtime-policy.env`
 
 The verified Inbox image includes private AgentBot transport. Keep `SAFE_FETCH_ALLOW_PRIVATE_NETWORK=false`; configure only exact per-account bot/URL/IP bindings as described in Phase 4. Do not create a global private-network exception.
 
+**Fresh-volume permission preflight (verified locally October 21):** Docker can create the mounted `/home/node/.n8n` directory as root-owned. The maintained runtime runs as UID/GID `1000:1000` and then fails with `EACCES` when creating `config`. After Coolify creates the fresh `n8n_data` volume, identify its actual Docker volume name and initialize that directory before starting main. In the operator shell, set `N8N_IMAGE` to the verified immutable reference above and `N8N_DATA_VOLUME` to that exact volume name:
+
+```bash
+docker volume inspect "$N8N_DATA_VOLUME" >/dev/null
+docker run --rm --network none --user 0:0 --entrypoint sh \
+  --mount "type=volume,source=$N8N_DATA_VOLUME,target=/home/node/.n8n" \
+  "$N8N_IMAGE" -c 'chown 1000:1000 /home/node/.n8n && chmod 0700 /home/node/.n8n'
+docker run --rm --network none --user 1000:1000 --entrypoint sh \
+  --mount "type=volume,source=$N8N_DATA_VOLUME,target=/home/node/.n8n" \
+  "$N8N_IMAGE" -c 'test -w /home/node/.n8n'
+```
+
+This isolated one-shot initialization changes only the fresh volume's top-level directory. Main and worker retain their non-root security settings. For restored/existing volumes, inspect file ownership and retained encryption configuration separately; do not recursively change or replace existing data as a startup shortcut. Verify readiness after initialization before opening the editor.
+
 Before either Compose application is deployed, select a non-conflicting RFC1918 subnet and create one dedicated internal Docker bridge. For example, only after confirming that the example subnet is unused:
 
 ```bash
