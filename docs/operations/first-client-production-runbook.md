@@ -399,6 +399,39 @@ https://inbox.volitexai.tech/data-deletion/<confirmation_code>
 
 **Already handled by Volitex AI Inbox:** OAuth callback routes, state signing, channel create/update, token encryption when configured, and webhook signature code. **Manual:** Meta approvals, app settings, domains, permissions, and external secrets.
 
+### Mandatory WhatsApp App Secret provisioning — before accepting messages
+
+**KVM deployment gate; observed locally October 21, 2026.** The local database repair is not transferred to a fresh VPS. The deployment operator must complete this step on the actual server. A valid callback GET verification does not prove that incoming POST signatures will pass.
+
+The WhatsApp controller reads the channel's supported app-secret fields and the global `WHATSAPP_APP_SECRET`. The Facebook/Messenger form's `FB_APP_SECRET` is not its global fallback; the callback verify token and API access token are different credentials.
+
+For this release, an existing blank `InstallationConfig` row named `WHATSAPP_APP_SECRET` prevents `GlobalConfigService.load` from importing the environment value: its `first_or_create` returns the existing blank row. A nonblank database value also takes precedence over environment changes. Therefore saving `.env` and restarting alone are not sufficient acceptance checks. This procedure handles the deployment configuration; the published image's fallback implementation has not been changed.
+
+1. Enter the correct Meta App Secret into protected `WHATSAPP_APP_SECRET` in Coolify (or the untracked server `.env`). Never put its value in Git, chat, command arguments, logs or screenshots. Recreate the app containers when changing their environment; a plain restart does not reload the Compose environment.
+2. After migration and app startup, explicitly provision the installation value from the running container's protected environment. Run from the configured production Compose directory; this prints no secret. It preserves an equal existing value and stops for review if a different nonblank database value already exists:
+
+```bash
+docker compose -f docker-compose.production.yaml exec -T rails bundle exec rails runner - <<'RUBY'
+secret = ENV.fetch('WHATSAPP_APP_SECRET')
+raise 'WHATSAPP_APP_SECRET is empty' if secret.blank?
+config = InstallationConfig.find_or_initialize_by(name: 'WHATSAPP_APP_SECRET')
+if config.value.present? && config.value != secret
+  raise 'Database and environment secrets differ; review the intended Meta app before rotation'
+end
+config.value = secret
+config.save!
+raise 'Effective WhatsApp secret mismatch' unless GlobalConfigService.load('WHATSAPP_APP_SECRET', nil) == secret
+puts 'WhatsApp effective App Secret configured: PASS'
+RUBY
+```
+
+`InstallationConfig.save!` clears the global configuration cache through its existing callback. Do not edit raw serialized SQL or disable signature verification. For later secret rotation, review the intended app and deliberately update the protected environment and installation value together; an environment edit does not override a populated database setting.
+
+3. Verify a real Meta delivery contains `X-Hub-Signature-256` and passes the actual controller's HMAC check against the exact request bytes. Presence of an environment variable or an isolated HMAC match is insufficient if the controller's effective configuration is blank. Inspect only presence/match booleans, HTTP status and processing IDs; do not print secrets, signatures or customer message bodies.
+4. Send an authorized test WhatsApp message. Require POST HTTP 200, successful high-priority Sidekiq processing, and the message visible in the correct account/inbox. Record sanitized evidence. Also retain the missing/invalid signature rejection check. No successful live acceptance is implied by the local captured-request signature check alone.
+
+**Stop condition:** any signed POST still returning 401, failed queue processing or absent test message blocks WhatsApp go-live. Check effective app/channel secret and actual Meta app identity before retries. Do not substitute the webhook verify token, bypass HMAC or replay customer traffic merely to make the check pass.
+
 ## 3.2 WhatsApp asset connection
 
 **Type:** [MANUAL] [PER META ASSET] [PER CLIENT]
@@ -507,7 +540,7 @@ Record timestamp, operator, release commit, image digest, and evidence. Do not d
 
 ### Meta and messages
 
-- [MANUAL] Valid WhatsApp signature accepted; missing/invalid rejected.
+- [MANUAL] Complete the mandatory WhatsApp App Secret provisioning above, including blank database-row handling and an effective-configuration check without secret output. Valid WhatsApp signature accepted; missing/invalid rejected; an authorized live test message appears in the correct Inbox.
 - [MANUAL] WhatsApp inbound reaches only the client inbox.
 - [MANUAL] Human and n8n WhatsApp outbound work.
 - [MANUAL] Human takeover stops bot replies and a later bot reply is rejected.
