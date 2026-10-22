@@ -391,6 +391,38 @@ try:
 except Exception as error:
     RESULTS['result'] = 'FAIL'
     RESULTS['failure'] = type(error).__name__ + ': ' + str(error)[:200]
+    # Preserve bounded, non-secret outcomes before disposable resources vanish.
+    # Raw execution data, webhook headers and credential values are never emitted.
+    try:
+        if 'fake' in globals():
+            RESULTS['failure_provider_state'] = fake_state()
+        if 'n8n_db' in globals() and 'n8n_main' in globals():
+            rows = sql('n8n', """SELECT coalesce(json_agg(t), '[]') FROM (
+                SELECT e.id,e.status,d.data FROM execution_entity e
+                LEFT JOIN execution_data d ON d."executionId"=e.id
+                WHERE e."workflowId"='VolitexStagingReply' ORDER BY e.id DESC LIMIT 6
+            ) t""")
+            decoder = """const flatted = require('/usr/local/lib/node_modules/n8n/node_modules/flatted');
+                let input = ''; process.stdin.on('data', chunk => input += chunk);
+                process.stdin.on('end', () => console.log(JSON.stringify(JSON.parse(input).map(row => {
+                    const result = row.data ? flatted.parse(row.data).resultData || {} : {};
+                    const statuses = new Set(['reply_accepted','human_owned','authenticated_event',
+                        'automation_allowed','invalid_authentication','tenant_context_rejected',
+                        'inbox_unavailable','ignored_test_phrase','reply_rejected','inbox_api_rejected']);
+                    return {id: row.id, status: row.status, lastNode: result.lastNodeExecuted,
+                        errorName: result.error?.name,
+                        nodes: Object.entries(result.runData || {}).map(([node, runs]) => ({node,
+                            errorNames: runs.map(run => run.error?.name).filter(Boolean),
+                            outcomes: runs.flatMap(run => (run.data?.main || []).flat()
+                                .filter(Boolean).map(item => item.json?.verification?.status || item.json?.status)
+                                .filter(status => statuses.has(status)))
+                        }))};
+                }))));"""
+            decoded = subprocess.run(['docker', 'exec', '-i', n8n_main, 'node', '-e', decoder],
+                                     input=rows, capture_output=True, text=True, check=True, timeout=30)
+            RESULTS['failure_execution_outcomes'] = json.loads(decoded.stdout)
+    except Exception as diagnostic_error:
+        RESULTS['failure_diagnostics_unavailable'] = type(diagnostic_error).__name__
     raise
 finally:
     for container in CONTAINERS:
