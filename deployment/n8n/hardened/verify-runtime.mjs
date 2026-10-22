@@ -24,7 +24,7 @@ const versions = {
   '@modelcontextprotocol/server': '2.3.0',
   'follow-redirects': '1.16.1',
   'markdown-it': '14.3.3',
-  'sanitize-html': '2.18.0',
+  'sanitize-html': '2.18.1',
   '@simple-git/argv-parser': '2.0.1',
   handlebars: '4.7.10',
   nodemailer: '10.0.9',

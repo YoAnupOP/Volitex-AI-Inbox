@@ -10,7 +10,7 @@ const replacements = {
   '@modelcontextprotocol/server': ['2.0.0', '2.3.0'],
   'follow-redirects': ['1.16.0', '1.16.1'],
   'markdown-it': ['13.0.2', '14.3.3'],
-  'sanitize-html': ['2.17.7', '2.18.0'],
+  'sanitize-html': ['2.17.7', '2.18.1'],
   '@simple-git/argv-parser': ['1.1.1', '2.0.1'],
   handlebars: ['4.7.9', '4.7.10'],
   nodemailer: ['8.0.10', '10.0.9'],

@@ -34,7 +34,7 @@ Publication downloads that accepted archive, verifies its checksum/source and ba
 
 ## October 22 advisory follow-up (requires a newly gated release)
 
-The security overlay now targets MCP SDK 1.32.0, MCP server 2.3.0, follow-redirects 1.16.1, markdown-it 14.3.3, Hono 4.13.11 and sanitize-html 2.18.0. The existing backports remain verified. Upgrading the MCP packages alone does not enforce the new optional input limits (GHSA-46jr-4wx8-v453). The HTTP/JSON production policy therefore disables both `mcp` and `mcp-registry` backend modules, in addition to excluding their nodes. The registry probe must prove those modules are ineligible. Enabling MCP later requires an explicit caller review, `maxToolInputElements` and transport/parser request size limits with adversarial acceptance; it is outside this approved profile. Existing published digests do not acquire these changes.
+The security overlay now targets MCP SDK 1.32.0, MCP server 2.3.0, follow-redirects 1.16.1, markdown-it 14.3.3, Hono 4.13.11 and sanitize-html 2.18.1. The existing backports remain verified. Upgrading the MCP packages alone does not enforce the new optional input limits (GHSA-46jr-4wx8-v453). The HTTP/JSON production policy therefore disables both `mcp` and `mcp-registry` backend modules, in addition to excluding their nodes. The registry probe must prove those modules are ineligible. Enabling MCP later requires an explicit caller review, `maxToolInputElements` and transport/parser request size limits with adversarial acceptance; it is outside this approved profile. Existing published digests do not acquire these changes.
 
 ## Maintenance
 

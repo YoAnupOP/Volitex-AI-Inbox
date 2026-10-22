@@ -38,7 +38,7 @@ The fresh published n8n scan reports **0 Critical, 10 High, 17 Medium, 3 Low and
 | n8n follow-redirects | 1.16.0 | 1.16.1 | High redirect advisories |
 | n8n markdown-it | 13.0.2 | 14.3.3 | Available parser fixes |
 | n8n Hono | 4.13.7 | 4.13.11 | Static-prefix authorization bypass |
-| n8n sanitize-html | 2.17.7 | 2.18.0 | Available sanitizer fixes |
+| n8n sanitize-html | 2.17.7 | 2.18.1 | Available sanitizer fixes |
 
 The [MCP upstream advisory](https://github.com/advisories/GHSA-46jr-4wx8-v453) explicitly says upgrading alone does not enable optional input limits. The shared HTTP/JSON production policy therefore disables both `mcp` and `mcp-registry` backend modules; the actual module-registry probe asserts they are ineligible. MCP nodes are already excluded. Future MCP enablement requires explicit caller review, `maxToolInputElements` and transport/parser body limits with adversarial acceptance. Existing client HTTP workflows do not require MCP.
 
