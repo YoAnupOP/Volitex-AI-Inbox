@@ -71,6 +71,15 @@
 - Deployments use the verified immutable image digest. The `master` image tag is a convenience pointer, not a production pin. Image publication does not deploy to a server or establish live client readiness.
 - Keep private local configuration and recovery snapshots outside tracked source. Never commit `.env`, credentials, or founder context files containing private information.
 
+### Deployment and ongoing operations ownership
+
+- The founder buys Hostinger KVM 4, completes the basic initial steps requiring his identity or provider access, and supplies the required server access and permissions. Codex is the technical deployment and operations agent for Volitex AI Inbox and n8n; do not routinely hand executable technical tasks back to the nontechnical founder when the available tools and authorization allow Codex to complete them safely.
+- After access is supplied, execute the deployment using `docs/operations/first-client-production-runbook.md` and the verified immutable release kit: provision configuration and private services, apply migrations, configure integrations, and record acceptance evidence before declaring clients live. Inspect existing state first; reuse completed work.
+- Ongoing scope includes monitoring configuration, health checks, log review, troubleshooting, incident response, security and application updates, routine maintenance, backups, and recovery verification. Use existing authorization for routine safe operations; obtain approval for destructive recovery, data loss, new spending, or actions outside the agreed scope. Leave a protected change/incident record and a concise founder-facing outcome.
+- Record the actual server, access method, alert destination, monitoring/backup schedules, recovery objectives, escalation contact, and maintenance window in protected operational records; never store credentials in this file or Git. Ask the founder only for missing access, business decisions, identity/consent steps, or approvals that cannot be completed with available permissions.
+- This ownership instruction does not itself create continuous execution or 24/7 coverage. Configure and verify persistent server-side monitoring, backup scheduling and alert delivery; explicitly record how alerts reach an available operator or agent, coverage gaps and escalation. Do not claim unattended maintenance or incident response is active merely because a chat or this file exists.
+- Distinguish verified release artifacts from a deployed and accepted service. Recheck current advisories and registry availability before deployment; complete actual server restore/reboot/alert and client integration acceptance. Report incomplete or unverified requirements plainly and keep campaigns gated until their separate acceptance checks pass.
+
 ## Commit Messages
 
 - Prefer Conventional Commits: `type(scope): subject` (scope optional)

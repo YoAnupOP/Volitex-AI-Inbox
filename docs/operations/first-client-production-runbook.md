@@ -51,7 +51,11 @@ Never put a real secret in this document, Git, a workflow file, a shell command,
 
 ### Division of responsibility
 
-Codex can automate repository changes, CI/test execution, image/digest verification, compose/configuration inspection, non-secret templates, release records, and post-deployment diagnostic commands when access is provided. You personally must buy the VPS, control provider billing, enter production secrets, operate Coolify/Hostinger/Meta/n8n dashboards, approve client data and prompts, perform destructive or externally visible recovery actions, and obtain client sign-off.
+The founder purchases the VPS, completes the basic initial identity/provider steps, supplies required server access and permissions, and owns billing, client scope and client sign-off. After that handoff, Codex executes the technical deployment and ongoing operations wherever tools and authorization permit: configuration, migrations, integrations, health checks, logs, troubleshooting, incident response, backups/restore verification, security updates and routine maintenance. Do not make the founder execute routine technical commands that Codex can safely handle. The repository's `AGENTS.md` records this standing handoff model.
+
+The [MANUAL] labels below mean an operator action is required, not necessarily that the founder must perform it. Codex should perform these steps with available access; involve the founder for missing access, identity/consent, business decisions, new spending or destructive actions requiring approval. Keep secrets in protected stores and record deployment/change evidence without exposing their values.
+
+Before accepting traffic, record the server/access inventory, alert destination and escalation contact, backup and monitoring schedules, recovery objectives and maintenance window in the protected operations record. Install and verify persistent monitoring, backup jobs and alert delivery. Document how an alert reaches an available operator or agent and any coverage gaps: this runbook and a chat do not create continuous execution or 24/7 incident coverage.
 
 ## Verified release and deployment kit
 
