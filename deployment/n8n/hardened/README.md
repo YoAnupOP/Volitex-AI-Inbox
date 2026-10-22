@@ -22,7 +22,9 @@ The rejected older npm assessment recipe has been removed from deployment source
 
 For a **new deployment**, create clean volumes with these published images. For an **existing Debian PostgreSQL deployment**, stop/drain all writers, preserve backups and the encryption key, and logically dump/restore into a fresh cluster. **Never attach the old Debian PGDATA volume directly to the Alpine image.** The acceptance harness starts with the old Debian image, backs up actual n8n workflows/credentials, restores into a fresh maintained PostgreSQL volume, and then verifies signed replies and application/database/key rollback. It also migrates persisted same-major Valkey AOF state with all writers stopped and verifies string/list state before resuming queue work. Existing workstation staging volumes are not used or modified.
 
-All three maintained images are saved in the checksummed acceptance archive and separately scanned with no companion-image vulnerability exceptions. Publication exports `n8n/immutable-reference.txt`, `n8n-postgres/immutable-reference.txt` and `n8n-valkey/immutable-reference.txt`; use all three references in the deployment environment.
+The separate `deployment/production/InboxPostgres.Dockerfile` supplies PostgreSQL 16.15 with pgvector 0.8.7 and pg_stat_statements preload for Inbox. It uses the same source-marker, obsolete-helper removal and scan gates, plus a checksum-pinned extension build with portable CPU flags. It is not the n8n PostgreSQL service and must have separate data, role and credentials. The extended acceptance verifies migration, vector execution, required extensions and dump/restore against this image. Existing Debian PGDATA must never be mounted directly into it.
+
+All four maintained companion/runtime images are saved in the checksummed acceptance archive and separately scanned with no companion-image vulnerability exceptions. Publication exports `n8n/immutable-reference.txt`, `n8n-postgres/immutable-reference.txt` and `n8n-valkey/immutable-reference.txt`; use all three references in the deployment environment.
 
 ## Evidence and release gates
 

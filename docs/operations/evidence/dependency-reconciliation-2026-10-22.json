@@ -24,8 +24,71 @@
     "full-range-reconciliation.json": "41d59f55bd80f088e64c309660ce671e8ee60e29cabc013932b9d5ca3c892025",
     "n8n-trivy.json": "2dd0388ca1e7f2f61f97ac5cbc72e9e006e576f7da84829163a80b835227209a",
     "inbox-prod-audit.json": "f6670f7fc3386911489754e02973782b468afc5592bedc560e08002526abf646",
-    "inbox-prod-audit-after.json": "13b5f651f633131c997763d40cf1b556d6fd69d415ff70a2e1d21b2d7b53a663"
+    "inbox-prod-audit-after.json": "13b5f651f633131c997763d40cf1b556d6fd69d415ff70a2e1d21b2d7b53a663",
+    "inbox-trivy.json": "b2ce41f2df1e6f43de3922ea0cb3048e179a99bdd95f02be4483543ccbc030b1",
+    "postgres-trivy.json": "85676e0a3597850512a193ceb49d1f977c926552098559c15ff044d55827cdbb",
+    "valkey-trivy.json": "cd159b1aa2fab71eb715e31420d717f2cbcdef7ed57b591def56beec3feee6f9",
+    "module-policy-test.log": "5e935072feb2079bbb4f3fb85b2e13bd37a69f8394178597ef4edd6ecb9ffe39",
+    "running-image-identity.json": "772e374f9124a785dea08f1605090ed76fa07fae72eb85cff3fbeac9acd00012",
+    "ci-29d885f389-n8n/n8n-vulnerabilities.json": "3e0dde3387c5db03181be6d7b07ef02dfb3d55e541f416f78a1c8cdbe02c5c0f",
+    "ci-29d885f389-n8n/postgres.json": "8fc31b98512b101169d17a1ddf95a0f418339588089d1e585e5b256563a4c94e",
+    "ci-29d885f389-n8n/security-summary.json": "41fbc0584880e3209987fb0022fdf288ae8ef87ec09e35add7bd1ada0324cc5b",
+    "ci-29d885f389-n8n/source-verification.json": "8a2391f72e381b9eeded45e4871a062770b87211d5fbbbc846b373d34f1c9e2c",
+    "ci-29d885f389-n8n/valkey.json": "0d499a09df0f14317e939f8ad0c1bbb4c3f806d0932d4661e6ba7c58311e4c8f",
+    "inbox-pgvector-trivy.json": "c4c61828cc6818c9d85265f4591d8bd778f45dff1b44b1fc958e7b99e91e26b8",
+    "inbox-pgvector-trixie-trivy.json": "d8074357ddc856408317b5df8b466e8a2a2ae44b122845fc6993b395498467a6",
+    "pgvector-v0.8.7.tar.gz": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+    "manifest-version-matching.json": "340a8081481322e1d5ab62e09aa8f73f76a43d96dc49513ce10e09ae2b930cf6"
   },
   "no_alerts_dismissed": true,
-  "production_deployed": false
+  "production_deployed": false,
+  "local_tests": {
+    "message_formatter": {
+      "passed": 27,
+      "failed": 0
+    },
+    "vue_ssr": {
+      "passed": 2,
+      "failed": 0
+    },
+    "actual_node_module_registry_policy": "PASS (18 nodes, mcp and mcp-registry ineligible)",
+    "inbox_prod_audit_after": "0 findings",
+    "n8n_overlay_audit_after": "0 findings (sanitize-html 2.18.1)",
+    "application_runtime_eslint": "not a release gate: direct ad-hoc lint reported pre-existing CJS CLI rule violations; actual frontend lint is gated by full CE CI"
+  },
+  "replacement_candidate_source": "PENDING_EXTENDED_INBOX_DATABASE_GATES",
+  "candidate_runtime_verification": {
+    "run_url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39757838868",
+    "n8n_runtime_job": "success",
+    "unresolved_critical_high": 0,
+    "verified_backports": 2,
+    "retained_lower_severity": {
+      "MEDIUM": 7,
+      "LOW": 1
+    },
+    "postgres_findings": 0,
+    "valkey_findings": 0,
+    "publication": "PENDING",
+    "source_sha": "29d885f3895b1391d24763d734feabbdbb91fa8f"
+  },
+  "inbox_postgres_revalidation": {
+    "legacy_raw_findings": {
+      "CRITICAL": 16,
+      "HIGH": 116,
+      "MEDIUM": 229,
+      "LOW": 185,
+      "UNKNOWN": 10
+    },
+    "current_vendor_pg16_trixie_raw_findings": {
+      "CRITICAL": 2,
+      "HIGH": 87,
+      "MEDIUM": 140,
+      "LOW": 141,
+      "UNKNOWN": 9
+    },
+    "replacement": "deployment/production/InboxPostgres.Dockerfile",
+    "database_major_version": 16,
+    "existing_data_changed": false,
+    "status": "BUILD_SCAN_AND_FULL_ACCEPTANCE_REQUIRED"
+  }
 }

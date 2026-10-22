@@ -48,6 +48,12 @@ New packages use the existing integrity-locked complete dependency overlay and f
 
 Fresh scans of the old Inbox, n8n PostgreSQL and Valkey images found no High/Critical findings. Inbox retains the two explained Devise Medium findings and a json 2.9.1 Low finding. All four images also contain the newly reported musl `CVE-2026-107891`, classified UNKNOWN by this scanner, with available Alpine patches. UNKNOWN is not treated as harmless: the three maintained n8n-family Dockerfiles now explicitly install musl/musl-utils 1.2.6-r3, and Inbox's existing targeted OS upgrade includes musl, musl-dev and musl-utils on Alpine 3.23. The [Alpine record](https://security.alpinelinux.org/vuln/CVE-2026-107891) is the vendor source. Fresh built-image scans must confirm removal. No broad OS/distribution upgrade is included.
 
+## Separate Inbox database prerequisite — newly confirmed blocker
+
+The compatibility-only pgvector digest in the old runbook has **16 Critical, 116 High, 229 Medium, 185 Low and 10 Unknown** raw findings. Current vendor `pg16-trixie` was also assessed and still has two Critical and 87 High findings. These counts describe package findings, not proof every advisory is remotely reachable; neither image is approved by our no-unresolved-Critical/High release policy.
+
+`deployment/production/InboxPostgres.Dockerfile` therefore keeps PostgreSQL 16 and the separate Inbox database architecture, builds pgvector 0.8.7 from a checksum-verified upstream archive against immutable official PostgreSQL 16.15/Alpine 3.24, disables host-native CPU optimizations, and uses the existing maintained companion pattern to remove obsolete gosu and apply vendor security patches. Build tools remain in a separate build stage. No existing database or volume is migrated. Candidate and publication now scan, archive, source-verify and publish this fifth image; application boot, database dump/restore and the full Inbox/n8n acceptance must run against it. Until those gates pass and its digest is published, the complete deployment remains blocked. Never mount existing Debian PGDATA into the Alpine replacement; use logical restore into fresh storage.
+
 ## Kit decision and KVM handoff
 
 The old kit is still an integrity-verified historical snapshot. Its images require security updates and a new verified kit before go-live. Reuse Compose topology, provisioning, WhatsApp effective-secret instructions and operational acceptance procedures. No production server, credentials, client data or paid resources were changed by this reconciliation.

@@ -3,6 +3,8 @@
 set -euo pipefail
 image=${1:?candidate image required}
 commit=${2:?commit required}
+app_postgres_image=${3:?verified Inbox pgvector image required}
+app_valkey_image=${4:?verified Inbox Valkey image required}
 prefix="volitex-verify-${GITHUB_RUN_ID:-$$}"
 scratch=$(mktemp -d)
 cleanup() {
@@ -44,12 +46,16 @@ if docker volume inspect "$prefix-storage" >/dev/null 2>&1; then
   exit 1
 fi
 docker volume create "$prefix-storage" >/dev/null
-docker run -d --name "$prefix-db" --network "$prefix" --env-file "$scratch/.env" pgvector/pgvector:pg16 >/dev/null
-docker run -d --name "$prefix-redis" --network "$prefix" redis:7-alpine >/dev/null
+docker run -d --name "$prefix-db" --network "$prefix" --env-file "$scratch/.env" "$app_postgres_image" >/dev/null
+docker run -d --name "$prefix-redis" --network "$prefix" "$app_valkey_image" >/dev/null
 for attempt in $(seq 1 60); do
   if docker exec "$prefix-db" pg_isready -U postgres >/dev/null 2>&1; then break; fi
   sleep 2
 done
+docker exec "$prefix-db" psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;'
+test "$(docker exec "$prefix-db" psql -U postgres -d postgres -tAc "SELECT '[1,2]'::vector <-> '[1,2]'::vector")" = 0
+docker exec "$prefix-db" psql -U postgres -d postgres -tAc 'SHOW shared_preload_libraries' | grep -q pg_stat_statements
+
 docker run --rm --network "$prefix" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails db:chatwoot_prepare
 docker run -d --name "$prefix-web" --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" --entrypoint docker/entrypoints/rails.sh "$image" bundle exec rails s -p 3000 -b 0.0.0.0 >/dev/null
 docker run -d --name "$prefix-worker" --env SIDEKIQ_HEALTH_QUEUE=critical --network "$prefix" --volume "$prefix-storage:/app/storage" --env-file "$scratch/.env" "$image" bundle exec sidekiq -C config/sidekiq.yml >/dev/null

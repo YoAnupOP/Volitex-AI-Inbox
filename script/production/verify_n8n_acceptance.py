@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'script/production/specs/n8n_acceptance'
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--app-image', required=True)
+parser.add_argument('--app-postgres-image', required=True)
 parser.add_argument('--source-sha', required=True)
 parser.add_argument('--n8n-image', required=True)
 parser.add_argument('--n8n-postgres-image', required=True)
@@ -33,7 +34,7 @@ OLD = 'n8nio/n8n@sha256:c34ee9107a42b837e25cec0c8a927ab90a45b776aa2ccbf15e5b9cda
 NEW = args.n8n_image
 LEGACY_PG = 'postgres@sha256:f4c66b820c6f974249089d3d16d86a3698eae11e8746eb6644b2271031e91232'
 PG = args.n8n_postgres_image
-APP_PG = 'pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2'
+APP_PG = args.app_postgres_image
 LEGACY_REDIS = 'valkey/valkey@sha256:3fbd2e3e4b6e85e046c1e7c215e8f79087bc0357789184305806664e320996f3'
 REDIS = args.n8n_valkey_image
 FAKE_NODE = 'node@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20'
@@ -57,7 +58,7 @@ ROLE_NETWORKS = {
     'n8n-worker': (N8N_NETWORK, '172.30.247.'),
 }
 RESULTS = {'application_image': APP, 'application_source': SOURCE_SHA, 'candidate_n8n_image': NEW,
-           'candidate_n8n_postgres_image': PG, 'candidate_n8n_valkey_image': REDIS,
+           'candidate_inbox_postgres_image': APP_PG, 'candidate_n8n_postgres_image': PG, 'candidate_n8n_valkey_image': REDIS,
            'runtime_policy_sha256': hashlib.sha256((ROOT / 'deployment/n8n/runtime-policy.env').read_bytes()).hexdigest()}
 
 
@@ -183,6 +184,9 @@ try:
     redis = start('redis', LEGACY_REDIS, '172.30.248.7', mounts=[f'{PREFIX}-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-redis')
     start('app-redis', REDIS, '172.30.248.8', mounts=[f'{PREFIX}-app-redis:/data'], args=['valkey-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction'], alias='probe-app-redis')
     fake = start('fake', FAKE_NODE, '172.30.248.30', mounts=[f'{FIXTURES}:/code:ro', f'{SCRATCH}:/state'], args=['node', '/code/fake.cjs'], alias='probe-fake')
+    if command('docker', 'exec', app_db, 'cat', '/opt/volitex/inbox-postgres-source-sha') != SOURCE_SHA:
+        raise RuntimeError('Inbox PostgreSQL image source mismatch')
+    RESULTS['inbox_postgres_source_marker'] = 'PASS'
     for db in (app_db, n8n_db):
         wait_for(lambda db=db: 'accepting connections' in command('docker', 'exec', db, 'pg_isready', '-U', 'postgres', check=False), 'postgres_ready')
     sql('postgres', 'CREATE DATABASE n8n')

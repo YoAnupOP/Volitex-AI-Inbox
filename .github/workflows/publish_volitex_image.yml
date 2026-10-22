@@ -93,6 +93,7 @@ jobs:
           echo "n8n_name=ghcr.io/${owner}/volitex-ai-n8n" >> "$GITHUB_OUTPUT"
           echo "postgres_name=ghcr.io/${owner}/volitex-ai-n8n-postgres" >> "$GITHUB_OUTPUT"
           echo "valkey_name=ghcr.io/${owner}/volitex-ai-n8n-valkey" >> "$GITHUB_OUTPUT"
+          echo "inbox_postgres_name=ghcr.io/${owner}/volitex-ai-inbox-postgres" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -126,23 +127,6 @@ jobs:
           tags: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}
           build-args: GIT_SHA=${{ needs.gates.outputs.source_sha }}
           cache-from: type=gha,scope=candidate-amd64
-      - name: Boot and recover the exact image
-        if: steps.existing.outputs.exists == 'false'
-        env:
-          IMAGE: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}
-          SOURCE_SHA: ${{ needs.gates.outputs.source_sha }}
-        run: bash script/production/verify_candidate.sh "$IMAGE" "$SOURCE_SHA"
-      - name: Scan the same image before publication
-        if: steps.existing.outputs.exists == 'false'
-        env:
-          IMAGE: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/publication-audit"
-          docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-            --volume "$RUNNER_TEMP/publication-audit:/out" \
-            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
-            image --scanners vuln --exit-code 0 --format json --output /out/image.json "$IMAGE"
-          jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$RUNNER_TEMP/publication-audit/image.json"
       - name: Load and recheck the exact n8n image accepted by CI
         env:
           SOURCE_SHA: ${{ needs.gates.outputs.source_sha }}
@@ -172,17 +156,34 @@ jobs:
             -v "$PWD/script/production/audit_n8n_runtime.mjs:/audit.mjs:ro" \
             -v "$RUNNER_TEMP/publication-audit/n8n:/out" --entrypoint node "$image" \
             /audit.mjs /out/image.json /out/source-verification.json /out/security-summary.json "$SOURCE_SHA" "$image"
-          for service in postgres valkey; do
-            image="volitex-n8n-$service:$SOURCE_SHA"
-            out="$RUNNER_TEMP/publication-audit/n8n-$service"
+          for service in n8n-postgres n8n-valkey inbox-postgres; do
+            image="volitex-$service:$SOURCE_SHA"
+            out="$RUNNER_TEMP/publication-audit/$service"
             mkdir -p "$out"
-            test "$(docker run --rm --network none --entrypoint cat "$image" "/opt/volitex/$service-source-sha")" = "$SOURCE_SHA"
+            test "$(docker run --rm --network none --entrypoint cat "$image" "/opt/volitex/${service#n8n-}-source-sha")" = "$SOURCE_SHA"
             docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro --volume "$out:/out" \
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
               image --scanners vuln --exit-code 0 --format json --output /out/image.json "$image"
             jq -e --arg image "$image" '.ArtifactName == $image' "$out/image.json"
             jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$out/image.json"
           done
+      - name: Boot and recover the exact image
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          IMAGE: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}
+          SOURCE_SHA: ${{ needs.gates.outputs.source_sha }}
+        run: bash script/production/verify_candidate.sh "$IMAGE" "$SOURCE_SHA" "volitex-inbox-postgres:$SOURCE_SHA" "volitex-n8n-valkey:$SOURCE_SHA"
+      - name: Scan the same image before publication
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          IMAGE: ${{ steps.image-name.outputs.name }}:${{ needs.gates.outputs.source_sha }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/publication-audit"
+          docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+            --volume "$RUNNER_TEMP/publication-audit:/out" \
+            aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
+            image --scanners vuln --exit-code 0 --format json --output /out/image.json "$IMAGE"
+          jq -e '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length == 0' "$RUNNER_TEMP/publication-audit/image.json"
       - name: Publish the tested image without rebuilding
         if: steps.existing.outputs.exists == 'false'
         env:
@@ -196,12 +197,14 @@ jobs:
           N8N_NAME: ${{ steps.image-name.outputs.n8n_name }}
           POSTGRES_NAME: ${{ steps.image-name.outputs.postgres_name }}
           VALKEY_NAME: ${{ steps.image-name.outputs.valkey_name }}
+          INBOX_POSTGRES_NAME: ${{ steps.image-name.outputs.inbox_postgres_name }}
         run: |
-          for service in n8n n8n-postgres n8n-valkey; do
+          for service in n8n n8n-postgres n8n-valkey inbox-postgres; do
             case "$service" in
               n8n) name="$N8N_NAME"; marker=/opt/volitex/security/source-sha ;;
               n8n-postgres) name="$POSTGRES_NAME"; marker=/opt/volitex/postgres-source-sha ;;
               n8n-valkey) name="$VALKEY_NAME"; marker=/opt/volitex/valkey-source-sha ;;
+              inbox-postgres) name="$INBOX_POSTGRES_NAME"; marker=/opt/volitex/inbox-postgres-source-sha ;;
             esac
             docker tag "volitex-$service:$SOURCE_SHA" "$name:$SOURCE_SHA"
             docker push "$name:$SOURCE_SHA"

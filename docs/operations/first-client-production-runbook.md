@@ -209,7 +209,7 @@ Attach inbox to Rails port 3000 and enable Coolify TLS. Do not assign any n8n se
 **Type:** [MANUAL] [ONE-TIME] [INFRASTRUCTURE-LEVEL]
 
 1. Create a private persistent PostgreSQL service with database volitex_inbox_production and role volitex_inbox restricted to that database.
-2. Use a pgvector-capable immutable image. The exact-source Inbox/n8n acceptance uses `pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2` (`APP_PG` in `script/production/verify_n8n_acceptance.py`). This is compatibility evidence, not the clean n8n PostgreSQL security scan. Review its current scan and record the actual selected Inbox database digest before deployment; do not reuse the n8n PostgreSQL image, which does not supply pgvector.
+2. Use the newly gated `volitex-ai-inbox-postgres` immutable digest from the replacement release kit (publication pending). The old `pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2` was compatibility-only evidence and is rejected for new production deployment after the October 22 scan. The replacement stays on PostgreSQL 16, builds checksum-pinned pgvector 0.8.7 on immutable official Alpine PostgreSQL, removes obsolete gosu, and enables pg_stat_statements preload. Do not substitute n8n's PostgreSQL image: it does not supply pgvector. Existing Debian volumes require a quiesced logical backup/restore into a fresh Alpine cluster; never attach old PGDATA directly. The fixture and publication boot checks must use the scanned replacement image.
 3. Configure shared_preload_libraries=pg_stat_statements and private readiness equivalent to:
 
 ```bash

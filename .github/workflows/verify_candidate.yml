@@ -48,12 +48,23 @@ jobs:
           build-args: GIT_SHA=${{ github.sha }}
           cache-from: type=gha,scope=n8n-valkey-amd64
           cache-to: type=gha,mode=max,scope=n8n-valkey-amd64
+      - name: Build the maintained Inbox pgvector database
+        uses: docker/build-push-action@v6
+        with:
+          context: deployment/production
+          file: deployment/production/InboxPostgres.Dockerfile
+          load: true
+          push: false
+          tags: volitex-inbox-postgres:${{ github.sha }}
+          build-args: GIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=inbox-postgres-amd64
+          cache-to: type=gha,mode=max,scope=inbox-postgres-amd64
       - name: Verify patched source and actual runtime behavior
         run: |
           image="volitex-n8n:$GITHUB_SHA"
           test "$(docker run --rm --network none --entrypoint cat "$image" /opt/volitex/security/source-sha)" = "$GITHUB_SHA"
-          for service in postgres valkey; do
-            test "$(docker run --rm --network none --entrypoint cat "volitex-n8n-$service:$GITHUB_SHA" "/opt/volitex/$service-source-sha")" = "$GITHUB_SHA"
+          for service in n8n-postgres n8n-valkey inbox-postgres; do
+            test "$(docker run --rm --network none --entrypoint cat "volitex-$service:$GITHUB_SHA" "/opt/volitex/${service#n8n-}-source-sha")" = "$GITHUB_SHA"
           done
           test "$(docker run --rm --network none --entrypoint su-exec "volitex-n8n-postgres:$GITHUB_SHA" postgres id -u)" = 70
           mkdir -p "$RUNNER_TEMP/n8n-audit"
@@ -83,8 +94,8 @@ jobs:
             -v "$RUNNER_TEMP/n8n-audit:/out" --entrypoint node "volitex-n8n:$GITHUB_SHA" \
             /audit.mjs /out/n8n-vulnerabilities.json /out/source-verification.json /out/security-summary.json "$GITHUB_SHA" "volitex-n8n:$GITHUB_SHA"
           cat "$RUNNER_TEMP/n8n-audit/security-summary.json" >> "$GITHUB_STEP_SUMMARY"
-          for service in postgres valkey; do
-            image="volitex-n8n-$service:$GITHUB_SHA"
+          for service in n8n-postgres n8n-valkey inbox-postgres; do
+            image="volitex-$service:$GITHUB_SHA"
             docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock:ro \
               --volume "$RUNNER_TEMP/n8n-audit:/out" \
               aquasec/trivy:0.75.0@sha256:af6acf9a6b85dfe389a1941505c0ce9efef52a4719635e1a962f022a3d855daa \
@@ -94,7 +105,7 @@ jobs:
           done
       - name: Save the checked image for acceptance and publication
         run: |
-          docker save "volitex-n8n:$GITHUB_SHA" "volitex-n8n-postgres:$GITHUB_SHA" "volitex-n8n-valkey:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/n8n-runtime.tar.gz"
+          docker save "volitex-n8n:$GITHUB_SHA" "volitex-n8n-postgres:$GITHUB_SHA" "volitex-n8n-valkey:$GITHUB_SHA" "volitex-inbox-postgres:$GITHUB_SHA" | gzip -1 > "$RUNNER_TEMP/n8n-runtime.tar.gz"
           cd "$RUNNER_TEMP"
           sha256sum n8n-runtime.tar.gz > n8n-runtime.tar.gz.sha256
       - uses: actions/upload-artifact@v4
@@ -164,9 +175,9 @@ jobs:
           sha256sum -c n8n-runtime.tar.gz.sha256
           gzip -dc n8n-runtime.tar.gz | docker load
       - name: Verify isolated production boot
-        run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA"
+        run: bash script/production/verify_candidate.sh "volitex-candidate:$GITHUB_SHA" "$GITHUB_SHA" "volitex-inbox-postgres:$GITHUB_SHA" "volitex-n8n-valkey:$GITHUB_SHA"
       - name: Verify private n8n upgrade, ownership and interrupted reply recovery
-        run: python3 script/production/verify_n8n_acceptance.py --app-image "volitex-candidate:$GITHUB_SHA" --source-sha "$GITHUB_SHA" --n8n-image "volitex-n8n:$GITHUB_SHA" --n8n-postgres-image "volitex-n8n-postgres:$GITHUB_SHA" --n8n-valkey-image "volitex-n8n-valkey:$GITHUB_SHA"
+        run: python3 script/production/verify_n8n_acceptance.py --app-image "volitex-candidate:$GITHUB_SHA" --app-postgres-image "volitex-inbox-postgres:$GITHUB_SHA" --source-sha "$GITHUB_SHA" --n8n-image "volitex-n8n:$GITHUB_SHA" --n8n-postgres-image "volitex-n8n-postgres:$GITHUB_SHA" --n8n-valkey-image "volitex-n8n-valkey:$GITHUB_SHA"
       - name: Audit candidate image runtime packages
         if: always() && steps.build.outcome == 'success'
         run: |
