@@ -649,6 +649,10 @@ Its defaults are 85% memory, 85% disk, and 100 jobs per listed queue. They are e
 
 Add provider/external monitoring for CPU, network, disk IOPS, TLS/DNS expiry, n8n execution failures/queue age, PostgreSQL storage/locks/slow queries, Redis memory/evictions, Meta delivery errors, application errors, and webhook acknowledgement latency.
 
+### Workflow readiness before resuming Inbox delivery
+
+In the assessed n8n startup code, the HTTP server marks general readiness before active workflow initialization. Therefore `/healthz/readiness` alone is insufficient to resume delivery after deployment or workflow replacement. Keep ordinary Inbox Sidekiq delivery paused while importing/publishing offline and starting n8n main/worker. From the authorized private network, POST `{}` with an intentionally invalid signature to each configured guarded Inbox workflow and require HTTP 401 from its authorization/rejection branch before resuming Sidekiq. This proves the real webhook route and queue worker are ready without an Inbox API write or provider message. Never use a valid customer event as a readiness probe. A missing route, timeout or non-401 response is a stop condition; inspect activation/configuration instead of enabling traffic. The candidate acceptance enforces this barrier at initial activation, upgrade, production graph replacement and rollback.
+
 ## Publishing or replacing an active n8n workflow
 
 Pause Inbox automation delivery by stopping the ordinary Sidekiq service during the controlled update; queued jobs must stay in persistent Redis. Drain running n8n executions and reconcile any interrupted external effects, then stop main and all workers before importing a replacement graph. Use a one-shot n8n CLI container on the private n8n network with the same maintained image (including its baked custom nodes), encrypted credentials key, runtime policy and database configuration to import and publish. Verify the published active-version graph contains the intended operations. Start main and workers, wait for both readiness checks, verify the authenticated workflow, then resume Inbox Sidekiq delivery. Keep human takeover available throughout.

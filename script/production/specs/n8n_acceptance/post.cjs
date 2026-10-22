@@ -5,7 +5,10 @@ const { createHmac, randomUUID } = require('node:crypto');
 const fixture = JSON.parse(
   fs.readFileSync('/fixtures/credentials-data.json', 'utf8')
 );
-const event = JSON.parse(fs.readFileSync('/fixtures/event.json', 'utf8'));
+const event =
+  process.argv[2] === 'readiness'
+    ? {}
+    : JSON.parse(fs.readFileSync('/fixtures/event.json', 'utf8'));
 if (process.argv[2] === 'foreign') event.account.id += 1000;
 const body = JSON.stringify(event);
 const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -22,7 +25,7 @@ const request = http.request(
       'Content-Type': 'application/json',
       'X-Chatwoot-Timestamp': timestamp,
       'X-Chatwoot-Delivery': randomUUID(),
-      'X-Chatwoot-Signature': `sha256=${process.argv[2] === 'invalid' ? '0'.repeat(64) : signature}`,
+      'X-Chatwoot-Signature': `sha256=${['invalid', 'readiness'].includes(process.argv[2]) ? '0'.repeat(64) : signature}`,
     },
   },
   response => {

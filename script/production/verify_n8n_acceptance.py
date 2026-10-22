@@ -160,6 +160,13 @@ def n8n_start(image, database='n8n', suffix=''):
     wait_for(lambda: command('docker', 'exec', n8n_worker, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'worker_readiness')
 
 
+def wait_for_workflow(label):
+    # Server readiness precedes workflow activation in upstream startup. A
+    # deliberately invalid signature proves the actual guarded route and queue
+    # worker are ready without issuing an Inbox API call or provider message.
+    wait_for(lambda: command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'readiness') == '401', label)
+
+
 def stop_n8n():
     command('docker', 'stop', '--time', '30', n8n_worker, n8n_main)
     command('docker', 'rm', n8n_worker, n8n_main)
@@ -242,6 +249,7 @@ try:
     command('docker', 'exec', n8n_main, 'n8n', 'publish:workflow', '--id=VolitexStagingReply')
     command('docker', 'restart', n8n_main, n8n_worker)
     wait_for(lambda: command('docker', 'exec', n8n_main, 'wget', '-qO-', 'http://127.0.0.1:5678/healthz/readiness', check=False) != '', 'old_n8n_active')
+    wait_for_workflow('old_workflow_route_ready')
     worker = start('app-worker', APP, '172.30.248.21', app_env, app_mounts, ['bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml'])
     bridge = json.loads(command('docker', 'network', 'inspect', PREFIX))[0]
     assert {member['Name'] for member in bridge['Containers'].values()} == {worker, n8n_main}
@@ -281,6 +289,7 @@ try:
     assert command('docker', 'exec', redis, 'valkey-cli', 'LPOP', 'volitex:migration:list') == 'queued'
     RESULTS['valkey_aof_state_migration'] = 'PASS'
     n8n_start(NEW)
+    wait_for_workflow('candidate_workflow_route_ready')
     command('docker', 'start', worker)
     emit_event()
     wait_for(lambda: fake_state()['providerCalls'] == 2, 'candidate_authenticated_round_trip')
@@ -358,8 +367,8 @@ try:
     active_nodes = json.loads(sql("n8n", """SELECT h.nodes FROM workflow_history h JOIN workflow_entity w ON h."versionId"=w."activeVersionId" WHERE w.id='VolitexStagingReply'"""))
     assert [node['parameters']['operation'] for node in active_nodes if node['type'] == 'CUSTOM.volitexReply'] == ['authorize', 'sendReply']
     n8n_start(NEW)
+    wait_for_workflow('production_contract_ready')
     command('docker', 'start', worker)
-    RESULTS['production_contract_ready'] = 'PASS'
     emit_event('Can I schedule a site visit?')
     wait_for(lambda: fake_state()['providerCalls'] == 5, 'ordinary_customer_configured_reply')
     assert command('docker', 'exec', n8n_main, 'node', '/fixtures/post.cjs', 'invalid') == '401'
@@ -383,6 +392,7 @@ try:
     command('docker', 'run', '--rm', '-v', PREFIX + '-n8n-data-restore:/to', '-v', str(SCRATCH) + ':/out:ro', 'alpine:3.23', 'tar', 'xf', '/out/prior-data.tar', '-C', '/to')
     rails('Conversations::AutomationOwnershipService.new(conversation:Conversation.first,actor:User.first).enable_n8n!')
     n8n_start(OLD, 'n8n_restore', '-restore')
+    wait_for_workflow('restored_workflow_route_ready')
     command('docker', 'start', worker)
     emit_event()
     wait_for(lambda: fake_state()['providerCalls'] == 6, 'rollback_restored_credentials_and_workflow')
