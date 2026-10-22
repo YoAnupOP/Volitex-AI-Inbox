@@ -60,6 +60,13 @@
 - Prefer `with_modified_env` (from spec helpers) over stubbing `ENV` directly in specs
 - Specs in parallel/reloading environments: prefer comparing `error.class.name` over constant class equality when asserting raised errors
 
+## Root-Cause Fix Policy
+
+- Prefer root-cause fixes over patch fixes. Investigate and address the underlying cause while preserving the existing architecture, infrastructure, design patterns, and established conventions.
+- Avoid superficial workarounds, symptom masking, and unnecessary architectural changes. Make the smallest correct change that permanently resolves the issue.
+- Use temporary patches only when technically justified. Clearly document their limitations and identify the path to a permanent fix.
+- Verify changes with relevant tests and checks before considering the issue resolved. Follow the existing guidance on when to add new specs; report any verification that remains incomplete.
+
 ## Codex Shared Checkout and Release Workflow
 
 - The founder explicitly requests one shared checkout across all Codex chats: `C:/Users/Anup/Desktop/Volitex-AI-Inbox`, on `master`.
