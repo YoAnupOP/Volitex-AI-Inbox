@@ -13,7 +13,7 @@ ARG GIT_SHA
 LABEL org.opencontainers.image.title="Volitex AI Inbox automation runtime" \
       org.opencontainers.image.revision=$GIT_SHA
 ENV NODE_ENV=production N8N_CUSTOM_EXTENSIONS=/opt/volitex/n8n-custom
-RUN apk add --no-cache zlib=1.3.2-r1
+RUN apk add --no-cache zlib=1.3.2-r1 musl=1.2.6-r3 musl-utils=1.2.6-r3
 COPY --from=patched /usr/local/lib/node_modules/n8n /usr/local/lib/node_modules/n8n
 COPY --from=patched /opt/security-updates/node_modules /opt/security-updates/node_modules
 COPY --from=patched /opt/volitex/security/manifest.json /opt/volitex/security/manifest.json

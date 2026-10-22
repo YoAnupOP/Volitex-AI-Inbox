@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.title="Volitex AI Inbox n8n PostgreSQL" \
       org.opencontainers.image.revision=$GIT_SHA
 # Use Alpine's C helper for the entrypoint's fixed postgres-user exec, removing
 # the old Go runtime embedded in vendor gosu. No database binary is replaced.
-RUN apk add --no-cache su-exec=0.3-r0 zlib=1.3.2-r1 \
+RUN apk add --no-cache su-exec=0.3-r0 zlib=1.3.2-r1 musl=1.2.6-r3 musl-utils=1.2.6-r3 \
     && grep -Fq 'exec gosu postgres' /usr/local/bin/docker-entrypoint.sh \
     && sed -i 's/exec gosu postgres/exec su-exec postgres/' /usr/local/bin/docker-entrypoint.sh \
     && rm /usr/local/bin/gosu \
