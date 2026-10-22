@@ -156,10 +156,12 @@ describe Whatsapp::CampaignDispatchService do
   end
 
   it 'honors an HTTP-date Retry-After' do
-    stub_request(:post, url).to_return(status: 429, body: '{}',
-                                       headers: { 'Content-Type' => 'application/json', 'Retry-After' => 10.minutes.from_now.httpdate })
-    described_class.new(campaign: campaign).perform
-    expect(recipient.reload.next_attempt_at).to be >= 599.seconds.from_now
+    freeze_time do
+      stub_request(:post, url).to_return(status: 429, body: '{}',
+                                         headers: { 'Content-Type' => 'application/json', 'Retry-After' => 10.minutes.from_now.httpdate })
+      described_class.new(campaign: campaign).perform
+      expect(recipient.reload.next_attempt_at).to eq(10.minutes.from_now)
+    end
   end
 
   it 'keeps reconciliation valid when deleted contacts have null foreign keys' do
