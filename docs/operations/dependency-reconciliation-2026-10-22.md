@@ -18,6 +18,8 @@ n8n retains seven unresolved Medium and one Low finding after the two verified b
 
 GitHub's API snapshot contains **221 open alerts: 11 Critical, 104 High, 91 Medium, 15 Low**. The [complete inventory](dependency-reconciliation-2026-10-22.csv) records every alert number, package, manifest, advisory, reported range, patched version, installed n8n versions and disposition. No GitHub alert was dismissed. Raw API responses, full advisory ranges, physical package inventory and scans are retained at `C:/Users/Anup/.codex/security/volitex-20261022`; [evidence hashes](evidence/dependency-reconciliation-2026-10-22.json) identify the inputs.
 
+GitHub's final October 22 push summary still reports 221 open alerts, now 11 Critical, 103 High, 92 Medium and 15 Low. Advisory classifications can change during reconciliation; the CSV preserves the original API snapshot rather than silently rewriting historical evidence. This repository-wide badge is not the maintained images' runtime scan result.
+
 Baseline: release `1ea83b0832faeafbbf867496b69f75f6a992ffb8` and the four runbook/kit image digests. The running n8n container uses that exact digest. Version matching uses every npm branch from the primary GitHub advisory API, normalizing comma-separated comparators to whitespace and checking ecosystem explicitly. A historical alert's single version branch is insufficient for comparing a different installed major version.
 
 | Manifest | Alerts | Production relationship |
