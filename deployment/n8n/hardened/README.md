@@ -32,6 +32,10 @@ The saved image archive is checksummed and passed unchanged to the full built-im
 
 Publication downloads that accepted archive, verifies its checksum/source and backport again, obtains a fresh security scan, then publishes the same image without rebuilding. The `publication-evidence/n8n/immutable-reference.txt` artifact is the production `N8N_IMAGE` value. No mutable tag or unverified local image is a production pin. Old deployment kits contain the stock runtime and are superseded only after a new verified kit is exported.
 
+## October 22 advisory follow-up (requires a newly gated release)
+
+The security overlay now targets MCP SDK 1.32.0, MCP server 2.3.0, follow-redirects 1.16.1, markdown-it 14.3.3, Hono 4.13.11 and sanitize-html 2.18.0. The existing backports remain verified. Upgrading the MCP packages alone does not enforce the new optional input limits (GHSA-46jr-4wx8-v453). The HTTP/JSON production policy therefore disables both `mcp` and `mcp-registry` backend modules, in addition to excluding their nodes. The registry probe must prove those modules are ineligible. Enabling MCP later requires an explicit caller review, `maxToolInputElements` and transport/parser request size limits with adversarial acceptance; it is outside this approved profile. Existing published digests do not acquire these changes.
+
 ## Maintenance
 
 Treat upgrades as application releases. Update immutable base digests and the npm lock, review upstream API/migration changes, and rerun all gates. Remove a backport only when the vendor package contains the fix and its source/behavior is independently verified. Any unexpected vulnerable package version or changed patch source fails the build. A new advisory fails publication unless it has a concrete verified remediation.

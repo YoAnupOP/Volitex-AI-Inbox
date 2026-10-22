@@ -1,5 +1,9 @@
 # Volitex AI Inbox — First-client production operations runbook
 
+## October 22 security revalidation — deployment hold
+
+The October 20 publication below is historical exact-source verification, not current advisory clearance. The [October 22 reconciliation](dependency-reconciliation-2026-10-22.md) records new actionable findings in the published Inbox/n8n images. Do not use the old kit/images for a new paying-client go-live until the targeted fixes pass all four exact-source gates, fresh scans and publication, and a replacement checksummed kit is exported. Keep existing digests as evidence; do not replace them with unverified build output. Compose topology and server acceptance instructions remain applicable. The restricted profile now additionally disables the MCP and MCP registry modules: package updates alone do not enable MCP input limits.
+
 ## Current verified release — October 20, 2026
 
 The deployment baseline is source `1ea83b0832faeafbbf867496b69f75f6a992ffb8` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361108), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360732), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360698), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361168). [Publication run 39424886778](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39424886778) published all four images in the table below. Their embedded source markers match this commit. This includes the private AgentBot transport, credential/idempotency controls and maintained n8n stack.

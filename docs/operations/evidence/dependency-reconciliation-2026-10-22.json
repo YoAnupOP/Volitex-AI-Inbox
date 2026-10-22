@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-22",
+  "release_source": "1ea83b0832faeafbbf867496b69f75f6a992ffb8",
+  "alerts_total": 221,
+  "severity": {
+    "low": 15,
+    "high": 104,
+    "medium": 91,
+    "critical": 11
+  },
+  "manifest_counts": {
+    "deployment/n8n/npm-candidate/package-lock.json": 154,
+    "pnpm-lock.yaml": 43,
+    "package.json": 2,
+    "deployment/n8n/hardened/package-lock.json": 1,
+    "deployment/n8n/hardened/package.json": 1,
+    "tests/playwright/pnpm-lock.yaml": 17,
+    "tests/playwright/package.json": 1,
+    "Gemfile.lock": 2
+  },
+  "evidence_sha256": {
+    "alerts.json": "db1c970750777d9de09679831f926184d97f1c258862a3ee28c9ff0fd5250955",
+    "n8n-reconciliation.json": "541e8ab359feab9a2ac46b8c35509d19ed89b713528979a2c30504a781374114",
+    "full-range-reconciliation.json": "41d59f55bd80f088e64c309660ce671e8ee60e29cabc013932b9d5ca3c892025",
+    "n8n-trivy.json": "2dd0388ca1e7f2f61f97ac5cbc72e9e006e576f7da84829163a80b835227209a",
+    "inbox-prod-audit.json": "f6670f7fc3386911489754e02973782b468afc5592bedc560e08002526abf646",
+    "inbox-prod-audit-after.json": "13b5f651f633131c997763d40cf1b556d6fd69d415ff70a2e1d21b2d7b53a663"
+  },
+  "no_alerts_dismissed": true,
+  "production_deployed": false
+}

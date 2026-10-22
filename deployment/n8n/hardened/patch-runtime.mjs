@@ -6,10 +6,15 @@ import { createHash } from 'node:crypto';
 const root = '/usr/local/lib/node_modules/n8n';
 const updates = '/opt/security-updates/node_modules';
 const replacements = {
+  '@modelcontextprotocol/sdk': ['1.31.0', '1.32.0'],
+  '@modelcontextprotocol/server': ['2.0.0', '2.3.0'],
+  'follow-redirects': ['1.16.0', '1.16.1'],
+  'markdown-it': ['13.0.2', '14.3.3'],
+  'sanitize-html': ['2.17.7', '2.18.0'],
   '@simple-git/argv-parser': ['1.1.1', '2.0.1'],
   handlebars: ['4.7.9', '4.7.10'],
   nodemailer: ['8.0.10', '10.0.9'],
-  hono: ['4.12.34', '4.13.7'],
+  hono: ['4.12.34', '4.13.11'],
   'ip-address': ['10.3.1', '10.7.1'],
   moment: ['2.30.1', '2.31.0'],
   multer: ['2.3.0', '2.4.0'],

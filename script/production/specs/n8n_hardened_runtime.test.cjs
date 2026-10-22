@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { createRequire } = require('node:module');
 const { test } = require('node:test');
+const { spawnSync } = require('node:child_process');
 
 const root = '/usr/local/lib/node_modules/n8n';
 const fromN8n = createRequire(root + '/package.json');
@@ -74,6 +75,24 @@ test('the actual core mailer composes email through patched Nodemailer', async (
   assert.match(composed.message.toString(), /To: recipient@example.invalid/);
   assert.match(composed.message.toString(), /Subject: Synthetic core mail/);
   assert.match(composed.message.toString(), /Security update/);
+});
+
+test('updated Markdown handles ordinary text and adversarial reference definitions', () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      String.raw`const assert = require('node:assert/strict');
+       const MarkdownIt = require('/opt/security-updates/node_modules/markdown-it');
+       const md = new MarkdownIt({ typographer: true });
+       assert.equal(md.render('[safe](https://example.invalid)'), '<p><a href="https://example.invalid">safe</a></p>\n');
+       md.render('[a]: /u "' + 'x\n'.repeat(100000));
+       md.render('"a '.repeat(32000) + "b' ".repeat(32000));`,
+    ],
+    { timeout: 5000, encoding: 'utf8' }
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test('patched TOML preserves the disabled SDK parser contract', () => {

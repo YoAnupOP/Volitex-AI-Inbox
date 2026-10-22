@@ -50,7 +50,13 @@ async function verify() {
   const allowed = JSON.parse(process.env.NODES_INCLUDE);
   assert.ok(Array.isArray(allowed) && allowed.length > 0);
   const modules = Container.get(ModuleRegistry);
-  for (const name of ['source-control', 'promotions', 'community-packages']) {
+  for (const name of [
+    'source-control',
+    'promotions',
+    'community-packages',
+    'mcp',
+    'mcp-registry',
+  ]) {
     assert.ok(!modules.eligibleModules.includes(name), `${name} is enabled`);
   }
 

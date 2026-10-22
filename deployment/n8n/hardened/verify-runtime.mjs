@@ -20,10 +20,15 @@ const manifest = JSON.parse(
   fs.readFileSync('/opt/volitex/security/manifest.json', 'utf8')
 );
 const versions = {
+  '@modelcontextprotocol/sdk': '1.32.0',
+  '@modelcontextprotocol/server': '2.3.0',
+  'follow-redirects': '1.16.1',
+  'markdown-it': '14.3.3',
+  'sanitize-html': '2.18.0',
   '@simple-git/argv-parser': '2.0.1',
   handlebars: '4.7.10',
   nodemailer: '10.0.9',
-  hono: '4.13.7',
+  hono: '4.13.11',
   'ip-address': '10.7.1',
   moment: '2.31.0',
   multer: '2.4.0',
