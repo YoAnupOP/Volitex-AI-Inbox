@@ -1,6 +1,5 @@
 {
   "date": "2026-10-22",
-  "release_source": "1ea83b0832faeafbbf867496b69f75f6a992ffb8",
   "alerts_total": 221,
   "severity": {
     "low": 15,
@@ -38,7 +37,21 @@
     "inbox-pgvector-trivy.json": "c4c61828cc6818c9d85265f4591d8bd778f45dff1b44b1fc958e7b99e91e26b8",
     "inbox-pgvector-trixie-trivy.json": "d8074357ddc856408317b5df8b466e8a2a2ae44b122845fc6993b395498467a6",
     "pgvector-v0.8.7.tar.gz": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
-    "manifest-version-matching.json": "340a8081481322e1d5ab62e09aa8f73f76a43d96dc49513ce10e09ae2b930cf6"
+    "manifest-version-matching.json": "340a8081481322e1d5ab62e09aa8f73f76a43d96dc49513ce10e09ae2b930cf6",
+    "publication-39770727890/image.json": "1e3d79d4c16781772cd1600faf2192cd807c0441bab324d185403763f5d092e1",
+    "publication-39770727890/immutable-reference.txt": "b73df47d4be7b49c0f735061d84262d61e6ee56a870e623d820ae8aa00397291",
+    "publication-39770727890/inbox-postgres/image.json": "722083c658989f742d91b88395725965093fa888570a5bf46f57d36f3b1a8305",
+    "publication-39770727890/inbox-postgres/immutable-reference.txt": "9ff3bb4ed1d92ba95999809c8fb95007017e8449a326b91305ba7766618da0fe",
+    "publication-39770727890/n8n/image.json": "3fdbd6eb32b4a888e40b7c46c6d6e6dd622eefe7ad5c2bfcc0a5f8f03b7e8e4c",
+    "publication-39770727890/n8n/immutable-reference.txt": "ca08d0db1a064528d65a49736d34aa942f1cd6deededeba590350fb4a5a14921",
+    "publication-39770727890/n8n/security-summary.json": "feeb260f6bddea503ac6b772dbacaf2cc5be327f6aef18b81a36ce61c91d0511",
+    "publication-39770727890/n8n/source-verification.json": "238f25a53fd559ae755e1dacfd54a71230490c187587678070a204a3d16a69df",
+    "publication-39770727890/n8n-postgres/image.json": "9ea56ec1ec449857e3c50058da9046abc356b568fe47eddd25a6a080b9b76c02",
+    "publication-39770727890/n8n-postgres/immutable-reference.txt": "2ea83454ca624590fed55b65a1b4452c6d24a33d2e3e45f71036b49d05c9849e",
+    "publication-39770727890/n8n-valkey/image.json": "58d162676a32b88671c5dafd2e047e63c0dc6803f8b2863a5c3d5f7be5802eef",
+    "publication-39770727890/n8n-valkey/immutable-reference.txt": "216691a30518a27ece035fe4d2b903f417d2db94a1ecf80b2dc4549f489f66aa",
+    "acceptance-fb723d5534.json": "75de4709c0a29c3b209b32836004fdac296760c5cb967bd9267edcb3ef663632",
+    "verified-release-input.json": "06dc65df5fa7d79ecdd7c15b5854e28f4fce85ee0874e44352a14162b04f4efb"
   },
   "no_alerts_dismissed": true,
   "production_deployed": false,
@@ -56,21 +69,7 @@
     "n8n_overlay_audit_after": "0 findings (sanitize-html 2.18.1)",
     "application_runtime_eslint": "not a release gate: direct ad-hoc lint reported pre-existing CJS CLI rule violations; actual frontend lint is gated by full CE CI"
   },
-  "replacement_candidate_source": "PENDING_EXTENDED_INBOX_DATABASE_GATES",
-  "candidate_runtime_verification": {
-    "run_url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39757838868",
-    "n8n_runtime_job": "success",
-    "unresolved_critical_high": 0,
-    "verified_backports": 2,
-    "retained_lower_severity": {
-      "MEDIUM": 7,
-      "LOW": 1
-    },
-    "postgres_findings": 0,
-    "valkey_findings": 0,
-    "publication": "PENDING",
-    "source_sha": "29d885f3895b1391d24763d734feabbdbb91fa8f"
-  },
+  "replacement_candidate_source": "fb723d55348361e34bb44ed270ef6d41ce03ea27",
   "inbox_postgres_revalidation": {
     "legacy_raw_findings": {
       "CRITICAL": 16,
@@ -89,6 +88,116 @@
     "replacement": "deployment/production/InboxPostgres.Dockerfile",
     "database_major_version": 16,
     "existing_data_changed": false,
-    "status": "BUILD_SCAN_AND_FULL_ACCEPTANCE_REQUIRED"
+    "status": "PUBLISHED_SCAN_AND_FULL_ACCEPTANCE_PASS",
+    "reference": "ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:809a13f6e5aa574fb508abab0c49972e1d20374779584670b0cdc797345885f9"
+  },
+  "baseline_release_source": "1ea83b0832faeafbbf867496b69f75f6a992ffb8",
+  "release_source": "fb723d55348361e34bb44ed270ef6d41ce03ea27",
+  "superseded_candidate_runtime_verification": {
+    "run_url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39757838868",
+    "n8n_runtime_job": "success",
+    "unresolved_critical_high": 0,
+    "verified_backports": 2,
+    "retained_lower_severity": {
+      "MEDIUM": 7,
+      "LOW": 1
+    },
+    "postgres_findings": 0,
+    "valkey_findings": 0,
+    "publication": "PENDING",
+    "source_sha": "29d885f3895b1391d24763d734feabbdbb91fa8f"
+  },
+  "candidate_runtime_verification": {
+    "source_sha": "fb723d55348361e34bb44ed270ef6d41ce03ea27",
+    "gates": [
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T10:41:22Z",
+        "databaseId": 39764974950,
+        "name": "Verify non-production candidate",
+        "status": "completed",
+        "url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974950"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T10:41:22Z",
+        "databaseId": 39764974747,
+        "name": "Verify migration compatibility",
+        "status": "completed",
+        "url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974747"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T10:41:22Z",
+        "databaseId": 39764974878,
+        "name": "Verify campaign lifecycle",
+        "status": "completed",
+        "url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974878"
+      },
+      {
+        "conclusion": "success",
+        "createdAt": "2026-10-22T10:41:22Z",
+        "databaseId": 39764974905,
+        "name": "Run Chatwoot CE spec",
+        "status": "completed",
+        "url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974905"
+      }
+    ],
+    "publication": {
+      "url": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39770727890",
+      "databaseId": 39770727890,
+      "publish_job": "success"
+    },
+    "references": {
+      "application_image": "ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0",
+      "n8n_image": "ghcr.io/yoanupop/volitex-ai-n8n@sha256:501ed8d07a0968e9670dbf17129ec9fd93757150c81ddc1952f1e92fa14d7fe2",
+      "n8n_postgres_image": "ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:a7856da1f84ea921cbfd05aca35a30d926197f91c270e29af8eb9cfd4e46acf3",
+      "n8n_valkey_image": "ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:a5f400a4135907987aa48279692931b441411af67436bf65b01aefaedf7532dc",
+      "inbox_postgres_image": "ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:809a13f6e5aa574fb508abab0c49972e1d20374779584670b0cdc797345885f9"
+    },
+    "raw_findings": {
+      "inbox": {
+        "MEDIUM": 2,
+        "LOW": 1
+      },
+      "n8n": {
+        "MEDIUM": 8,
+        "LOW": 1,
+        "HIGH": 1
+      },
+      "n8n-postgres": {},
+      "n8n-valkey": {},
+      "inbox-postgres": {}
+    },
+    "registry": {
+      "application_image": {
+        "reference": "ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0",
+        "anonymous_manifest_sha256_verified": true
+      },
+      "n8n_image": {
+        "reference": "ghcr.io/yoanupop/volitex-ai-n8n@sha256:501ed8d07a0968e9670dbf17129ec9fd93757150c81ddc1952f1e92fa14d7fe2",
+        "anonymous_manifest_sha256_verified": true
+      },
+      "n8n_postgres_image": {
+        "reference": "ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:a7856da1f84ea921cbfd05aca35a30d926197f91c270e29af8eb9cfd4e46acf3",
+        "anonymous_manifest_sha256_verified": true
+      },
+      "n8n_valkey_image": {
+        "reference": "ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:a5f400a4135907987aa48279692931b441411af67436bf65b01aefaedf7532dc",
+        "anonymous_manifest_sha256_verified": true
+      },
+      "inbox_postgres_image": {
+        "reference": "ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:809a13f6e5aa574fb508abab0c49972e1d20374779584670b0cdc797345885f9",
+        "anonymous_manifest_sha256_verified": true
+      }
+    },
+    "unresolved_critical_high": 0,
+    "verified_backports": 2,
+    "retained_n8n_lower_severity": {
+      "MEDIUM": 7,
+      "LOW": 1
+    },
+    "acceptance_result": "PASS",
+    "full_ce_jobs": "20/20"
   }
 }

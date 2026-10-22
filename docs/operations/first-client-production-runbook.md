@@ -1,18 +1,14 @@
 # Volitex AI Inbox — First-client production operations runbook
 
-## October 22 security revalidation — deployment hold
+## Current verified release — October 22, 2026
 
-The October 20 publication below is historical exact-source verification, not current advisory clearance. The [October 22 reconciliation](dependency-reconciliation-2026-10-22.md) records new actionable findings in the published Inbox/n8n images. Do not use the old kit/images for a new paying-client go-live until the targeted fixes pass all four exact-source gates, fresh scans and publication, and a replacement checksummed kit is exported. Keep existing digests as evidence; do not replace them with unverified build output. Compose topology and server acceptance instructions remain applicable. The restricted profile now additionally disables the MCP and MCP registry modules: package updates alone do not enable MCP input limits.
+The deployment baseline is source `fb723d55348361e34bb44ed270ef6d41ce03ea27` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974950), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974747), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974878), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974905). [Publication run 39770727890](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39770727890) completed its actual publish job and published all five images below. Source verification, fresh scans, acceptance and anonymous registry manifest SHA256 checks passed. This release supersedes the October 20 kit and its image pins.
 
-## Current verified release — October 20, 2026
+**Release status:** exact-source CI verified and published for the private, operator-managed HTTP/JSON n8n profile. Use the replacement checksummed kit described below; live deployment status is **NOT_DEPLOYED**. Actual KVM networking/TLS, private-editor login, off-host backups, restore/reboot/alerts, measured capacity and client acceptance must pass before client traffic. A successful image publication does not perform these steps.
 
-The deployment baseline is source `1ea83b0832faeafbbf867496b69f75f6a992ffb8` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361108), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360732), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422360698), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39422361168). [Publication run 39424886778](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39424886778) published all four images in the table below. Their embedded source markers match this commit. This includes the private AgentBot transport, credential/idempotency controls and maintained n8n stack.
+**Security scope:** zero unresolved runtime Critical/High findings within this restricted profile. Inbox retains two explained Devise Medium findings and one json Low finding. The raw n8n scan retains one High, eight Medium and one Low; the braces High and one stream-json Medium are resolved by independently verified source backports, leaving seven Medium and one Low. Both PostgreSQL images and the maintained Valkey image have zero scan findings. MCP and MCP registry backend modules are disabled because package upgrades alone do not enable their optional input limits. Development-tool and lower-severity findings remain documented; no GitHub alerts were dismissed. See the [current reconciliation](dependency-reconciliation-2026-10-22.md), [historical remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md). Recheck advisories before deployment.
 
-**Release status:** exact-source CI verified and published for the private, operator-managed HTTP/JSON n8n profile. The deployment kit is prepared; live deployment status is **NOT_DEPLOYED**. Actual KVM networking/TLS, private-editor login, off-host backups, restore/reboot/alerts, measured capacity and client acceptance must pass before client traffic. A successful image publication does not perform these steps.
-
-**Security scope:** n8n has zero unresolved Critical/High findings after two exact-source-verified backports. The raw scan retains one High, eleven Medium and one Low finding; the verified braces High and stream-json Medium fixes are recorded separately. Ten unresolved Medium and one Low remain documented under the restricted capability profile. The maintained n8n PostgreSQL and Valkey publication scans have zero findings. This is not a vulnerability-free claim. See the [security remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md).
-
-**Client scope:** appointment booking with calendar/CRM integration; providers are chosen per client. `deployment/n8n/inbox-reply.workflow.json` is a fixed-reply integration test, not an accepted booking workflow. Configure and accept each client's workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md).
+**Client scope:** appointment booking with calendar/CRM integration; providers are chosen per client. `deployment/n8n/inbox-reply.workflow.json` is a fixed-reply integration test, not an accepted booking workflow. Configure and accept each client's workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md). Campaigns require their separate server/provider acceptance.
 
 This is the current operating procedure for the planned shared Hostinger KVM 4 deployment. Older dated audit/publication reports are historical evidence; their image pins, source-only verdicts and public n8n instructions do not override this release or the actual Compose files.
 
@@ -63,26 +59,27 @@ Before accepting traffic, record the server/access inventory, alert destination 
 
 ## Verified release and deployment kit
 
-Use these four immutable references together for this release:
+Use these five immutable references together for this release:
 
 | Coolify variable | Published immutable image |
 | --- | --- |
-| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:82d0da5993c4572fc7a84331c1033eebfe97d14d45277350ca1f8cab6a2dfa93` |
-| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:8c5387a96dcfb9c1eebeb944d02ecd4a8ed9953881bbb34f400bac56a604d72a` |
-| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:f5e4fe82aa1cafcaa2829ea56f783b1258c7544b8f0a861ac8dc7a49d098e869` |
-| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:b35c85884b1ed88de5016a785afcb4a1b29886cfebd09f6c43836a3921e849f4` |
+| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0` |
+| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:501ed8d07a0968e9670dbf17129ec9fd93757150c81ddc1952f1e92fa14d7fe2` |
+| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:a7856da1f84ea921cbfd05aca35a30d926197f91c270e29af8eb9cfd4e46acf3` |
+| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:a5f400a4135907987aa48279692931b441411af67436bf65b01aefaedf7532dc` |
+| `INBOX_POSTGRES_IMAGE` (separate Coolify resource) | `ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:809a13f6e5aa574fb508abab0c49972e1d20374779584670b0cdc797345885f9` |
 
-The maintained stack runs n8n 2.44.4, PostgreSQL 17.11 and Valkey 8.1.10. These PostgreSQL/Valkey references are for n8n's dedicated services; provision Inbox's pgvector-capable database and separate queue as described below. Do not substitute upstream images, mutable tags or CI build-manifest digests for these published references.
+The maintained n8n stack runs n8n 2.44.4, PostgreSQL 17.11 and Valkey 8.1.10; the separate Inbox database runs PostgreSQL 16.15 with pgvector 0.8.7. N8N_POSTGRES_IMAGE is for n8n only; INBOX_POSTGRES_IMAGE supplies Inbox's separate pgvector database. The maintained Valkey image is used in two separate private services with independent credentials and volumes as described below. Do not substitute upstream images, mutable tags or CI build-manifest digests for these published references.
 
-On the founder's workstation, `C:/Users/Anup/.codex/releases/Volitex-AI-Inbox/latest.json` locates the current exported ZIP and its SHA256. Check that its release source is the commit above, verify the ZIP checksum, then run `sha256sum -c SHA256SUMS` inside the extracted kit. Keep the complete kit with the protected change record. It contains:
+On the founder's workstation, `C:/Users/Anup/.codex/releases/Volitex-AI-Inbox/latest.json` locates the current exported ZIP and its SHA256. Check that its release source is the commit above, verify the ZIP checksum, then run `sha256sum -c SHA256SUMS` inside the extracted kit. Keep the complete kit with the protected change record. The kit records the image source and documentation revision separately; later documentation commits do not change the published image source. It contains:
 
 - `release.json`: source, completed gates, publication URL, security findings and acceptance limits.
-- `release-images.env`: all four immutable references, without credentials.
+- `release-images.env`: all five immutable references, without credentials.
 - `deployment/.env.n8n.example`: all three maintained n8n image pins already filled; remaining server/secret placeholders still need configuration.
 - `verification/publication/`: registry references, per-image metadata and n8n source/security verification.
 - `verification/n8n-acceptance.json`: exact-source integration, upgrade and recovery evidence.
 
-The Git source example intentionally uses image placeholders; copy the verified kit's pins or the table above into Coolify. Do not blindly deploy Git `master`: a later documentation or code commit is not this verified image source. Check `/app/.git_sha` for Inbox and the runtime source markers described in the maintained-image documentation. All four images were anonymously pullable when verified; recheck access from the actual server before deployment. Future releases require all four exact-source gates and a successful publication job before replacing these pins and exporting a new kit.
+The Git source example intentionally uses image placeholders; copy the verified kit's pins or the table above into Coolify. Do not blindly deploy Git `master`: a later documentation or code commit is not this verified image source. Check `/app/.git_sha` for Inbox and the runtime source markers described in the maintained-image documentation. All five image manifests were anonymously accessible and their SHA256 digests verified on October 22; recheck access from the actual server before deployment. Future releases require all four exact-source gates and a successful publication job before replacing these pins and exporting a new kit.
 
 # Phase 0 — Before buying the KVM 4
 
@@ -90,8 +87,8 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.1 Done now
 
-- [ALREADY DONE] The published release source is `1ea83b0832faeafbbf867496b69f75f6a992ffb8`; the private AgentBot transport and maintained n8n stack are included.
-- [ALREADY DONE] All four immutable GHCR artifacts and the verified deployment kit are recorded above.
+- [ALREADY DONE] The published release source is `fb723d55348361e34bb44ed270ef6d41ce03ea27`; the private AgentBot transport and maintained n8n stack are included.
+- [ALREADY DONE] All five immutable GHCR artifacts and the verified deployment kit are recorded above.
 - [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; the campaign feature remains disabled until its separate acceptance gates pass.
 - [ALREADY DONE] WhatsApp and Instagram webhook controllers validate Meta signatures, enqueue work, and acknowledge accepted deliveries. WhatsApp uses /webhooks/whatsapp/:phone_number; Instagram uses /webhooks/instagram.
 - [ALREADY DONE] WhatsApp webhook work is on a high-priority Sidekiq queue. Queue order is in config/sidekiq.yml.
@@ -114,7 +111,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 - [MANUAL] Confirm GitHub/GHCR ownership and that Coolify can pull the exact image. If GHCR is private, use a read-only package credential stored only in Coolify.
 - [MANUAL] Own DNS for inbox.volitexai.tech and the protected Coolify administration endpoint. n8n has no public domain in the selected private profile.
 - [MANUAL] Prepare the Meta Developer App, Business/Tech Provider setup, WhatsApp Embedded Signup configuration, Instagram product, privacy/terms/data-deletion URLs, and required review permissions.
-- [MANUAL] Prepare off-server S3-compatible storage for media/backups and an age encryption key pair.
+- [MANUAL] Prepare off-server S3-compatible backup storage and an age encryption key pair. Media may use the backed-up persistent local volume or separately configured S3-compatible storage; S3 media storage is optional.
 - [MANUAL] Prepare a private alert-webhook destination and a client onboarding record.
 
 ## 0.4 Requires future infrastructure validation
@@ -209,7 +206,7 @@ Attach inbox to Rails port 3000 and enable Coolify TLS. Do not assign any n8n se
 **Type:** [MANUAL] [ONE-TIME] [INFRASTRUCTURE-LEVEL]
 
 1. Create a private persistent PostgreSQL service with database volitex_inbox_production and role volitex_inbox restricted to that database.
-2. Use the newly gated `volitex-ai-inbox-postgres` immutable digest from the replacement release kit (publication pending). The old `pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2` was compatibility-only evidence and is rejected for new production deployment after the October 22 scan. The replacement stays on PostgreSQL 16, builds checksum-pinned pgvector 0.8.7 on immutable official Alpine PostgreSQL, removes obsolete gosu, and enables pg_stat_statements preload. Do not substitute n8n's PostgreSQL image: it does not supply pgvector. Existing Debian volumes require a quiesced logical backup/restore into a fresh Alpine cluster; never attach old PGDATA directly. The fixture and publication boot checks must use the scanned replacement image.
+2. Use `INBOX_POSTGRES_IMAGE` from the five-image table above as this separate Coolify resource's image (the Inbox Compose file does not provision it). The old `pgvector/pgvector@sha256:ad2e18408bf447f62092a8a5259e7df10505c5a0360bd1a1853ac8b8b0763da2` was compatibility-only evidence and is rejected for new production deployment after the October 22 scan. The replacement stays on PostgreSQL 16, builds checksum-pinned pgvector 0.8.7 on immutable official Alpine PostgreSQL, removes obsolete gosu, and enables pg_stat_statements preload. Do not substitute n8n's PostgreSQL image: it does not supply pgvector. Existing Debian volumes require a quiesced logical backup/restore into a fresh Alpine cluster; never attach old PGDATA directly. The completed fixture, dump/restore, full acceptance and publication boot checks used this scanned replacement image.
 3. Configure shared_preload_libraries=pg_stat_statements and private readiness equivalent to:
 
 ```bash
@@ -220,7 +217,7 @@ pg_isready -U <volitex-role> -d volitex_inbox_production
 5. Set VOLITEX_DATABASE_URL only in a protected operator environment and run:
 
 ```bash
-deployment/production/check_postgres_extensions.sh
+bash deployment/production/check_postgres_extensions.sh
 ```
 
 The preflight must find pgcrypto, pg_trgm, vector, and pg_stat_statements, and must find pg_stat_statements in shared_preload_libraries. A plain PostgreSQL image or missing preload is a stop condition; correct it and rerun before migration.
@@ -229,7 +226,7 @@ The preflight must find pgcrypto, pg_trgm, vector, and pg_stat_statements, and m
 
 **Type:** [MANUAL] [ONE-TIME] [INFRASTRUCTURE-LEVEL]
 
-Create a separate private persistent service with a generated password and authenticated readiness:
+Create a separate private persistent service using the maintained `N8N_VALKEY_IMAGE` digest above (also exercised by Inbox candidate acceptance), with its own volume, generated password and authenticated readiness. Reuse the image, never the n8n service or data volume:
 
 ```bash
 REDISCLI_AUTH="$REDIS_PASSWORD" valkey-cli ping
@@ -248,7 +245,7 @@ Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox V
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
 ```dotenv
-VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:82d0da5993c4572fc7a84331c1033eebfe97d14d45277350ca1f8cab6a2dfa93
+VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0
 RAILS_ENV=production
 NODE_ENV=production
 INSTALLATION_ENV=docker
@@ -767,8 +764,8 @@ Recovery time and recovery-point objectives are not promises until restore and V
 # Phase 11 — Final chronological checklist
 
 1. [MANUAL] [ONGOING] Organize credentials, Meta access, domains, client materials, pricing, and operators.
-2. [ALREADY DONE] Record verified release source `1ea83b0832faeafbbf867496b69f75f6a992ffb8` and its four successful gates.
-3. [ALREADY DONE] Record all four immutable images and verify the deployment kit checksums from the release section above.
+2. [ALREADY DONE] Record verified release source `fb723d55348361e34bb44ed270ef6d41ce03ea27` and its four successful gates.
+3. [ALREADY DONE] Record all five immutable images and verify the deployment kit checksums from the release section above.
 4. [MANUAL] Finalize packages, features, pricing, contract, and demo.
 5. [MANUAL] Begin sales/outreach.
 6. [MANUAL] [PER CLIENT] Client signs.
