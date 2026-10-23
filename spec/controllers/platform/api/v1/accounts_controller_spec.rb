@@ -177,7 +177,7 @@ RSpec.describe 'Platform Accounts API', type: :request do
 
       it 'updates an account when its permissible object' do
         create(:platform_app_permissible, platform_app: platform_app, permissible: account)
-        account.enable_features!('inbox_management', 'channel_facebook')
+        account.update!(selected_feature_flags: %w[feature_inbox_management feature_channel_facebook])
 
         patch "/platform/api/v1/accounts/#{account.id}", params: {
           name: 'Test Account',

@@ -3,34 +3,6 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-*,
-:focus-visible,
-[type="checkbox"]:focus,
-[type="radio"]:focus {
-  --tw-ring-color: rgba(0, 0, 0, 0.4);
-}
-
-[type="checkbox"],
-[type="radio"] {
-  accent-color: #000000;
-  color: #000000;
-}
-
-html.dark {
-  *,
-  :focus-visible,
-  [type="checkbox"]:focus,
-  [type="radio"]:focus {
-    --tw-ring-color: rgba(255, 255, 255, 0.4);
-  }
-
-  [type="checkbox"],
-  [type="radio"] {
-    accent-color: #ffffff;
-    color: #ffffff;
-  }
-}
-
 body {
   font-family: "Space Grotesk", -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
 }
@@ -238,6 +210,34 @@ body {
     --border-blue: 255, 255, 255, 0.5;
     --border-container: 236, 236, 236, 0;
     --white-alpha: 255, 255, 255, 0.1;
+  }
+}
+
+*,
+:focus-visible,
+[type="checkbox"]:focus,
+[type="radio"]:focus {
+  --tw-ring-color: rgba(0, 0, 0, 0.4);
+}
+
+[type="checkbox"],
+[type="radio"] {
+  accent-color: #000000;
+  color: #000000;
+}
+
+html.dark {
+  *,
+  :focus-visible,
+  [type="checkbox"]:focus,
+  [type="radio"]:focus {
+    --tw-ring-color: rgba(255, 255, 255, 0.4);
+  }
+
+  [type="checkbox"],
+  [type="radio"] {
+    accent-color: #ffffff;
+    color: #ffffff;
   }
 }
 

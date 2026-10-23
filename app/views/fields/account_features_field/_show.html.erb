@@ -3,7 +3,7 @@
     <% enabled = field.data.fetch(feature.fetch('name')) %>
     <div class="flex items-center justify-between gap-3">
       <span><%= feature.fetch('display_name') %></span>
-      <span class="rounded px-2 py-1 text-xs <%= enabled ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' %>">
+      <span class="rounded px-2 py-1 text-xs <%= enabled ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' %>">
         <%= t(enabled ? 'super_admin.account_features.active' : 'super_admin.account_features.inactive') %>
       </span>
     </div>

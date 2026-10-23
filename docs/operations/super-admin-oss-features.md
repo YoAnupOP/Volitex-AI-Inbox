@@ -18,3 +18,7 @@ Applies to releases containing the OSS account field implementation. Use a publi
 ## Verification
 
 Run `bundle exec rspec spec/requests/super_admin/account_provisioning_spec.rb spec/script/production/compose_spec.rb spec/models/account_spec.rb`. The campaign CI gate includes the provisioning requests after asset compilation; full CE remains a publication gate. Check actual built Super Admin assets in light/dark mode, including checkbox accents, keyboard focus, active navigation and chart contrast.
+
+The custom Tailwind palette explicitly registers `zinc`; badges use supported green tokens. Theme variable blocks precede the form overrides so the existing contrast checks still inspect the correct dark palette. Fixtures for disabled mail and campaign behaviour and Platform API flags explicitly select their intended features instead of relying on an unconfigured account having none.
+
+The October 23 CI security gate also required the narrowly scoped DOMPurify 3.4.16 → 3.4.17 patch for [GHSA-cg2g-xh64-v4q7](https://github.com/advisories/GHSA-cg2g-xh64-v4q7) and [GHSA-mrv2-3pqr-j5jr](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr). Both direct and Vue plugin resolutions are locked to the patched version. `postcss-import` is declared directly at its already locked version because `postcss.config.js` requires it directly; builds must not rely on an accidental hoisted dependency. No audit suppression or gate bypass is included.
