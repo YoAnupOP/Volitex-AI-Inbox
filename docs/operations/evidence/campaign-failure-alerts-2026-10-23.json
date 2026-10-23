@@ -1,0 +1,15 @@
+{
+  "whatsapp_failed_and_unknown_query": "PASS",
+  "sms_excluded": "PASS",
+  "cancelled_without_errors_excluded": "PASS",
+  "smtp_accepted_alerts": 1,
+  "repeat_poll_alerts": 0,
+  "whatsapp_sends": 0,
+  "mailbox_confirmation": "PENDING",
+  "date": "2026-10-23",
+  "unit_and_regression_tests": 16,
+  "scheduled_task_last_exit": 0,
+  "poll_interval_seconds": 60,
+  "automatic_campaign_resend": false,
+  "coverage": "Local signed-in Windows session and Docker availability only; KVM timer acceptance pending"
+}

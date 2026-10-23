@@ -132,6 +132,8 @@ jobs:
           node-version: 24
       - name: Verify acceptance cleanup ownership
         run: python3 script/production/specs/n8n_acceptance/test_harness.py
+      - name: Verify operations email alerts and guarded recovery
+        run: python3 -m unittest discover -s script/production/specs -p 'test_*.py'
       - name: Verify security gate rejects unverified findings
         run: node --test script/production/specs/n8n_security_gate.test.cjs
       - name: Verify production monitor failure handling

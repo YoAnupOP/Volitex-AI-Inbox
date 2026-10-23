@@ -56,6 +56,37 @@ successful executions, stuck executions, service/queue health, backup failures,
 alert delivery failure and actual operator response require the separate
 operational acceptance checks in the first-client runbook.
 
+## WhatsApp campaign failure alerts
+
+`deployment/production/campaign_failure_alerts.py` reuses the same SMTP transport
+but reads the separate Inbox PostgreSQL ledger. Add INBOX_DATABASE_CONTAINER,
+INBOX_DATABASE_USER and INBOX_DATABASE_NAME to the protected configuration (or
+VOLITEX_DATABASE_URL with a host PostgreSQL client). Do not point it at n8n's DB.
+
+Initialize once using `--config /etc/volitex/workflow-alerts.env --state
+/var/lib/volitex/campaign-alerts.json`. Existing historical failures require a
+separate review. Install and enable the adjacent `volitex-campaign-alerts.service`
+and `.timer` exactly as the workflow timer. Verify receipt and a repeat poll, and
+monitor this timer independently as well. The two monitors use separate state
+files and either must be able to report its own failing exit status.
+
+Only Channel::Whatsapp campaigns are selected: recipient states `failed` or
+`unknown`, plus campaign statuses `failed`/`completed_with_errors`. An alert
+aggregates account/campaign IDs and failed/unknown counts; no campaign content,
+recipient phone numbers, tokens or provider response bodies are queried/emailed.
+The current campaign-status/count combination is deduplicated. Increased counts
+or a changed campaign status produce another notification; this is not one email
+per recipient. Up to 20 new notifications are sent per poll. SMTP rejection does
+not mark notification success. The same at-least-once caveat applies if sending
+succeeds but state persistence is interrupted.
+
+There are no UPDATE statements, provider calls or campaign dispatches in this
+monitor. An `unknown` outcome may already have reached Meta: reconcile provider
+status before an operator-approved recovery; never blindly resend. This monitor
+does not detect every stuck pending/sending campaign or provide automated recovery.
+The local preview's existing Windows scheduled task runs both checks each minute;
+coverage still requires the signed-in PC and Docker to be available.
+
 ## Recovery
 
 An alert does not claim that no external action occurred. Inspect current human

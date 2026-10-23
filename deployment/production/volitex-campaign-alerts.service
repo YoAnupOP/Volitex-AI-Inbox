@@ -1,0 +1,9 @@
+[Unit]
+Description=Volitex AI Inbox WhatsApp campaign failure email checks
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/volitex-ai-inbox/deployment/production/campaign_failure_alerts.py --config /etc/volitex/workflow-alerts.env --state /var/lib/volitex/campaign-alerts.json

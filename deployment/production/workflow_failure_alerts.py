@@ -99,6 +99,10 @@ def send_alert(config, execution):
         'and downstream committed state before any approved replay. This alert does not '
         'retry or repair the workflow. No customer message or credentials are included.\n'
     )
+    deliver_email(config, message)
+
+
+def deliver_email(config, message):
     with smtplib.SMTP(config['SMTP_ADDRESS'], int(config['SMTP_PORT']), timeout=20) as smtp:
         smtp.ehlo()
         smtp.starttls(context=ssl.create_default_context())
