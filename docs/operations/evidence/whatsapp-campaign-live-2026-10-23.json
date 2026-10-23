@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-23",
+  "channel": "WhatsApp Cloud",
+  "application_source": "a40c7e6d956942adfd53e8c4c9c296bab1ff5b0b",
+  "audience": "One explicitly authorised founder personal test recipient; no client list",
+  "template": "jaspers_market_plain_text_v1",
+  "template_category": "MARKETING",
+  "template_status_checked": "APPROVED via provider sync",
+  "pre_due_pause_resume": "PASS via authenticated HTTP API",
+  "pre_due_no_send": "PASS",
+  "cancel_before_due_no_send": "PASS",
+  "duplicate_completed_trigger_jobs": 2,
+  "cancelled_trigger_replay": 1,
+  "post_replay_counts": [
+    {
+      "campaign_id": 1,
+      "state": 1,
+      "scheduled_at_utc": "2026-10-23T13:32:06",
+      "snapshotted_at_utc": "2026-10-23T13:35:23.871169",
+      "recipient_count": 1,
+      "provider_attempts": 1,
+      "recipient_states": [
+        "read"
+      ]
+    },
+    {
+      "campaign_id": 2,
+      "state": 4,
+      "scheduled_at_utc": "2026-10-23T13:32:06",
+      "snapshotted_at_utc": null,
+      "recipient_count": 0,
+      "provider_attempts": 0,
+      "recipient_states": []
+    }
+  ],
+  "scheduled_trigger_granularity_minutes": 5,
+  "source_ci_run": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39935873222",
+  "previously_verified_synthetic_recipients": [
+    1000,
+    2000,
+    5000,
+    10000
+  ],
+  "synthetic_duplicates": 0,
+  "synthetic_provider": "Mocked with accelerated clock; not real Meta delivery throughput",
+  "real_sidekiq_crash_replay": "PASS: 6 provider calls, zero duplicate calls, zero lost pending; one ambiguous outcome retained unknown",
+  "limits": [
+    "Single live destination only",
+    "KVM 4 concurrency and resource acceptance pending",
+    "Meta account limits and per-client approved templates/consent remain prerequisites",
+    "Campaign-specific failed/unknown email alert acceptance not covered by n8n execution alert monitor"
+  ]
+}
