@@ -41,9 +41,13 @@ class Api::V1::Accounts::Conversations::MessagesController < Api::V1::Accounts::
   def retry
     return if message.blank?
 
-    service = Messages::StatusUpdateService.new(message, 'sent')
-    service.perform
-    message.update!(content_attributes: {})
+    message.with_lock do
+      return head :unprocessable_entity unless message.failed?
+
+      Messages::StatusUpdateService.new(message, 'sent').perform
+      # Provider failures retain their identity; a new attempt must pass channel loop prevention.
+      message.update!(content_attributes: {}, source_id: nil)
+    end
     ::SendReplyJob.perform_later(message.id)
   rescue StandardError => e
     render_could_not_create_error(e.message)

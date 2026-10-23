@@ -361,6 +361,10 @@ RSpec.describe 'Conversation Messages API', type: :request do
       end
 
       it 'retries the message' do
+        message.update!(source_id: 'wamid.failed-provider-attempt')
+
+        expect(SendReplyJob).to receive(:perform_later).with(message.id).once
+
         post "/api/v1/accounts/#{account.id}/conversations/#{message.conversation.display_id}/messages/#{message.id}/retry",
              headers: agent.create_new_auth_token,
              as: :json
@@ -368,6 +372,31 @@ RSpec.describe 'Conversation Messages API', type: :request do
         expect(response).to have_http_status(:success)
         expect(message.reload.status).to eq('sent')
         expect(message.reload.content_attributes['external_error']).to be_nil
+        expect(message.source_id).to be_nil
+      end
+
+      it 'rejects another retry after the failed message has been claimed' do
+        expect(SendReplyJob).to receive(:perform_later).with(message.id).once
+
+        2.times do
+          post "/api/v1/accounts/#{account.id}/conversations/#{message.conversation.display_id}/messages/#{message.id}/retry",
+               headers: agent.create_new_auth_token,
+               as: :json
+        end
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it 'does not retry a delivered message or clear its provider identity' do
+        message.update!(status: :delivered, source_id: 'wamid.delivered-provider-attempt')
+        expect(SendReplyJob).not_to receive(:perform_later)
+
+        post "/api/v1/accounts/#{account.id}/conversations/#{message.conversation.display_id}/messages/#{message.id}/retry",
+             headers: agent.create_new_auth_token,
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(message.reload.source_id).to eq('wamid.delivered-provider-attempt')
       end
     end
 
