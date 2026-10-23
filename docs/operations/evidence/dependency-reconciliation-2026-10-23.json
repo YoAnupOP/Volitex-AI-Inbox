@@ -1,0 +1,74 @@
+{
+  "snapshot_date": "2026-10-23",
+  "source_sha": "b13c06a4694f5c7a9c73a631e064436aa624c455",
+  "open_alerts": 224,
+  "severity": {
+    "high": 105,
+    "medium": 93,
+    "low": 15,
+    "critical": 11
+  },
+  "manifests": {
+    "deployment/n8n/npm-candidate/package-lock.json": 156,
+    "deployment/n8n/hardened/package-lock.json": 2,
+    "pnpm-lock.yaml": 45,
+    "tests/playwright/pnpm-lock.yaml": 17,
+    "tests/playwright/package.json": 1,
+    "package.json": 1,
+    "Gemfile.lock": 2
+  },
+  "maintained_n8n_advisory_range_matching_critical_high": 0,
+  "inbox_production_npm_audit": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "advisory_branch_method": "All current advisory package/ecosystem branches compared using semver, comma comparators normalized; no range silently ignored",
+  "runtime_scan_scope": "Fresh exact-source candidate artifacts; final publication scans/registry verification required before export",
+  "no_alerts_dismissed": true,
+  "publication_run": 39976372981,
+  "raw_image_findings": {
+    "inbox": {
+      "MEDIUM": 2,
+      "LOW": 1
+    },
+    "n8n": {
+      "MEDIUM": 10,
+      "LOW": 1,
+      "HIGH": 1
+    },
+    "n8n-postgres": {},
+    "n8n-valkey": {},
+    "inbox-postgres": {}
+  },
+  "registry": {
+    "application_image": {
+      "reference": "ghcr.io/yoanupop/volitex-ai-inbox@sha256:2d3d5dcdbce8d3f6796971a189f3b15e1a2badb5cd56c9c65dbf6cf1082e3571",
+      "anonymous_manifest_sha256_verified": true
+    },
+    "n8n_image": {
+      "reference": "ghcr.io/yoanupop/volitex-ai-n8n@sha256:9ba232cd87eafcdb19f258443d141fcbc3c02b13edaee4d84791cab15485a262",
+      "anonymous_manifest_sha256_verified": true
+    },
+    "n8n_postgres_image": {
+      "reference": "ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:f63383f71449bbbb4f6c3b2745e565a577c282fba4837d6c7cf6a5ef4ae3e4ab",
+      "anonymous_manifest_sha256_verified": true
+    },
+    "n8n_valkey_image": {
+      "reference": "ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:0ff96716ed8756d8f1debbe712a059ca9c4cc0e5b516c1c4e45101338149f7c8",
+      "anonymous_manifest_sha256_verified": true
+    },
+    "inbox_postgres_image": {
+      "reference": "ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:3e7c260f0306f9cf9c48f4b081a4bd45ca18fb9c554f52f272a6c0de8e028ce9",
+      "anonymous_manifest_sha256_verified": true
+    }
+  },
+  "input_hashes": {
+    "alerts.json": "2f3add62e3ef0acb9a832703321998238b676c730b650a0a8020f5b09eff8403",
+    "version-reconciliation.json": "206066aebd4e9a7928e901de48a917a87b0788be52452dabc743cbe88da0bdd4",
+    "running-n8n-physical-versions.json": "bc7aa1497d7451fdff06cd3f4ed20b816631a9be12e6f02a735bd8b2ca0d557a",
+    "inbox-production-audit.json": "13b5f651f633131c997763d40cf1b556d6fd69d415ff70a2e1d21b2d7b53a663"
+  }
+}

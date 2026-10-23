@@ -1,14 +1,14 @@
 # Volitex AI Inbox release verification — October 23, 2026
 
-Image source: `24ea94a74c067e734e6ccba9e54700d29ac16189`. Documentation revisions are separate from image source. This record supersedes the earlier October 23 release baseline; older audit records remain historical evidence.
+Image source: `b13c06a4694f5c7a9c73a631e064436aa624c455`. Documentation revisions are separate from image source. This record supersedes the earlier October 23 release baseline; older audit records remain historical evidence.
 
 ## Completed release gates
 
-- [Verify non-production candidate](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692564): completed, success.
-- [Verify migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692533): completed, success.
-- [Verify campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692513): completed, success.
-- [Run Chatwoot CE spec](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692538): completed, success.
-- [Actual publication job](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39926256180): completed, success; all five immutable references are in the production runbook and exported kit. Anonymous manifest SHA256 verification passed for each reference.
+- [Verify non-production candidate](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39970961221): completed, success.
+- [Verify migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39970961231): completed, success.
+- [Verify campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39970961348): completed, success.
+- [Run Chatwoot CE spec](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39970961293): completed, success.
+- [Actual publication job](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39976372981): completed, success; all five immutable references are in the production runbook and exported kit. Anonymous manifest SHA256 verification passed for each reference.
 
 ## Changes and failed-gate remediation
 
@@ -52,3 +52,9 @@ The complete checksummed kit includes raw scans, source markers, verified backpo
 ## Deployment boundary
 
 No production KVM is deployed by this publication. Actual private networking/TLS, off-host backup restore, reboot, alert delivery, measured capacity, Meta/media and each client's workflow acceptance remain required. Keep campaigns disabled on unaccepted accounts. Use the [production runbook](first-client-production-runbook.md) and [OSS account feature guide](super-admin-oss-features.md).
+
+## Release alignment and operations acceptance
+
+This source also includes the later Super Admin settings/background/text/icon fix and the SMTP n8n/campaign failure monitors, guarded Sheets recovery and systemd units. All 16 operator-tool regression tests are part of the candidate contract gate. Local acceptance records cover real WhatsApp/Google Sheets and one-recipient marketing delivery plus isolated recovery; see the evidence directory. Mailbox receipts are founder-confirmed. Monitor delivery is at-least-once, unknown campaigns are never automatically resent, and no recovery scheduler is enabled. KVM monitoring, restore/reboot/load and actual client workflow acceptance remain pending.
+
+The [fresh dependency inventory](dependency-reconciliation-2026-10-23.md) preserves every open alert disposition without dismissals. Its production npm audit and exact-source candidate/publication scans are distinct from the repository badge.
