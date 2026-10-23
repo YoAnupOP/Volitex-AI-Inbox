@@ -1,12 +1,12 @@
 # Volitex AI Inbox — First-client production operations runbook
 
-## Current verified release — October 22, 2026
+## Current verified release — October 23, 2026
 
-The deployment baseline is source `fb723d55348361e34bb44ed270ef6d41ce03ea27` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974950), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974747), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974878), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39764974905). [Publication run 39770727890](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39770727890) completed its actual publish job and published all five images below. Source verification, fresh scans, acceptance and anonymous registry manifest SHA256 checks passed. This release supersedes the October 20 kit and its image pins.
+The deployment baseline is source `a06159678b804de587f2554dc1e7f6966647a12a` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645682), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645619), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645615), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645612). [Publication run 39913267161](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39913267161) completed its actual publish job and published all five images below. Source verification, fresh scans, acceptance and anonymous registry manifest SHA256 checks passed. This release supersedes the October 22 kit and its image pins. It includes OSS Super Admin feature/limit management, WhatsApp campaign defaults and neutral light/dark branding; see the [release verification](release-verification-2026-10-23.md).
 
 **Release status:** exact-source CI verified and published for the private, operator-managed HTTP/JSON n8n profile. Use the replacement checksummed kit described below; live deployment status is **NOT_DEPLOYED**. Actual KVM networking/TLS, private-editor login, off-host backups, restore/reboot/alerts, measured capacity and client acceptance must pass before client traffic. A successful image publication does not perform these steps.
 
-**Security scope:** zero unresolved runtime Critical/High findings within this restricted profile. Inbox retains two explained Devise Medium findings and one json Low finding. The raw n8n scan retains one High, eight Medium and one Low; the braces High and one stream-json Medium are resolved by independently verified source backports, leaving seven Medium and one Low. Both PostgreSQL images and the maintained Valkey image have zero scan findings. MCP and MCP registry backend modules are disabled because package upgrades alone do not enable their optional input limits. Development-tool and lower-severity findings remain documented; no GitHub alerts were dismissed. See the [current reconciliation](dependency-reconciliation-2026-10-22.md), [historical remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md). Recheck advisories before deployment.
+**Security scope:** zero unresolved runtime Critical/High findings within this restricted profile. Inbox retains two explained Devise Medium findings and one json Low finding. The raw n8n scan retains one High, ten Medium and one Low; the braces High and one stream-json Medium are resolved by independently verified source backports, leaving nine Medium and one Low. Both PostgreSQL images and the maintained Valkey image have zero scan findings. MCP and MCP registry backend modules are disabled because package upgrades alone do not enable their optional input limits. Development-tool and lower-severity findings remain documented; no GitHub alerts were dismissed. See the [October 23 release verification](release-verification-2026-10-23.md), [October 22 dependency reconciliation](dependency-reconciliation-2026-10-22.md), [historical remediation record](n8n-security-remediation-2026-10-20.md) and [runtime maintenance process](../../deployment/n8n/hardened/README.md). Recheck advisories before deployment.
 
 **Client scope:** appointment booking with calendar/CRM integration; providers are chosen per client. `deployment/n8n/inbox-reply.workflow.json` is a fixed-reply integration test, not an accepted booking workflow. Configure and accept each client's workflow during onboarding using the [capability and booking acceptance checklist](n8n-capabilities-2026-10-19.md). Campaigns require their separate server/provider acceptance.
 
@@ -63,11 +63,11 @@ Use these five immutable references together for this release:
 
 | Coolify variable | Published immutable image |
 | --- | --- |
-| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0` |
-| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:501ed8d07a0968e9670dbf17129ec9fd93757150c81ddc1952f1e92fa14d7fe2` |
-| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:a7856da1f84ea921cbfd05aca35a30d926197f91c270e29af8eb9cfd4e46acf3` |
-| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:a5f400a4135907987aa48279692931b441411af67436bf65b01aefaedf7532dc` |
-| `INBOX_POSTGRES_IMAGE` (separate Coolify resource) | `ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:809a13f6e5aa574fb508abab0c49972e1d20374779584670b0cdc797345885f9` |
+| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:991de6650329419b241de22c632b81e7aa60d61342fe4b68542c72f45c8d6b9a` |
+| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:3e56fd97ec9cefc0ec4cc957f0e19cc1ec89246d6e4367c2b47fb62010b0f7c8` |
+| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:c5fa1010b025d9fa5fe382badfa152cc9f5caa2a539d5c543c7b20a053a04a0f` |
+| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:edb6a308459847aa0cc481a5a70caf4644e63b2c1d28ff68928f0873077d7e4b` |
+| `INBOX_POSTGRES_IMAGE` (separate Coolify resource) | `ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:ceffc418d283286003d85c1ff0fbd4a3f142e6068dfb58934cdb164fc869eded` |
 
 The maintained n8n stack runs n8n 2.44.4, PostgreSQL 17.11 and Valkey 8.1.10; the separate Inbox database runs PostgreSQL 16.15 with pgvector 0.8.7. N8N_POSTGRES_IMAGE is for n8n only; INBOX_POSTGRES_IMAGE supplies Inbox's separate pgvector database. The maintained Valkey image is used in two separate private services with independent credentials and volumes as described below. Do not substitute upstream images, mutable tags or CI build-manifest digests for these published references.
 
@@ -79,7 +79,7 @@ On the founder's workstation, `C:/Users/Anup/.codex/releases/Volitex-AI-Inbox/la
 - `verification/publication/`: registry references, per-image metadata and n8n source/security verification.
 - `verification/n8n-acceptance.json`: exact-source integration, upgrade and recovery evidence.
 
-The Git source example intentionally uses image placeholders; copy the verified kit's pins or the table above into Coolify. Do not blindly deploy Git `master`: a later documentation or code commit is not this verified image source. Check `/app/.git_sha` for Inbox and the runtime source markers described in the maintained-image documentation. All five image manifests were anonymously accessible and their SHA256 digests verified on October 22; recheck access from the actual server before deployment. Future releases require all four exact-source gates and a successful publication job before replacing these pins and exporting a new kit.
+The Git source example intentionally uses image placeholders; copy the verified kit's pins or the table above into Coolify. Do not blindly deploy Git `master`: a later documentation or code commit is not this verified image source. Check `/app/.git_sha` for Inbox and the runtime source markers described in the maintained-image documentation. All five image manifests were anonymously accessible and their SHA256 digests verified on October 23; recheck access from the actual server before deployment. Future releases require all four exact-source gates and a successful publication job before replacing these pins and exporting a new kit.
 
 # Phase 0 — Before buying the KVM 4
 
@@ -87,9 +87,9 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.1 Done now
 
-- [ALREADY DONE] The published release source is `fb723d55348361e34bb44ed270ef6d41ce03ea27`; the private AgentBot transport and maintained n8n stack are included.
+- [ALREADY DONE] The published release source is `a06159678b804de587f2554dc1e7f6966647a12a`; the private AgentBot transport and maintained n8n stack are included.
 - [ALREADY DONE] All five immutable GHCR artifacts and the verified deployment kit are recorded above.
-- [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; the campaign feature remains disabled until its separate acceptance gates pass.
+- [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; shipped defaults enable campaigns, so explicitly disable the campaign feature for accounts awaiting their separate acceptance gates. The ordinary worker sets SIDEKIQ_SKIP_CAMPAIGNS=true; the dedicated campaign worker owns campaign processing.
 - [ALREADY DONE] WhatsApp and Instagram webhook controllers validate Meta signatures, enqueue work, and acknowledge accepted deliveries. WhatsApp uses /webhooks/whatsapp/:phone_number; Instagram uses /webhooks/instagram.
 - [ALREADY DONE] WhatsApp webhook work is on a high-priority Sidekiq queue. Queue order is in config/sidekiq.yml.
 - [ALREADY DONE] Instagram inbound deduplication is protected by the database uniqueness boundary (inbox_id, source_id) and concurrent duplicate handling.
@@ -245,7 +245,7 @@ Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox V
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
 ```dotenv
-VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:a29c5e77caa6a159b6143581876afcabfc2226bd0dc5441a2562190efcf75fc0
+VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:991de6650329419b241de22c632b81e7aa60d61342fe4b68542c72f45c8d6b9a
 RAILS_ENV=production
 NODE_ENV=production
 INSTALLATION_ENV=docker
@@ -489,12 +489,12 @@ Do not describe Connect as repository-integrated until this end-to-end test pass
 **Type:** [MANUAL] [PER CLIENT]
 
 1. Keep ENABLE_ACCOUNT_SIGNUP=false.
-2. In the authenticated Super Admin dashboard, open Accounts > New account and save the tenant name and locale. New accounts created through Super Admin use `ACCOUNT_LEVEL_FEATURE_DEFAULTS`; when that record is absent, this creation path uses the enabled defaults in `config/features.yml`. Other creation APIs retain their established behavior. An explicitly configured empty/disabled default list remains authoritative. Existing accounts are not backfilled or changed.
+2. In the authenticated Super Admin dashboard, open Accounts > New account and save the tenant name and locale. New accounts created through Super Admin use `ACCOUNT_LEVEL_FEATURE_DEFAULTS`; when that record is absent, this creation path uses the enabled defaults in `config/features.yml`. Model provisioning uses the same effective defaults when no explicit feature selection was submitted. Super Admin New/Edit/Show exposes the OSS feature switches and stored limits; explicitly submitted selections, including all unchecked, take precedence. An explicitly configured empty/disabled default list remains authoritative. Existing accounts are not backfilled or changed.
 3. Create the customer user under Users (or select the existing verified user), then create an Account user membership with the new account, that user and the `administrator` role. Super Admin access does not automatically grant customer-account membership. Use the authenticated password reset/invitation flow and protected credentials, never passwords pasted in chat or shell arguments.
 4. Record ACCOUNT_ID privately. Create only purchased inboxes, agents and least-privilege roles. Verify the new administrator can access only assigned accounts and an ordinary agent cannot mutate Quick Menus.
 5. Store approved tier/features/niche rules in the client record or approved configuration. Defaults do not enable premium Captain features or provide Meta assets, AgentBot credentials or a working n8n workflow. Configure those separately; routine account creation does not require the legacy Rake task.
 
-**Bulk campaign gate:** WhatsApp campaigns remain disabled in shipped defaults. The new durable recipient ledger, bounded retries, pacing, separate campaign worker and recovery tests are documented in [campaign release acceptance](campaign-release-2026-10-17.md). Deploy the campaign worker from the same application digest, verify its heartbeat/alerts and resource limits, and back up before the ledger migration. Keep the feature disabled until the approved small live campaign, delivery reconciliation, consent/opt-out procedure and KVM workload/recovery gates pass. Never reset unknown outcomes or roll back to the old sender against a used ledger. These campaign-specific gates do not invalidate the existing one-to-one automation evidence.
+**Bulk campaign gate:** Shipped defaults now enable `campaigns` and `whatsapp_campaign`. A stored installation default override remains authoritative and existing accounts are not backfilled. Review effective defaults and explicitly disable these switches in Super Admin on each unaccepted account; enabling the defaults does not perform live campaign acceptance. See [OSS feature management](super-admin-oss-features.md). The new durable recipient ledger, bounded retries, pacing, separate campaign worker and recovery tests are documented in [campaign release acceptance](campaign-release-2026-10-17.md). Deploy the campaign worker from the same application digest, verify its heartbeat/alerts and resource limits, and back up before the ledger migration. Keep the feature disabled until the approved small live campaign, delivery reconciliation, consent/opt-out procedure and KVM workload/recovery gates pass. Never reset unknown outcomes or roll back to the old sender against a used ledger. These campaign-specific gates do not invalidate the existing one-to-one automation evidence.
 
 ## 4.2 n8n machine identity and routing
 
@@ -764,7 +764,7 @@ Recovery time and recovery-point objectives are not promises until restore and V
 # Phase 11 — Final chronological checklist
 
 1. [MANUAL] [ONGOING] Organize credentials, Meta access, domains, client materials, pricing, and operators.
-2. [ALREADY DONE] Record verified release source `fb723d55348361e34bb44ed270ef6d41ce03ea27` and its four successful gates.
+2. [ALREADY DONE] Record verified release source `a06159678b804de587f2554dc1e7f6966647a12a` and its four successful gates.
 3. [ALREADY DONE] Record all five immutable images and verify the deployment kit checksums from the release section above.
 4. [MANUAL] Finalize packages, features, pricing, contract, and demo.
 5. [MANUAL] Begin sales/outreach.
