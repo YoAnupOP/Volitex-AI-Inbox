@@ -99,3 +99,21 @@ failures with no retained execution context, non-Google failures, booking/paymen
 actions, changed workflows, human-owned or newer conversations require manual
 review. No recovery scheduler is installed. This is a constrained operator tool,
 not automatic recovery or an atomic multi-writer CRM guarantee.
+
+### Recovery acceptance — 2026-10-23
+
+The guarded command at source `68c1619f21` passed an isolated end-to-end run
+against the real Inbox application and queue-mode n8n with synthetic Google and
+Meta endpoints. The run retained a Google-node failure, obtained an eligible
+dry-run, restored the synthetic dependency and dispatched the original event
+through the actual Inbox worker. The resulting Sheet row and one provider send
+were verified. A second dispatch for the same failed execution was rejected;
+redelivery of the original event also produced no additional provider send.
+Human takeover and a newer incoming message each blocked recovery dispatch.
+
+No live Sheet, WhatsApp recipient or live credentials were used. Test resources
+were removed and the existing preview remained healthy. Runtime image pins,
+component source markers and outcomes are recorded in
+[the acceptance evidence](evidence/sheets-recovery-2026-10-23.json). This validates
+the constrained operator-run command; no automatic recovery scheduler was enabled.
+KVM acceptance and other workflow types remain separate.
