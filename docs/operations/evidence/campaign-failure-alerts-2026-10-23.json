@@ -5,7 +5,7 @@
   "smtp_accepted_alerts": 1,
   "repeat_poll_alerts": 0,
   "whatsapp_sends": 0,
-  "mailbox_confirmation": "PENDING",
+  "mailbox_confirmation": "CONFIRMED_BY_FOUNDER",
   "date": "2026-10-23",
   "unit_and_regression_tests": 16,
   "scheduled_task_last_exit": 0,
