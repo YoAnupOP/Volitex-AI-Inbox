@@ -64,3 +64,38 @@ the original authenticated event through the existing tenant checks and stable
 reply idempotency key. Do not mint a new message ID or blindly replay a booking,
 payment or other non-idempotent action. Automatic recovery is not enabled by this
 monitor. The Sheets demo's sequential reserved-row replay is a narrower guarantee.
+
+### Guarded Sheets recovery command
+
+`deployment/production/recover_sheets_failure.py` provides an operator-run dry-run
+by default. It requires a retained failed execution from the exact approved
+Sheets workflow; only its three Google HTTP nodes are eligible. It extracts the
+original authenticated message ID, checks the reviewed workflow fingerprint and
+worker concurrency of one, then rechecks tenant/bot binding, current ownership,
+reply window, existing reply and newer incoming messages under the Inbox
+conversation lock. It queues a newly signed delivery of the original event only
+when every guard passes. n8n still rechecks ownership before external actions.
+
+Store these non-secret approval bindings in a protected recovery configuration:
+N8N_DATABASE_CONTAINER, N8N_WORKER_CONTAINER, INBOX_WORKER_CONTAINER,
+RECOVERY_WORKFLOW_ID, RECOVERY_WORKFLOW_SHA256, RECOVERY_ACCOUNT_ID,
+RECOVERY_INBOX_ID, RECOVERY_BOT_ID and RECOVERY_WEBHOOK_URL. The fingerprint is
+SHA256 of the canonical sorted compact JSON object containing the reviewed
+workflow's nodes, connections and settings. Re-review any workflow changes;
+do not automatically refresh the approval fingerprint.
+
+Run `python3 deployment/production/recover_sheets_failure.py --config
+/etc/volitex/sheets-recovery.env --state /var/lib/volitex/sheets-recovery.json
+--execution-id <failed-id>`. After cause/downstream-state review, `--execute
+--cause-resolved` permits one guarded attempt. Save its metadata output to the
+protected incident record. The attempt is durably reserved before dispatch:
+interrupted/uncertain dispatch is not automatically repeated. `queued_unverified`
+does not mean recovery succeeded. Verify the new n8n result, independent Sheet
+read-back and original reply key/provider status before resolving the incident.
+
+Do not use this command while another operator edits or manually runs the demo.
+The same single-worker/no-manual-Sheet-writer constraints still apply. Historical
+failures with no retained execution context, non-Google failures, booking/payment
+actions, changed workflows, human-owned or newer conversations require manual
+review. No recovery scheduler is installed. This is a constrained operator tool,
+not automatic recovery or an atomic multi-writer CRM guarantee.
