@@ -20,17 +20,17 @@ as defined by the routes in the `admin/` namespace
   }
 %>
 
-<div class="border-slate-100 dark:border-slate-800 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col bg-white dark:bg-slate-900" role="navigation">
+<div class="border-n-strong dark:border-zinc-800 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col bg-n-background dark:bg-zinc-950" role="navigation">
   <div>
-    <div class="flex mx-4 mb-4 border-slate-100 dark:border-slate-800 border-b py-6 items-center">
+    <div class="flex mx-4 mb-4 border-n-strong dark:border-zinc-800 border-b py-6 items-center">
       <%= link_to super_admin_root_url, class: "flex-shrink-0 mr-[12px]" do %>
         <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="text-black dark:text-white transition-colors duration-200">
           <path fill-rule="evenodd" d="M10 10H90L50 90ZM27 10H73L50 77Z" fill="currentColor" />
         </svg>
       <% end %>
       <div class="flex flex-col">
-        <div class="text-sm text-slate-800 dark:text-slate-200">Volitex AI Inbox <%= Chatwoot.config[:version] %></div>
-        <div class="text-xs text-slate-700 dark:text-slate-400 mt-0.5">Super Admin Console</div>
+        <div class="text-sm text-n-slate-12 dark:text-zinc-200">Volitex AI Inbox <%= Chatwoot.config[:version] %></div>
+        <div class="text-xs text-n-slate-11 dark:text-zinc-300 mt-0.5">Super Admin Console</div>
       </div>
     </div>
 
@@ -58,7 +58,7 @@ as defined by the routes in the `admin/` namespace
       <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Agent Dashboard' } %>
       
       <li class="px-4 mb-1">
-        <button id="theme-toggle-btn" class="-ml-1 focus:outline-none cursor-pointer flex items-center w-full px-2 py-1.5 text-slate-800 dark:text-slate-200 cursor-pointer hover:text-woot-500 dark:hover:text-woot-400 hover:bg-slate-25 dark:hover:bg-slate-800 rounded-lg">
+        <button id="theme-toggle-btn" class="-ml-1 focus:outline-none cursor-pointer flex items-center w-full px-2 py-1.5 text-n-slate-12 dark:text-zinc-200 cursor-pointer hover:text-woot-500 dark:hover:text-zinc-100 hover:bg-slate-25 dark:hover:bg-zinc-800 rounded-lg">
           <svg id="theme-toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
           </svg>
           <span id="theme-toggle-label" class="ml-2 text-sm">Theme Mode</span>

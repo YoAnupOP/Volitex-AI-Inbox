@@ -9,7 +9,7 @@
     <h1 class="text-base font-medium leading-6 text-n-slate-12" id="page-title">
       <%= content_for(:title) %>
     </h1>
-    <p class="text-sm font-normal leading-5 text-slate-500 m-0">Update your instance settings, access billing portal</p>
+    <p class="text-sm font-normal leading-5 text-n-slate-11 m-0">Update your instance settings, access billing portal</p>
   </div>
 </header>
 <section class="main-content__body px-8">
@@ -20,7 +20,7 @@
     </div>
   <% end %>
 
-  <div class="bg-white py-2 px-4 xl:px-0">
+  <div class="bg-n-background py-2 px-4 xl:px-0">
     <%= javascript_include_tag "secretField" %>
     <div class="flex items-center mb-6">
       <h4 class="text-sm font-medium leading-5 h-5 text-n-slate-12 mr-4">Installation Identifier</h4>
@@ -39,7 +39,7 @@
       </div>
     </div>
     <% if ChatwootApp.enterprise? %>
-      <div class="flex p-4 outline outline-1 outline-n-container rounded-lg items-start md:items-center shadow-sm flex-col md:flex-row">
+      <div class="flex p-4 outline outline-1 outline-n-strong rounded-lg items-start md:items-center shadow-sm flex-col md:flex-row">
         <div class="flex flex-col flex-grow gap-1">
           <div class="flex items-center gap-2">
             <h2 class="h-5 leading-5 text-n-slate-12 text-sm font-medium">Current plan</h2>
@@ -51,7 +51,7 @@
           <p class="text-n-slate-11 m-0 text-sm"><%= SuperAdmin::FeaturesHelper.plan_details.html_safe %></p>
         </div>
         <a href="<%= ChatwootHub.billing_url %>" target="_blank" rel="noopener noreferrer">
-          <button class="mt-4 md:mt-0 flex gap-1 items-center bg-transparent shadow-sm h-9 hover:text-n-slate-12 hover:bg-slate-50 outline outline-1 outline-n-container rounded text-n-slate-11 font-medium p-2 focus:outline-none">
+          <button class="mt-4 md:mt-0 flex gap-1 items-center bg-transparent shadow-sm h-9 hover:text-n-slate-12 hover:bg-n-slate-3 outline outline-1 outline-n-strong rounded text-n-slate-11 font-medium p-2 focus:outline-none">
             <svg width="16" height="16"><use xlink:href="#icon-settings-2-line" /></svg>
             <span class="px-1">Manage</span>
           </button>
@@ -68,7 +68,7 @@
     <% end %>
 
 
-    <div class="flex p-4 outline outline-1 outline-n-container rounded-lg mt-4 items-start md:items-center shadow-sm flex-col md:flex-row">
+    <div class="flex p-4 outline outline-1 outline-n-strong rounded-lg mt-4 items-start md:items-center shadow-sm flex-col md:flex-row">
       <div class="flex flex-col flex-grow gap-1">
         <h2 class="h-5 leading-5 text-n-slate-12 text-sm font-medium">Need help?</h2>
         <p class="text-n-slate-11 m-0 text-sm">Do you face any issues? We are here to help.</p>
@@ -85,11 +85,11 @@
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-2 gap-y-3">
       <% SuperAdmin::FeaturesHelper.available_features.each do |feature, attrs| %>
-        <div class="group outline outline-1 outline-n-container p-4 rounded-lg relative shadow-sm">
-          <span class="<%= attrs[:enabled] ? 'bg-green-400 text-white': 'bg-slate-300 text-slate-800' %> absolute rounded-full p-1 inline-flex right-4 top-5">
+        <div class="group outline outline-1 outline-n-strong p-4 rounded-lg relative shadow-sm">
+          <span class="<%= attrs[:enabled] ? 'bg-green-400 text-white': 'bg-n-slate-4 text-n-slate-12' %> absolute rounded-full p-1 inline-flex right-4 top-5">
             <svg width="14" height="14"><use xlink:href="<%= attrs[:enabled] ? '#icon-tick-line': '#icon-lock-line' %>" /></svg>
           </span>
-          <div class="visible <% if !attrs[:enabled] %> group-hover:invisible <% end %> flex items-center justify-center w-10 h-10 mb-2 border border-slate-100 border-solid text-slate-800 rounded-full">
+          <div class="visible <% if !attrs[:enabled] %> group-hover:invisible <% end %> flex items-center justify-center w-10 h-10 mb-2 border border-n-strong border-solid text-n-slate-12 rounded-full">
             <svg width="20" height="20"><use xlink:href="#<%= attrs[:icon] %>" /></svg>
           </div>
           <% if !attrs[:enabled] %>
@@ -108,7 +108,7 @@
                 <span class="px-2 h-4 leading-4 rounded-xl text-green-800 font-medium bg-green-100/70 text-xxs">EE</span>
               <% end %>
               <% if attrs[:config_key].present? && attrs[:enabled] %>
-                <a class="inline-flex items-center justify-center h-5 w-5 hover:bg-slate-50 rounded-sm" href="/super_admin/app_config?config=<%= attrs[:config_key] %>">
+                <a class="inline-flex items-center justify-center h-5 w-5 hover:bg-n-slate-3 rounded-sm" href="/super_admin/app_config?config=<%= attrs[:config_key] %>">
                   <svg width="18" height="18"><use xlink:href="#icon-gear" /></svg>
                 </a>
               <% end %>
