@@ -57,6 +57,8 @@ The [MANUAL] labels below mean an operator action is required, not necessarily t
 
 Before accepting traffic, record the server/access inventory, alert destination and escalation contact, backup and monitoring schedules, recovery objectives and maintenance window in the protected operations record. Install and verify persistent monitoring, backup jobs and alert delivery. Document how an alert reaches an available operator or agent and any coverage gaps: this runbook and a chat do not create continuous execution or 24/7 incident coverage.
 
+For SMTP notifications of terminal n8n execution failures, follow [workflow failure email alerts](workflow-failure-email-alerts.md). Install and accept its timer separately from the infrastructure monitor. Email notification does not replay customer workflows or establish operator response coverage.
+
 ## Verified release and deployment kit
 
 Use these five immutable references together for this release:
