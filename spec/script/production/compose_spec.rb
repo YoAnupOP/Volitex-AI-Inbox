@@ -14,12 +14,24 @@ RSpec.describe 'Production deployment contracts' do # rubocop:disable RSpec/Desc
 
   it 'checks the ordinary and campaign workers independently and bounds the campaign connection pool' do
     expect(application.dig('sidekiq', 'environment', 'SIDEKIQ_HEALTH_QUEUE')).to eq('critical')
+    expect(application.dig('sidekiq', 'environment', 'SIDEKIQ_SKIP_CAMPAIGNS')).to eq('true')
     expect(application.dig('campaign-worker', 'environment', 'SIDEKIQ_HEALTH_QUEUE')).to eq('campaigns')
     expect(application.dig('campaign-worker', 'environment', 'SIDEKIQ_DB_POOL')).to eq('2')
     expect(application.dig('campaign-worker', 'environment', 'SIDEKIQ_CONCURRENCY')).to eq('2')
     %w[sidekiq campaign-worker].each do |name|
       expect(application.fetch(name).fetch('healthcheck').fetch('test')).to include('script/production/campaign_worker_health.rb')
     end
+  end
+
+  it 'processes campaigns by default while preserving the dedicated production worker isolation' do
+    config = Rails.root.join('config/sidekiq.yml').read
+    with_modified_env SIDEKIQ_SKIP_CAMPAIGNS: nil do
+      expect(YAML.safe_load(ERB.new(config).result, permitted_classes: [Symbol])[:queues]).to include('campaigns')
+    end
+    with_modified_env SIDEKIQ_SKIP_CAMPAIGNS: 'true' do
+      expect(YAML.safe_load(ERB.new(config).result, permitted_classes: [Symbol])[:queues]).not_to include('campaigns')
+    end
+    expect(YAML.load_file(Rails.root.join('config/sidekiq_campaigns.yml'))[:queues]).to eq(['campaigns'])
   end
 
   it 'rotates logs for every application and n8n stack service' do

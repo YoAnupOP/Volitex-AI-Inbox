@@ -20,6 +20,9 @@
   - medium
   - default
   - mailers
+<% unless ENV['SIDEKIQ_SKIP_CAMPAIGNS'] == 'true' %>
+  - campaigns
+<% end %>
   - action_mailbox_routing
   - low
   - scheduled_jobs

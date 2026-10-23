@@ -12,6 +12,12 @@ module Featurable
 
   FEATURE_LIST = YAML.safe_load(Rails.root.join('config/features.yml').read).freeze
 
+  def self.default_features
+    config = InstallationConfig.find_by(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS')
+    features = config ? config.value : FEATURE_LIST
+    features.select { |feature| feature['enabled'] }.pluck('name')
+  end
+
   def self.feature_flag_mappings_for(feature_list)
     features_by_column = feature_list.group_by { |feature| feature['column'].presence || DEFAULT_FEATURE_FLAG_COLUMN }
 
@@ -61,6 +67,7 @@ module Featurable
     end
 
     define_method :selected_feature_flags= do |chosen_flags|
+      @selected_feature_flags_assigned = true
       FEATURE_FLAG_COLUMNS.each { |column| unselect_all_flags(column) }
       return if chosen_flags.nil?
 
@@ -113,10 +120,8 @@ module Featurable
   private
 
   def enable_default_features
-    config = InstallationConfig.find_by(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS')
-    return true if config.blank?
+    return if @selected_feature_flags_assigned
 
-    features_to_enabled = config.value.select { |f| f[:enabled] }.pluck(:name)
-    enable_features(*features_to_enabled)
+    enable_features(*Featurable.default_features)
   end
 end

@@ -59,6 +59,8 @@ services:
       start_period: 60s
     environment:
       SIDEKIQ_HEALTH_QUEUE: critical
+      # Campaigns run on the separately bounded worker in this topology.
+      SIDEKIQ_SKIP_CAMPAIGNS: "true"
       NODE_ENV: production
       RAILS_ENV: production
       INSTALLATION_ENV: docker

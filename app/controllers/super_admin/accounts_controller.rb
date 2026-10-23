@@ -38,7 +38,7 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   def resource_params
     permitted_params = super
     permitted_params.extract!(:suspension_category, :suspension_reason)
-    permitted_params[:limits] = permitted_params[:limits].to_h.compact if permitted_params.key?(:limits)
+    permitted_params[:limits] = permitted_params[:limits].to_h.compact_blank if permitted_params.key?(:limits)
     permitted_params[:captain_models] = permitted_params[:captain_models].to_h.compact_blank.presence if permitted_params.key?(:captain_models)
     permitted_params.merge(feature_params)
   end
@@ -77,11 +77,12 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
   private
 
   def feature_params
-    return { selected_feature_flags: params[:enabled_features].keys.map(&:to_sym) } if params[:enabled_features].present?
-    return {} unless action_name == 'create' && !InstallationConfig.exists?(name: 'ACCOUNT_LEVEL_FEATURE_DEFAULTS')
+    return {} unless params.key?(:enabled_features)
 
-    defaults = Featurable::FEATURE_LIST.select { |feature| feature['enabled'] }.pluck('name')
-    { selected_feature_flags: defaults.map { |name| "feature_#{name}" } }
+    allowed_flags = Featurable::FEATURE_LIST.map { |feature| "feature_#{feature['name']}" }
+    submitted = params.require(:enabled_features).permit(*allowed_flags)
+    selected = submitted.select { |_flag, value| ActiveModel::Type::Boolean.new.cast(value) }.keys
+    { selected_feature_flags: selected }
   end
 
   def validate_suspension_metadata

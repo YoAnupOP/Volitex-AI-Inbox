@@ -1,0 +1,19 @@
+<div class="field-unit__label">
+  <%= f.label field.attribute %>
+</div>
+<div class="field-unit__field">
+  <%= hidden_field_tag 'enabled_features[_present]', '1' %>
+  <% defaults = field.resource.new_record? && !params.key?(:enabled_features) ? Featurable.default_features : [] %>
+  <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <% field.features.each do |feature| %>
+      <% name = feature.fetch('name') %>
+      <div class="flex items-center gap-2">
+        <%= check_box_tag "enabled_features[feature_#{name}]", '1', field.data.fetch(name) || defaults.include?(name),
+                          id: "enabled_features_feature_#{name}",
+                          class: 'rounded text-black focus:ring-black dark:text-white dark:focus:ring-white border-slate-300' %>
+        <%= label_tag "enabled_features_feature_#{name}", feature.fetch('display_name'), class: 'font-normal' %>
+      </div>
+    <% end %>
+  </div>
+  <p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400"><%= t('super_admin.account_features.hint') %></p>
+</div>

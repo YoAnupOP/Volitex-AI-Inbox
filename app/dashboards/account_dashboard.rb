@@ -9,15 +9,11 @@ class AccountDashboard < Administrate::BaseDashboard
   # on pages throughout the dashboard.
 
   enterprise_attribute_types = if ChatwootApp.enterprise?
-                                 attributes = {
-                                   limits: AccountLimitsField
-                                 }
+                                 attributes = {}
 
                                  # Only show manually managed features in Chatwoot Cloud deployment
                                  attributes[:manually_managed_features] = ManuallyManagedFeaturesField if ChatwootApp.chatwoot_cloud?
 
-                                 # Add all_features last so it appears after manually_managed_features
-                                 attributes[:all_features] = AccountFeaturesField
                                  attributes[:captain_models] = CaptainModelOverridesField
 
                                  attributes
@@ -36,7 +32,9 @@ class AccountDashboard < Administrate::BaseDashboard
     status: AccountStatusField.with_options(collection: [%w[Active active], %w[Suspended suspended]]),
     suspension_history: SuspensionHistoryField,
     account_users: Field::HasMany,
-    custom_attributes: Field::String
+    custom_attributes: Field::String,
+    limits: AccountLimitsField,
+    all_features: AccountFeaturesField
   }.merge(enterprise_attribute_types).freeze
 
   # COLLECTION_ATTRIBUTES
@@ -56,9 +54,8 @@ class AccountDashboard < Administrate::BaseDashboard
   # SHOW_PAGE_ATTRIBUTES
   # an array of attributes that will be displayed on the model's show page.
   enterprise_show_page_attributes = if ChatwootApp.enterprise?
-                                      attrs = %i[custom_attributes limits]
+                                      attrs = %i[custom_attributes]
                                       attrs << :manually_managed_features if ChatwootApp.chatwoot_cloud?
-                                      attrs << :all_features
                                       attrs << :captain_models
                                       attrs
                                     else
@@ -74,15 +71,16 @@ class AccountDashboard < Administrate::BaseDashboard
     suspension_history
     conversations
     account_users
+    limits
+    all_features
   ] + enterprise_show_page_attributes).freeze
 
   # FORM_ATTRIBUTES
   # an array of attributes that will be displayed
   # on the model's form (`new` and `edit`) pages.
   enterprise_form_attributes = if ChatwootApp.enterprise?
-                                 attrs = %i[limits]
+                                 attrs = []
                                  attrs << :manually_managed_features if ChatwootApp.chatwoot_cloud?
-                                 attrs << :all_features
                                  attrs << :captain_models
                                  attrs
                                else
@@ -92,6 +90,8 @@ class AccountDashboard < Administrate::BaseDashboard
     name
     locale
     status
+    limits
+    all_features
   ] + enterprise_form_attributes).freeze
 
   # COLLECTION_FILTERS
@@ -122,7 +122,7 @@ class AccountDashboard < Administrate::BaseDashboard
   # to prevent an error from being raised (wrong number of arguments)
   # Reference: https://github.com/thoughtbot/administrate/pull/2356/files#diff-4e220b661b88f9a19ac527c50d6f1577ef6ab7b0bed2bfdf048e22e6bfa74a05R204
   def permitted_attributes(action)
-    attrs = super + [limits: {}, captain_models: {}]
+    attrs = super + [limits: AccountLimitsField::LIMIT_KEYS, captain_models: {}]
     attrs += %i[suspension_category suspension_reason] if action == 'update'
 
     # Add manually_managed_features to permitted attributes only for Chatwoot Cloud

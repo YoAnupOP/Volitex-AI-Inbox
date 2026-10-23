@@ -20,7 +20,7 @@ const prepareData = sourceData => {
     datasets: [
       {
         type: 'bar',
-        backgroundColor: 'rgb(31, 147, 255)',
+        backgroundColor: '#111111',
         yAxisID: 'y',
         label: 'Conversations',
         data: data,
@@ -42,7 +42,7 @@ const { accountsCount, usersCount, inboxesCount, conversationsCount } =
     <header class="main-content__header" role="banner">
       <h1
         id="page-title"
-        class="main-content__page-title text-slate-900 dark:text-slate-100"
+        class="main-content__page-title text-zinc-900 dark:text-zinc-100"
       >
         {{ 'Admin Dashboard' }}
       </h1>
@@ -51,38 +51,36 @@ const { accountsCount, usersCount, inboxesCount, conversationsCount } =
     <section class="main-content__body main-content__body--flush">
       <div class="report--list">
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">
+          <div class="metric text-zinc-900 dark:text-zinc-100">
             {{ accountsCount }}
           </div>
-          <div class="text-slate-700 dark:text-slate-300">{{ 'Accounts' }}</div>
+          <div class="text-zinc-700 dark:text-zinc-300">{{ 'Accounts' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">
+          <div class="metric text-zinc-900 dark:text-zinc-100">
             {{ usersCount }}
           </div>
-          <div class="text-slate-700 dark:text-slate-300">{{ 'Users' }}</div>
+          <div class="text-zinc-700 dark:text-zinc-300">{{ 'Users' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">
+          <div class="metric text-zinc-900 dark:text-zinc-100">
             {{ inboxesCount }}
           </div>
-          <div class="text-slate-700 dark:text-slate-300">{{ 'Inboxes' }}</div>
+          <div class="text-zinc-700 dark:text-zinc-300">{{ 'Inboxes' }}</div>
         </div>
         <div class="report-card">
-          <div class="metric text-slate-900 dark:text-slate-100">
+          <div class="metric text-zinc-900 dark:text-zinc-100">
             {{ conversationsCount }}
           </div>
-          <div class="text-slate-700 dark:text-slate-300">
+          <div class="text-zinc-700 dark:text-zinc-300">
             {{ 'Conversations' }}
           </div>
         </div>
       </div>
     </section>
-    <!-- eslint-disable vue/no-static-inline-styles -->
     <BarChart
-      class="p-8 w-full"
+      class="p-8 w-full max-h-[500px] dark:invert"
       :collection="chartData"
-      style="max-height: 500px"
     />
   </div>
 </template>

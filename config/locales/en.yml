@@ -610,6 +610,19 @@ en:
     ssl_status:
       custom_domain_not_configured: 'Custom domain is not configured'
   super_admin:
+    account_features:
+      active: 'Active'
+      inactive: 'Inactive'
+      hint: 'Flags configure installed capabilities. Enabling a flag does not install Enterprise-only functionality.'
+    account_limits:
+      keys:
+        agents: 'Agents'
+        inboxes: 'Inboxes'
+        captain_responses: 'Captain responses'
+        captain_documents: 'Captain documents'
+        emails: 'Emails'
+      hint: 'Leave blank to remove an override. Limits apply only where supported by the installed feature; Captain limits do not enable Captain.'
+      not_set: 'Not set'
     account_suspension:
       categories:
         spam: 'Spam'

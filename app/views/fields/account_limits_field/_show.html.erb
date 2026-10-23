@@ -1,0 +1,8 @@
+<dl class="space-y-2">
+  <% field.limits.each do |key, value| %>
+    <div class="flex justify-between gap-4">
+      <dt><%= t("super_admin.account_limits.keys.#{key}") %></dt>
+      <dd><%= value.presence || t('super_admin.account_limits.not_set') %></dd>
+    </div>
+  <% end %>
+</dl>

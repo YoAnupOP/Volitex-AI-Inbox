@@ -72,6 +72,7 @@ jobs:
           spec/requests/api/v1/accounts/base_controller_spec.rb spec/controllers/instagram/callbacks_controller_spec.rb
           spec/services/instagram/comments_client_spec.rb spec/services/instagram/comments_service_spec.rb
           spec/services/whatsapp/csat_template_service_spec.rb
+          spec/requests/super_admin/account_provisioning_spec.rb
       - name: Real queue crash and overlapping jobs
         run: bundle exec ruby script/production/specs/campaign_worker_recovery.rb
       - name: Synthetic ledger load with mocked provider
