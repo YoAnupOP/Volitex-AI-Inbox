@@ -17,7 +17,7 @@
     "qs": "6.16.0",
     "sanitize-html": "2.18.1",
     "simple-git": "4.0.1",
-    "toml": "4.2.0"
+    "toml": "5.0.1"
   },
   "overrides": {
     "simple-git": {

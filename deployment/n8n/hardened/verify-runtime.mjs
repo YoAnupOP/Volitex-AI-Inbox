@@ -34,7 +34,7 @@ const versions = {
   multer: '2.4.0',
   qs: '6.16.0',
   'simple-git': '4.0.1',
-  toml: '4.2.0',
+  toml: '5.0.1',
 };
 const hashes = {
   'lib/parse.js':

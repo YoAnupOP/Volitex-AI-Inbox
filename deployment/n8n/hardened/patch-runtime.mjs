@@ -20,7 +20,7 @@ const replacements = {
   multer: ['2.3.0', '2.4.0'],
   qs: ['6.15.2', '6.16.0'],
   'simple-git': ['3.36.0', '4.0.1'],
-  toml: ['3.0.0', '4.2.0'],
+  toml: ['3.0.0', '5.0.1'],
 };
 const pristine = {
   'lib/parse.js':

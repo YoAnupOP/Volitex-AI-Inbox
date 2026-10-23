@@ -97,7 +97,42 @@ test('updated Markdown handles ordinary text and adversarial reference definitio
 
 test('patched TOML preserves the disabled SDK parser contract', () => {
   const toml = require('/opt/security-updates/node_modules/toml');
-  assert.equal(toml.parse('[service]\nenabled = true\n').service.enabled, true);
+  const input =
+    '[service]\nenabled = true\ncount = 42\nnames = ["one", "two"]\n';
+  const service = toml.parse(input).service;
+  assert.equal(Object.getPrototypeOf(service), null);
+  assert.deepEqual(
+    { ...service },
+    {
+      enabled: true,
+      count: 42,
+      names: ['one', 'two'],
+    }
+  );
+  for (const entry of manifest.replacements.filter(
+    item => item.name === 'toml'
+  )) {
+    assert.equal(require(entry.directory).parse, toml.parse);
+  }
+});
+
+test('patched TOML bounds array tables, dotted keys and oversized integers', () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      '-e',
+      String.raw`const assert = require('node:assert/strict');
+       const toml = require('/opt/security-updates/node_modules/toml');
+       const input = Array.from({ length: 12000 }, (_, i) => '[[item' + i + ']]\nvalue = ' + i).join('\n');
+       assert.equal(toml.parse(input).item11999[0].value, 11999);
+       assert.throws(() => toml.parse('huge = 0x' + 'f'.repeat(100000)));
+       try { toml.parse('a.'.repeat(20000) + 'leaf = 1'); }
+       catch (error) { assert.notEqual(error.name, 'RangeError'); }`,
+    ],
+    { timeout: 5000, encoding: 'utf8' }
+  );
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
 });
 
 for (const entry of manifest.backports.filter(item => item.name === 'braces')) {
