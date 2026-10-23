@@ -1,14 +1,14 @@
 # Volitex AI Inbox release verification — October 23, 2026
 
-Image source: `a06159678b804de587f2554dc1e7f6966647a12a`. Documentation revisions are separate from image source. This record supersedes the October 22 release baseline; older audit records remain historical evidence.
+Image source: `24ea94a74c067e734e6ccba9e54700d29ac16189`. Documentation revisions are separate from image source. This record supersedes the earlier October 23 release baseline; older audit records remain historical evidence.
 
 ## Completed release gates
 
-- [Verify non-production candidate](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645682): completed, success.
-- [Verify migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645619): completed, success.
-- [Verify campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645615): completed, success.
-- [Run Chatwoot CE spec](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645612): completed, success.
-- [Actual publication job](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39913267161): completed, success; all five immutable references are in the production runbook and exported kit. Anonymous manifest SHA256 verification passed for each reference.
+- [Verify non-production candidate](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692564): completed, success.
+- [Verify migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692533): completed, success.
+- [Verify campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692513): completed, success.
+- [Run Chatwoot CE spec](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692538): completed, success.
+- [Actual publication job](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39926256180): completed, success; all five immutable references are in the production runbook and exported kit. Anonymous manifest SHA256 verification passed for each reference.
 
 ## Changes and failed-gate remediation
 
@@ -17,6 +17,12 @@ Image source: `a06159678b804de587f2554dc1e7f6966647a12a`. Documentation revision
 - TOML 4.2.0 caused three new High findings in the prior candidate gate (CVE-2026-114141, CVE-2026-114143 and CVE-2026-114144). The overlay and actual runtime resolution now use TOML 5.0.1. Tests cover CommonJS callers, normal values, null-prototype results and bounded adversarial parsing. See the [upstream security release](https://github.com/BinaryMuse/toml-node/releases/tag/v5.0.1).
 - Legacy round-robin tests explicitly disable assignment_v2 because they stub the legacy Redis path. No production assignment behavior was changed to satisfy a test. Full CE passes all 20 jobs. The postcss-import direct dependency declaration uses its existing locked version.
 - Local verification includes the requested account provisioning suite, model/Compose regressions, all 108 conversation examples, actual-runtime n8n checks (10/10), frontend sanitizer/theme regressions and rendered browser checks in light/dark mode. CI additionally validates built-image boot, guarded replies, upgrade/restore and interrupted-reply recovery. No real campaign recipients were contacted by these tests.
+
+## WhatsApp media and retry follow-up
+
+The local preview had a Compose-level localhost FRONTEND_URL override despite an ngrok URL in its env file. The override was removed, the current HTTPS URL applied to the web/workers and the Meta WhatsApp callback updated with existing verification settings. External media fetching returned the actual PNG bytes, and a controlled outgoing JPEG obtained a read-status webhook. These are local integration checks, not production acceptance. No secret rotation was needed.
+
+The follow-up also found that an asynchronously failed message retained source_id, causing the retry job to skip it as already originating from the provider. The retry action now locks and claims only failed messages, clears the old provider identity and queues one new attempt. Repeated claims and retries of sent/delivered messages are rejected. The focused controller/provider suites passed 56 examples and RuboCop; all four exact-source release gates and actual publication above passed for this fix. The runbook includes effective environment precedence, container recreation, public media URL and actual delivery acceptance.
 
 ## Security evidence and limits
 

@@ -2,7 +2,7 @@
 
 ## Current verified release — October 23, 2026
 
-The deployment baseline is source `a06159678b804de587f2554dc1e7f6966647a12a` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645682), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645619), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645615), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39908645612). [Publication run 39913267161](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39913267161) completed its actual publish job and published all five images below. Source verification, fresh scans, acceptance and anonymous registry manifest SHA256 checks passed. This release supersedes the October 22 kit and its image pins. It includes OSS Super Admin feature/limit management, WhatsApp campaign defaults and neutral light/dark branding; see the [release verification](release-verification-2026-10-23.md).
+The deployment baseline is source `24ea94a74c067e734e6ccba9e54700d29ac16189` on `master`. All four exact-source gates completed successfully: [candidate and n8n recovery/security](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692564), [migration compatibility](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692533), [campaign lifecycle](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692513), and [full CE suite, 20/20 jobs](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39922692538). [Publication run 39926256180](https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/39926256180) completed its actual publish job and published all five images below. Source verification, fresh scans, acceptance and anonymous registry manifest SHA256 checks passed. This release supersedes the earlier October 23 kit and its image pins. It includes OSS Super Admin feature/limit management, WhatsApp campaign defaults, neutral light/dark branding and failed-provider message retry; see the [release verification](release-verification-2026-10-23.md).
 
 **Release status:** exact-source CI verified and published for the private, operator-managed HTTP/JSON n8n profile. Use the replacement checksummed kit described below; live deployment status is **NOT_DEPLOYED**. Actual KVM networking/TLS, private-editor login, off-host backups, restore/reboot/alerts, measured capacity and client acceptance must pass before client traffic. A successful image publication does not perform these steps.
 
@@ -63,11 +63,11 @@ Use these five immutable references together for this release:
 
 | Coolify variable | Published immutable image |
 | --- | --- |
-| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:991de6650329419b241de22c632b81e7aa60d61342fe4b68542c72f45c8d6b9a` |
-| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:3e56fd97ec9cefc0ec4cc957f0e19cc1ec89246d6e4367c2b47fb62010b0f7c8` |
-| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:c5fa1010b025d9fa5fe382badfa152cc9f5caa2a539d5c543c7b20a053a04a0f` |
-| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:edb6a308459847aa0cc481a5a70caf4644e63b2c1d28ff68928f0873077d7e4b` |
-| `INBOX_POSTGRES_IMAGE` (separate Coolify resource) | `ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:ceffc418d283286003d85c1ff0fbd4a3f142e6068dfb58934cdb164fc869eded` |
+| `VOLITEX_IMAGE` | `ghcr.io/yoanupop/volitex-ai-inbox@sha256:28cd347be90c6a7448f5fe5e233fa0c82ea19cf152ed0a19bb56f50db95e6bf7` |
+| `N8N_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n@sha256:6926f3597600bfb7c161570e31cc3abc5dd90449ae93fe3b6d281b85d9241b62` |
+| `N8N_POSTGRES_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-postgres@sha256:41e083cd17504a12b812d9557f123c0a0659c5b1ec4040ac46e1feed5040a85b` |
+| `N8N_VALKEY_IMAGE` | `ghcr.io/yoanupop/volitex-ai-n8n-valkey@sha256:5e41cbd23d1385198c42383188492e0e52944c6a79b60d21f8adeae79527fc1b` |
+| `INBOX_POSTGRES_IMAGE` (separate Coolify resource) | `ghcr.io/yoanupop/volitex-ai-inbox-postgres@sha256:68d359c6bbdb501e924dac7d1a934427228e4f50f0c9e5b64da16fe401d1186a` |
 
 The maintained n8n stack runs n8n 2.44.4, PostgreSQL 17.11 and Valkey 8.1.10; the separate Inbox database runs PostgreSQL 16.15 with pgvector 0.8.7. N8N_POSTGRES_IMAGE is for n8n only; INBOX_POSTGRES_IMAGE supplies Inbox's separate pgvector database. The maintained Valkey image is used in two separate private services with independent credentials and volumes as described below. Do not substitute upstream images, mutable tags or CI build-manifest digests for these published references.
 
@@ -87,7 +87,7 @@ Do this work before promising a go-live date, but do not buy or provision the VP
 
 ## 0.1 Done now
 
-- [ALREADY DONE] The published release source is `a06159678b804de587f2554dc1e7f6966647a12a`; the private AgentBot transport and maintained n8n stack are included.
+- [ALREADY DONE] The published release source is `24ea94a74c067e734e6ccba9e54700d29ac16189`; the private AgentBot transport and maintained n8n stack are included.
 - [ALREADY DONE] All five immutable GHCR artifacts and the verified deployment kit are recorded above.
 - [ALREADY DONE] docker-compose.production.yaml requires VOLITEX_IMAGE and defines migrate, rails, sidekiq, and campaign-worker. Migration must complete before the application processes start; shipped defaults enable campaigns, so explicitly disable the campaign feature for accounts awaiting their separate acceptance gates. The ordinary worker sets SIDEKIQ_SKIP_CAMPAIGNS=true; the dedicated campaign worker owns campaign processing.
 - [ALREADY DONE] WhatsApp and Instagram webhook controllers validate Meta signatures, enqueue work, and acknowledge accepted deliveries. WhatsApp uses /webhooks/whatsapp/:phone_number; Instagram uses /webhooks/instagram.
@@ -245,7 +245,7 @@ Enable AOF persistence (`appendonly yes`, `appendfsync everysec`) on the Inbox V
 Create a Coolify Docker Compose application using docker-compose.production.yaml and set:
 
 ```dotenv
-VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:991de6650329419b241de22c632b81e7aa60d61342fe4b68542c72f45c8d6b9a
+VOLITEX_IMAGE=ghcr.io/yoanupop/volitex-ai-inbox@sha256:28cd347be90c6a7448f5fe5e233fa0c82ea19cf152ed0a19bb56f50db95e6bf7
 RAILS_ENV=production
 NODE_ENV=production
 INSTALLATION_ENV=docker
@@ -764,7 +764,7 @@ Recovery time and recovery-point objectives are not promises until restore and V
 # Phase 11 — Final chronological checklist
 
 1. [MANUAL] [ONGOING] Organize credentials, Meta access, domains, client materials, pricing, and operators.
-2. [ALREADY DONE] Record verified release source `a06159678b804de587f2554dc1e7f6966647a12a` and its four successful gates.
+2. [ALREADY DONE] Record verified release source `24ea94a74c067e734e6ccba9e54700d29ac16189` and its four successful gates.
 3. [ALREADY DONE] Record all five immutable images and verify the deployment kit checksums from the release section above.
 4. [MANUAL] Finalize packages, features, pricing, contract, and demo.
 5. [MANUAL] Begin sales/outreach.
