@@ -20,7 +20,19 @@ RSpec.describe Instagram::MessageText do
     channel.update!(expires_at: 1.hour.ago)
     event[:timestamp] = (25.hours.ago.to_f * 1000).to_i
     described_class.new(event, channel).perform
-    expect(channel.inbox.messages.last.created_at).to be_within(2.seconds).of(25.hours.ago)
+    expect(channel.inbox.messages.last.content_attributes['instagram_event_timestamp']).to eq(event[:timestamp])
+    expect(channel.inbox.messages.last.created_at).to be_within(2.seconds).of(Time.current)
     expect(Conversations::MessageWindowService.new(channel.inbox.conversations.last, human_agent: false).can_reply?).to be false
+  end
+
+  it 'uses the newest provider event when an older DM arrives out of order' do
+    channel.update!(expires_at: 1.hour.ago)
+    described_class.new(event, channel).perform
+    delayed = event.deep_dup
+    delayed[:message][:mid] = 'delayed-message'
+    delayed[:timestamp] = (25.hours.ago.to_f * 1000).to_i
+    described_class.new(delayed, channel).perform
+    expect(channel.inbox.messages.count).to eq(2)
+    expect(Conversations::MessageWindowService.new(channel.inbox.conversations.last, human_agent: false).can_reply?).to be true
   end
 end

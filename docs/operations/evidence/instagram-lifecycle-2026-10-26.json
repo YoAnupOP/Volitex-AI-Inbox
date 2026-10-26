@@ -9,8 +9,8 @@
     "queue_store": "isolated Valkey"
   },
   "related_rspec": {
-    "duration": 176.494266317,
-    "example_count": 162,
+    "duration": 170.036649971,
+    "example_count": 196,
     "failure_count": 0,
     "pending_count": 0,
     "errors_outside_of_examples_count": 0
@@ -31,30 +31,33 @@
     "scope": "transactional isolated schema; synthetic ciphertext"
   },
   "rubocop": {
-    "files": 41,
+    "files": 42,
     "offenses": 0
   },
   "frontend_eslint": "PASS",
   "monitor_shell_syntax": "PASS",
   "external_provider_calls": "STUBBED_HTTP_ONLY",
   "live_meta_acceptance": "NOT_RUN",
-  "release_status": "EXACT_SOURCE_CI_REQUIRED",
+  "release_status": "BLOCKED_N8N_RUNTIME_SECURITY; FOLLOW_UP_EXACT_SOURCE_CI_REQUIRED",
   "production_deployment": "NOT_DEPLOYED",
   "credentials_changed": false,
   "input_hashes": {
-    "rspec.json": "b2ee07bb4c351e341bc5aaa98f15220dec8e6db0b2a4962c2cba33769f66b6d2",
+    "rspec.json": "b719db928129d073d8520cf9e875e45c61181385552eb2a1aae3d3cee7b7ccc7",
     "scheduler-rspec.json": "200b38b908cd890436936efffc57185e888894c77af734a01371d98c4ba0e6d4",
-    "rubocop-final.log": "d7386ecedaf99a39f55435efb57126105e8d8dd018a2f75dced5df680ad71aac",
-    "migration-acceptance.log": "03ee114a1ae9649b1891a979928744ac7be96e422947b75cc0c95a7df0263d05"
+    "rubocop-final.log": "67401d4a0b8e1d3b8f279c3abcabc3d76a6c7f1c7be1045179c68196cfd0c185",
+    "migration-acceptance.log": "03ee114a1ae9649b1891a979928744ac7be96e422947b75cc0c95a7df0263d05",
+    "final-network-rspec.json": "63b515d3348cd7ddd9bcb34ed0412770f65c968166fe01c60b336efdb9f2f44c",
+    "final-network-rubocop.log": "7eb6dfe1141150265b9ad8950f845ef708b94f2aadf04a4b3bda2ec75d1ffb77",
+    "final-bundle-audit.log": "e258955e41fdfe7feb917a926bcaa31a81a8d1a9d3570ded36c32b12c1401a69"
   },
   "working_tree_sha256": {
     "app/jobs/channels/instagram/connection_health_job.rb": "770c6c611b81152e8c864cc45f4efab23a1b1ed774d7cc0a6d0ad1664357e52c",
     "app/jobs/channels/instagram/connection_health_scheduler_job.rb": "5c5bc7476e1622e82eadd9b27c82ee8969875329d381e075a62e3ede949e4d2f",
-    "app/services/instagram/graph_client.rb": "91f92baa2f9380f32e87cec2dd8100ad3a7d1139dc0a9dab59ed1f13c9fc0c8e",
+    "app/services/instagram/graph_client.rb": "0d482fb45d19a058d26f8dff0edcd88a31afba2052e98619703ab5591f3fb120",
     "app/services/instagram/oauth_access_token.rb": "c85507f55ed7b4d29266f29664482890bdd57975940c99a8211dc4d0aff71509",
     "app/views/mailers/administrator_notifications/channel_notifications_mailer/instagram_connection_failure.liquid": "8349868733ebe7c21ae6b5b1927770ef374c557151e30957e826739cbef529c0",
     "db/migrate/20261026000000_track_instagram_connection_health.rb": "6168e61e10f22423f347afd5a072ce61193f478ef9745c245627d0475d4acf6b",
-    "app/builders/messages/instagram/base_message_builder.rb": "696b05324191f8487256e5442ccb888da38118d4c9ff29e08cdc2ca9d2f25bfb",
+    "app/builders/messages/instagram/base_message_builder.rb": "709f267f952d0f2cdf98ff2ff59c9b27113c13db5d981e644becf56b5847214d",
     "app/builders/messages/instagram/message_builder.rb": "d858df0526c1869f031b2fcfa51d6f570f91b273f74e0cda35248c69c0d9cd7a",
     "app/controllers/api/v1/accounts/instagram/authorizations_controller.rb": "02f65203996a6985336956652905c00dc4c88035723955692004121a72bd066a",
     "app/controllers/concerns/instagram_concern.rb": "beb8db82aeefb237ece21b70f17b05f3ae1e2b6589161ae7a6b0a4c6c4929f4b",
@@ -65,7 +68,7 @@
     "app/jobs/webhooks/instagram_events_job.rb": "f428d9a1cfcc2564c95aea3d4263043c79d5db516061c2d0e8d889a68af152ab",
     "app/mailers/administrator_notifications/channel_notifications_mailer.rb": "bbc099f3d198a28fb73c0311a6c99045fd276528d28b801dfb4b8424130190c5",
     "app/models/channel/instagram.rb": "94743d33fdcd0132ec054531513c61b1218a7b754002387f384d8c10043c9380",
-    "app/services/conversations/message_window_service.rb": "80313ce0cbb1866d3f9afb478b89c4d5894ee1120e52fb4e866cd0526b54ad7c",
+    "app/services/conversations/message_window_service.rb": "52dd140a721fe78d9b12b63fbd821e552f7833f0f15396b4aee492cd39b2687f",
     "app/services/instagram/base_message_text.rb": "cbe8452dd11adbda5ec1d2055c64566462fe38ec4e872d41d4704eec6e97cde0",
     "app/services/instagram/base_send_service.rb": "0b491a3578b9530074bb8d5dd912cc2f4623de607b567e656b334c1937e94293",
     "app/services/instagram/comments_client.rb": "e9cfeeb0448c367ec88977a1f66f3fe787797c7c8fbbb5ceea2765b153d7bbca",
@@ -77,6 +80,25 @@
     "config/initializers/filter_parameter_logging.rb": "2b003edebf77ccf0014e9d866aa3b8ad1c5149f11734abdff66ac22a9ba1dc1e",
     "config/locales/en.yml": "3a4e5d0a174c259067d980d25b1ecc7f6a5629470174e8f3720bfb85b8de2126",
     "db/schema.rb": "5325a68f11624a9680ce45751c4ca9b28887c9971c9f4124d3be4a82eadb7569",
-    "deployment/production/monitor.sh": "c9b15684730629ef736cedab9a01c20e59d374c611042b158408920614412d70"
-  }
+    "deployment/production/monitor.sh": "c9b15684730629ef736cedab9a01c20e59d374c611042b158408920614412d70",
+    "Gemfile.lock": "54fe63065213d52b1daf5bcbe039457b74a36e6c4035a089d89c2245a1449341",
+    "spec/lib/crass/tokenizer_security_spec.rb": "f3738c68b37638a6e73752fa44800980877b8aa2f477b30b1bce49ef7b8f2772",
+    "spec/services/instagram/graph_client_spec.rb": "4d83655a1494142dbec17a5fb6bef9976066e89e2791613a34a7be3a1ad931fe",
+    "spec/services/instagram/message_text_reauthorization_spec.rb": "1f19bfd318fce060a238b51f966661e8b80f42f83c54b25df95731ae4d0dd5d7"
+  },
+  "follow_up_network_and_tokenizer_rspec": {
+    "duration": 0.610777548,
+    "example_count": 7,
+    "failure_count": 0,
+    "pending_count": 0,
+    "errors_outside_of_examples_count": 0
+  },
+  "distinct_examples": 199,
+  "overlap_note": "The seven follow-up examples repeat three GraphClient examples and one tokenizer example from the 196-example suite; three network exceptions are additional. The earlier three scheduler examples are included in the expanded suite.",
+  "bundle_audit": {
+    "result": "PASS",
+    "advisory_db_commit": "04bbdaed29a22b4539f899ac1d6863ddaa326074",
+    "crass": "1.0.8"
+  },
+  "release_blockers_record": "instagram-release-blockers-2026-10-26.md"
 }

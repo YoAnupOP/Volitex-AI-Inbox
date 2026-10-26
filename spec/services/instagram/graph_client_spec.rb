@@ -25,4 +25,16 @@ RSpec.describe Instagram::GraphClient do
                                                                                                      'code' => 'private-code')
     expect(filtered).to eq('state' => '[FILTERED]', 'code' => '[FILTERED]')
   end
+
+  [OpenSSL::SSL::SSLError, Errno::ECONNREFUSED, Net::WriteTimeout].each do |network_error|
+    it "sanitizes #{network_error.name} for bounded connection-health retries" do
+      allow(HTTParty).to receive(:get).and_raise(network_error, 'private-test-token')
+      expect { client.request(:get, 'refresh_access_token', versioned: false) }.to raise_error(described_class::Error) { |error|
+        expect(error.status).to eq(503)
+        expect(error.authorization_error?).to be false
+        expect(error.message).not_to include('private-test-token')
+        expect(error.cause).to be_nil
+      }
+    end
+  end
 end

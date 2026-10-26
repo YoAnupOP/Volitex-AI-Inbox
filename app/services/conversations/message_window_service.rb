@@ -1,6 +1,8 @@
 class Conversations::MessageWindowService
   MESSAGING_WINDOW_24_HOURS = 24.hours
   MESSAGING_WINDOW_7_DAYS = 7.days
+  INSTAGRAM_EVENT_TIME_SQL = "COALESCE(((content_attributes #>> '{}')::json ->> 'instagram_event_timestamp')::double precision / 1000, " \
+                             'EXTRACT(EPOCH FROM created_at))'.freeze
 
   def initialize(conversation, human_agent: true)
     @conversation = conversation
@@ -35,7 +37,11 @@ class Conversations::MessageWindowService
   def last_message_in_messaging_window?(time)
     return false if last_incoming_message.nil?
 
-    Time.current < last_incoming_message.created_at + time
+    timestamp = last_incoming_message.created_at
+    if @conversation.inbox.channel_type == 'Channel::Instagram' && last_incoming_message.content_attributes['instagram_event_timestamp'].present?
+      timestamp = Time.zone.at(last_incoming_message.content_attributes['instagram_event_timestamp'].to_f / 1000)
+    end
+    Time.current < timestamp + time
   end
 
   def api_messaging_window
@@ -71,8 +77,10 @@ class Conversations::MessageWindowService
       scope = @conversation.messages.where(account_id: @conversation.account_id).incoming
       if @conversation.inbox.channel_type == 'Channel::Instagram'
         scope = scope.where("((content_attributes #>> '{}')::json ->> 'instagram_comment') IS DISTINCT FROM 'true'")
+        scope.reorder(Arel.sql("#{INSTAGRAM_EVENT_TIME_SQL} DESC")).first
+      else
+        scope.last
       end
-      scope.last
     end
   end
 end

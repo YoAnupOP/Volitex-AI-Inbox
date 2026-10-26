@@ -32,7 +32,8 @@ class Instagram::GraphClient
     data
   rescue JSON::ParserError
     raise Error.new(status: response.code), cause: nil
-  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError, EOFError, Errno::ECONNRESET
+  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout, SocketError, EOFError,
+         OpenSSL::SSL::SSLError, Errno::ECONNRESET, Errno::ECONNREFUSED, Errno::ETIMEDOUT
     raise Error.new(status: 503), cause: nil
   end
 end

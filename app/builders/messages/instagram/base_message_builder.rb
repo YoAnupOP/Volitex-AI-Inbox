@@ -170,8 +170,17 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
     params[:content_attributes][:external_echo] = true if @outgoing_echo
     params[:content_attributes][:is_unsupported] = true if message_is_unsupported?
-    params[:created_at] = Time.zone.at(@messaging[:timestamp].to_f / 1000) if @messaging[:timestamp].present?
+    if @inbox.channel_type == 'Channel::Instagram' && @messaging[:timestamp].present?
+      params[:content_attributes][:instagram_event_timestamp] = instagram_event_timestamp
+    end
     params
+  end
+
+  def instagram_event_timestamp
+    timestamp = @messaging[:timestamp]
+    return timestamp.to_i if timestamp.to_s.match?(/\A\d+\z/)
+
+    (Time.iso8601(timestamp).to_f * 1000).to_i
   end
 
   def message_already_exists?
