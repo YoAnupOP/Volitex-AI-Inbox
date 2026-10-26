@@ -3,97 +3,53 @@ require 'rails_helper'
 RSpec.describe Instagram::IntegrationHelper do
   include described_class
 
-  describe '#generate_instagram_token' do
-    let(:account_id) { 1 }
-    let(:client_secret) { 'test_secret' }
-    let(:current_time) { Time.current }
+  let(:account) { create(:account) }
+  let(:admin) { create(:user, account: account, role: :administrator) }
+  let(:browser_nonce) { 'private-browser-binding' }
+  let(:secret) { 'test-instagram-secret' }
+  let(:token) { generate_instagram_token(account.id, 'onboarding', user_id: admin.id, browser_nonce: browser_nonce, inbox_id: 42) }
 
-    before do
-      allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_SECRET', nil).and_return(client_secret)
-      allow(Time).to receive(:current).and_return(current_time)
-    end
+  before do
+    allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_SECRET', nil).and_return(secret)
+  end
 
-    it 'generates a valid JWT token with correct payload' do
-      token = generate_instagram_token(account_id)
-      decoded_token = JWT.decode(token, client_secret, true, algorithm: 'HS256').first
+  it 'binds tenant, administrator, operation and target inbox in expiring state' do
+    payload = consume_instagram_state!(token, browser_nonce: browser_nonce)
+    expect(payload.slice('sub', 'user_id', 'inbox_id', 'return_to')).to eq('sub' => account.id, 'user_id' => admin.id,
+                                                                           'inbox_id' => 42, 'return_to' => 'onboarding')
+    expect(payload['exp'] - payload['iat']).to eq(600)
+  end
 
-      expect(decoded_token['sub']).to eq(account_id)
-      expect(decoded_token['iat']).to eq(current_time.to_i)
-    end
+  it 'consumes a state exactly once' do
+    consume_instagram_state!(token, browser_nonce: browser_nonce)
+    expect { consume_instagram_state!(token, browser_nonce: browser_nonce) }.to raise_error(described_class::InvalidState)
+  end
 
-    context 'when client secret is not configured' do
-      let(:client_secret) { nil }
+  it 'rejects a different browser without consuming the initiating browser state' do
+    expect { consume_instagram_state!(token, browser_nonce: 'other-browser') }.to raise_error(described_class::InvalidState)
+    expect(consume_instagram_state!(token, browser_nonce: browser_nonce)['sub']).to eq(account.id)
+  end
 
-      it 'returns nil' do
-        expect(generate_instagram_token(account_id)).to be_nil
-      end
-    end
-
-    context 'when an error occurs' do
-      before do
-        allow(JWT).to receive(:encode).and_raise(StandardError.new('Test error'))
-      end
-
-      it 'logs the error and returns nil' do
-        expect(Rails.logger).to receive(:error).with('Failed to generate Instagram token: Test error')
-        expect(generate_instagram_token(account_id)).to be_nil
-      end
+  it 'rejects expired state' do
+    issued = token
+    travel 11.minutes do
+      expect { consume_instagram_state!(issued, browser_nonce: browser_nonce) }.to raise_error(described_class::InvalidState)
     end
   end
 
-  describe '#token_payload' do
-    let(:account_id) { 1 }
-    let(:current_time) { Time.current }
-
-    before do
-      allow(Time).to receive(:current).and_return(current_time)
-    end
-
-    it 'returns a hash with the correct structure' do
-      payload = token_payload(account_id)
-
-      expect(payload).to be_a(Hash)
-      expect(payload[:sub]).to eq(account_id)
-      expect(payload[:iat]).to eq(current_time.to_i)
-    end
+  it 'rejects the historical signed format without expiry' do
+    old = JWT.encode({ sub: account.id, iat: 1.year.ago.to_i }, secret, 'HS256')
+    expect { consume_instagram_state!(old, browser_nonce: browser_nonce) }.to raise_error(described_class::InvalidState)
   end
 
-  describe '#verify_instagram_token' do
-    let(:account_id) { 1 }
-    let(:client_secret) { 'test_secret' }
-    let(:valid_token) do
-      JWT.encode({ sub: account_id, iat: Time.current.to_i }, client_secret, 'HS256')
-    end
+  it 'rechecks administrator membership at callback time' do
+    issued = token
+    admin.account_users.find_by!(account: account).update!(role: :agent)
+    expect { consume_instagram_state!(issued, browser_nonce: browser_nonce) }.to raise_error(described_class::InvalidState)
+  end
 
-    before do
-      allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_SECRET', nil).and_return(client_secret)
-    end
-
-    it 'successfully verifies and returns account_id from valid token' do
-      expect(verify_instagram_token(valid_token)).to eq(account_id)
-    end
-
-    context 'when token is blank' do
-      it 'returns nil' do
-        expect(verify_instagram_token('')).to be_nil
-        expect(verify_instagram_token(nil)).to be_nil
-      end
-    end
-
-    context 'when client secret is not configured' do
-      let(:client_secret) { nil }
-      let(:valid_token) { 'any-token' }
-
-      it 'returns nil' do
-        expect(verify_instagram_token(valid_token)).to be_nil
-      end
-    end
-
-    context 'when token is invalid' do
-      it 'logs the error and returns nil' do
-        expect(Rails.logger).to receive(:error).with(/Unexpected error verifying Instagram token:/)
-        expect(verify_instagram_token('invalid_token')).to be_nil
-      end
-    end
+  it 'rejects altered signed state' do
+    altered = "#{token}tampered"
+    expect { consume_instagram_state!(altered, browser_nonce: browser_nonce) }.to raise_error(described_class::InvalidState)
   end
 end

@@ -25,11 +25,13 @@ class Channel::Instagram < ApplicationRecord
   AUTHORIZATION_ERROR_THRESHOLD = 1
   HTTP_OPEN_TIMEOUT = 5
   HTTP_READ_TIMEOUT = 15
+  SUBSCRIBED_FIELDS = %w[messages message_reactions messaging_seen messaging_postbacks comments].freeze
 
   validates :access_token, presence: true
   validates :instagram_id, uniqueness: true, presence: true
 
-  after_create_commit :subscribe
+  before_save :stamp_token_issuance, if: :will_save_change_to_access_token?
+  after_create_commit :schedule_connection_check
   before_destroy :unsubscribe
 
   def name
@@ -44,38 +46,64 @@ class Channel::Instagram < ApplicationRecord
                                                           }).perform
   end
 
-  def subscribe
-    # ref https://developers.facebook.com/docs/instagram-platform/webhooks#enable-subscriptions
-    HTTParty.post(
-      "https://graph.instagram.com/v22.0/#{instagram_id}/subscribed_apps",
-      query: {
-        subscribed_fields: %w[messages message_reactions messaging_seen comments],
-        access_token: access_token
-      },
-      open_timeout: HTTP_OPEN_TIMEOUT,
-      timeout: HTTP_READ_TIMEOUT
-    )
-  rescue StandardError => e
-    Rails.logger.debug { "Rescued: #{e.inspect}" }
+  def subscribe(reauthorize: false)
+    failure = nil
+    with_lock do
+      data = Instagram::GraphClient.new(self[:access_token]).request(:post, "#{instagram_id}/subscribed_apps",
+                                                                     params: { subscribed_fields: SUBSCRIBED_FIELDS.join(',') })
+      raise Instagram::GraphClient::Error.new(status: 502) unless data['success'] == true
+
+      update!(subscription_verified_at: Time.current)
+      reauthorized! if reauthorize
+    rescue Instagram::GraphClient::Error => e
+      prompt_reauthorization! if e.authorization_error? && !reauthorization_required?
+      failure = e
+    end
+    raise failure if failure
+
     true
   end
 
   def unsubscribe
     HTTParty.delete(
-      "https://graph.instagram.com/v22.0/#{instagram_id}/subscribed_apps",
+      "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/#{instagram_id}/subscribed_apps",
       query: {
-        access_token: access_token
+        access_token: self[:access_token]
       },
       open_timeout: HTTP_OPEN_TIMEOUT,
       timeout: HTTP_READ_TIMEOUT
     )
     true
   rescue StandardError => e
-    Rails.logger.debug { "Rescued: #{e.inspect}" }
+    Rails.logger.warn("Instagram unsubscribe failed channel_id=#{id} error=#{e.class.name}")
     true
   end
 
-  def access_token
+  def valid_access_token
     Instagram::RefreshOauthTokenService.new(channel: self).access_token
+  end
+
+  def notify_connection_failure
+    key = "instagram:connection_failure_notice:#{id}"
+    return unless Redis::Alfred.set(key, true, nx: true, ex: 1.day.to_i)
+
+    AdministratorNotifications::ChannelNotificationsMailer.with(account: account).instagram_connection_failure(inbox).deliver_later
+  end
+
+  def reject_invalid_token!(token)
+    with_lock do
+      authorization_error! if self[:access_token] == token && !reauthorization_required?
+    end
+  end
+
+  private
+
+  def stamp_token_issuance
+    self.token_refreshed_at = Time.current
+    self.subscription_verified_at = nil
+  end
+
+  def schedule_connection_check
+    Channels::Instagram::ConnectionHealthJob.perform_later(self)
   end
 end

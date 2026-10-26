@@ -2,8 +2,9 @@ class Conversations::MessageWindowService
   MESSAGING_WINDOW_24_HOURS = 24.hours
   MESSAGING_WINDOW_7_DAYS = 7.days
 
-  def initialize(conversation)
+  def initialize(conversation, human_agent: true)
     @conversation = conversation
+    @human_agent = human_agent
   end
 
   def can_reply?
@@ -53,7 +54,7 @@ class Conversations::MessageWindowService
   end
 
   def instagram_messaging_window
-    meta_messaging_window('ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT')
+    @human_agent ? meta_messaging_window('ENABLE_INSTAGRAM_CHANNEL_HUMAN_AGENT') : MESSAGING_WINDOW_24_HOURS
   end
 
   def tiktok_messaging_window
@@ -61,10 +62,17 @@ class Conversations::MessageWindowService
   end
 
   def meta_messaging_window(config_key)
-    GlobalConfigService.load(config_key, nil) ? MESSAGING_WINDOW_7_DAYS : MESSAGING_WINDOW_24_HOURS
+    enabled = ActiveModel::Type::Boolean.new.cast(GlobalConfigService.load(config_key, nil))
+    enabled ? MESSAGING_WINDOW_7_DAYS : MESSAGING_WINDOW_24_HOURS
   end
 
   def last_incoming_message
-    @last_incoming_message ||= @conversation.messages.where(account_id: @conversation.account_id).incoming&.last
+    @last_incoming_message ||= begin
+      scope = @conversation.messages.where(account_id: @conversation.account_id).incoming
+      if @conversation.inbox.channel_type == 'Channel::Instagram'
+        scope = scope.where("((content_attributes #>> '{}')::json ->> 'instagram_comment') IS DISTINCT FROM 'true'")
+      end
+      scope.last
+    end
   end
 end

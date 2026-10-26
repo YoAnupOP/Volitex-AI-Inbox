@@ -465,13 +465,15 @@ https://inbox.volitexai.tech/webhooks/whatsapp/<client-phone-number>
 
 **Type:** [MANUAL] [PER META ASSET] [PER CLIENT]
 
-1. Confirm Business/Creator account and required linked Meta/Facebook relationship.
-2. In authenticated Inbox choose Settings -> Inboxes -> Add Instagram.
+1. Confirm the Instagram Business/Creator account, separate Instagram App ID/secret and approved Instagram Login permissions. This direct flow does not require a linked Facebook Page.
+2. Open authenticated Inbox at its canonical HTTPS `FRONTEND_URL`, then choose Settings -> Inboxes -> Add Instagram.
 3. Complete OAuth and return to /instagram/callback.
-4. The callback exchanges the code, obtains a long-lived token/details, creates or updates the channel inside the current account, and subscribes messages, message_reactions, messaging_seen, and comments.
+4. The callback validates browser-bound one-time state and permission grants, exchanges the code, obtains a long-lived token/details and verifies account webhook subscription success. Reconnect must retain the original tenant inbox and Instagram identity.
 5. Send a test DM. Use reauthorization for expiry/revocation; do not edit the database.
 
 Instagram token encryption is enabled when Active Record encryption is configured.
+
+Follow the [Instagram connection lifecycle and acceptance procedure](instagram-connection-lifecycle.md) for scheduled renewal, subscription restoration, SMTP alerts, inbound retention and human-versus-automation messaging windows. These October 26 fixes require a matching verified release; do not assume the earlier kit includes them. Keep Human Agent disabled until separate Meta approval is confirmed.
 
 ## 3.4 connect.volitexai.tech boundary
 
@@ -641,7 +643,7 @@ N8N_DATABASE_URL=<private-url>
 VOLITEX_REDIS_URL=<private-url>
 N8N_REDIS_URL=<private-url>
 MONITOR_DISK_PATH=/
-SIDEKIQ_QUEUE_NAMES="critical high medium default mailers campaigns"
+SIDEKIQ_QUEUE_NAMES="critical high medium default mailers campaigns low scheduled_jobs"
 ```
 
 All four database/Redis URLs above are required. The script checks health, DB connection headroom, Redis/Valkey connectivity/evictions, Sidekiq backlog, memory, unhealthy containers, disk, and n8n error/crashed executions from the last five minutes. Run it every minute and verify alert delivery independently. Reconcile external side effects before replaying a failed execution.
@@ -821,7 +823,7 @@ The ordinary and campaign Compose health checks require a recent Sidekiq registr
 
 All application and n8n Compose services now use Docker's `local` log driver with 10-MB files and five files per container. This bounds local logs, not remote retention; verify the actual deployed driver/options with Docker inspect. Set Rails stdout logging, retain redaction, do not enable verbose request-body/token logging. Preserve a bounded off-host incident window through the existing operator tooling; no paid logging service is required by this change.
 
-Both queue stores require persistent volumes, `appendonly yes`, `appendfsync everysec`, and `maxmemory-policy noeviction`. n8n Compose specifies them explicitly; configure the separate Inbox Valkey resource the same way. Check `CONFIG GET` and `INFO persistence` on the actual servers without recording passwords. The monitor now rejects empty/unauthorized INFO output, disabled AOF, failed AOF writes or RDB saves, eviction, and failed Docker health inspection. It queries `INFO memory stats persistence` as separate sections. Configure the monitor's database/Redis URLs and `SIDEKIQ_QUEUE_NAMES=critical high medium default mailers campaigns` in a root-owned protected environment file. Run it every minute and verify both a healthy run and a delivered failure alert; a failed alert transport must be detected by an independent scheduler/uptime check. Do not assume the script installs its own cron or alert destination.
+Both queue stores require persistent volumes, `appendonly yes`, `appendfsync everysec`, and `maxmemory-policy noeviction`. n8n Compose specifies them explicitly; configure the separate Inbox Valkey resource the same way. Check `CONFIG GET` and `INFO persistence` on the actual servers without recording passwords. The monitor now rejects empty/unauthorized INFO output, disabled AOF, failed AOF writes or RDB saves, eviction, and failed Docker health inspection. It queries `INFO memory stats persistence` as separate sections. Configure the monitor's database/Redis URLs and `SIDEKIQ_QUEUE_NAMES=critical high medium default mailers campaigns low scheduled_jobs` in a root-owned protected environment file. Run it every minute and verify both a healthy run and a delivered failure alert; a failed alert transport must be detected by an independent scheduler/uptime check. Do not assume the script installs its own cron or alert destination.
 
 Check Redis/Valkey startup for persistence errors and the vendor memory-overcommit warning. Apply the intended Linux `vm.overcommit_memory=1` setting through the reviewed server provisioning procedure, with memory limits/alerts; no host sysctl was changed during local verification. Every-second AOF can lose the latest unflushed writes after abrupt power loss. Off-server backup RPO can be much larger; document the actual schedule and measured restore time.
 

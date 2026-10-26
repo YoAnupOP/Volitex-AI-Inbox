@@ -30,6 +30,8 @@
 # available at https://guides.rubyonrails.org/i18n.html.
 
 en:
+  instagram_connection:
+    health_alert_subject: "Your Instagram connection needs an operational check"
   hello: 'Hello world'
   inbox:
     reauthorization:

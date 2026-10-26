@@ -9,7 +9,7 @@ describe Instagram::SendOnInstagramService do
 
   let!(:contact) { create(:contact, account: account) }
   let(:contact_inbox) { create(:contact_inbox, contact: contact, inbox: instagram_inbox) }
-  let(:conversation) { create(:conversation, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox) }
+  let(:conversation) { create(:conversation, account: account, contact: contact, inbox: instagram_inbox, contact_inbox: contact_inbox) }
   let(:response) { double }
   let(:mock_response) do
     instance_double(
@@ -47,6 +47,10 @@ describe Instagram::SendOnInstagramService do
       :body => error_body.to_json,
       :parsed_response => error_body
     )
+  end
+
+  before do
+    create(:message, message_type: :incoming, conversation: conversation, inbox: instagram_inbox, account: account)
   end
 
   describe '#perform' do
@@ -104,34 +108,6 @@ describe Instagram::SendOnInstagramService do
           expect(HTTParty).to have_received(:post)
           expect(message.reload.status).to eq('failed')
           expect(message.reload.external_error).to eq('400 - The Instagram account is restricted.')
-        end
-      end
-
-      context 'with message_tag HUMAN_AGENT' do
-        before do
-          InstallationConfig.where(name: 'ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT').first_or_create(value: true)
-        end
-
-        it 'if message is sent from chatwoot and is outgoing' do
-          message = create(:message, message_type: 'outgoing', inbox: instagram_inbox, account: account, conversation: conversation)
-
-          allow(HTTParty).to receive(:post).with(
-            {
-              recipient: { id: contact.get_source_id(instagram_inbox.id) },
-              message: {
-                text: message.content
-              },
-              messaging_type: 'MESSAGE_TAG',
-              tag: 'HUMAN_AGENT'
-            }
-          ).and_return(
-            {
-              'message_id': 'random_message_id'
-            }
-          )
-
-          described_class.new(message: message).perform
-          expect(HTTParty).to have_received(:post)
         end
       end
 

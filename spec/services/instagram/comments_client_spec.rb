@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Instagram::CommentsClient do
   let(:inbox) { instance_double(Inbox, name: 'volitexai') }
   let(:channel) do
-    instance_double(Channel::Instagram, instagram_id: '9001', access_token: 'access-token', inbox: inbox)
+    instance_double(Channel::Instagram, instagram_id: '9001', valid_access_token: 'access-token', inbox: inbox)
   end
   let(:response) do
     {

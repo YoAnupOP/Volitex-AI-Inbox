@@ -21,11 +21,6 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
     inbox_channel(channel.instagram_id)
     return if @inbox.blank?
 
-    if @inbox.channel.reauthorization_required?
-      Rails.logger.info("Skipping comment processing as reauthorization is required for inbox #{@inbox.id}")
-      return
-    end
-
     return if comment_id.blank? || self_authored_comment? || comment_already_processed?
 
     ensure_contact
@@ -66,25 +61,31 @@ class Instagram::CommentsService < Instagram::WebhooksBaseService
   end
 
   def fetch_commenter_profile
+    fallback = { 'name' => comment.dig(:from, :username) || "Unknown (IG: #{commenter_id})",
+                 'username' => comment.dig(:from, :username), 'id' => commenter_id }.with_indifferent_access
+    token = @inbox.channel.valid_access_token
+    return fallback if token.blank?
+
     fields = 'name,username,profile_pic'
-    url = "#{base_uri}/#{commenter_id}?fields=#{fields}&access_token=#{@inbox.channel.access_token}"
+    url = "#{base_uri}/#{commenter_id}?fields=#{fields}&access_token=#{token}"
     response = HTTParty.get(url, open_timeout: 5, timeout: 15)
 
-    if response.success?
-      result = JSON.parse(response.body).with_indifferent_access
-      return {
-        'name' => result['name'] || result['username'],
-        'username' => result['username'],
-        'profile_pic' => result['profile_pic'],
-        'id' => result['id']
-      }.with_indifferent_access
-    end
+    return commenter_profile(response) if response.success?
 
     # Fallback: build a minimal profile from the webhook payload itself
+    channel.reject_invalid_token!(token) if response.parsed_response.dig('error', 'code') == 190
+    fallback
+  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError
+    fallback
+  end
+
+  def commenter_profile(response)
+    result = JSON.parse(response.body).with_indifferent_access
     {
-      'name' => comment.dig(:from, :username) || "Unknown (IG: #{commenter_id})",
-      'username' => comment.dig(:from, :username),
-      'id' => commenter_id
+      'name' => result['name'] || result['username'],
+      'username' => result['username'],
+      'profile_pic' => result['profile_pic'],
+      'id' => result['id'].presence || commenter_id
     }.with_indifferent_access
   end
 

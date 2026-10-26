@@ -3,6 +3,11 @@ require 'rails_helper'
 RSpec.describe 'Instagram Authorization API', type: :request do
   let(:account) { create(:account) }
 
+  before do
+    allow(GlobalConfigService).to receive(:load).and_call_original
+    allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_SECRET', nil).and_return('instagram-test-secret')
+  end
+
   describe 'POST /api/v1/accounts/{account.id}/instagram/authorization' do
     context 'when it is an unauthenticated user' do
       it 'returns unauthorized' do
@@ -32,22 +37,12 @@ RSpec.describe 'Instagram Authorization API', type: :request do
         expect(response).to have_http_status(:success)
         expect(response.parsed_body['success']).to be true
 
-        instagram_service = Class.new do
-          extend InstagramConcern
-          extend Instagram::IntegrationHelper
-        end
-        frontend_url = ENV.fetch('FRONTEND_URL', 'http://localhost:3000')
-        response_url = instagram_service.instagram_client.auth_code.authorize_url(
-          {
-            redirect_uri: "#{frontend_url}/instagram/callback",
-            scope: Instagram::IntegrationHelper::REQUIRED_SCOPES.join(','),
-            enable_fb_login: 'false',
-            force_reauth: 'true',
-            response_type: 'code',
-            state: instagram_service.generate_instagram_token(account.id)
-          }
-        )
-        expect(response.parsed_body['url']).to eq response_url
+        query = Rack::Utils.parse_query(URI.parse(response.parsed_body['url']).query)
+        payload = JWT.decode(query.fetch('state'), 'instagram-test-secret', true, algorithm: 'HS256').first
+        expect(payload['sub']).to eq(account.id)
+        expect(payload['user_id']).to eq(administrator.id)
+        expect(payload['exp']).to be > Time.current.to_i
+        expect(response.cookies['instagram_oauth_session']).to be_present
       end
     end
   end

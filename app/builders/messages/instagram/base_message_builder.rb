@@ -9,8 +9,6 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
   end
 
   def perform
-    return if @inbox.channel.reauthorization_required?
-
     ActiveRecord::Base.transaction do
       build_message
     end
@@ -172,6 +170,7 @@ class Messages::Instagram::BaseMessageBuilder < Messages::Messenger::MessageBuil
 
     params[:content_attributes][:external_echo] = true if @outgoing_echo
     params[:content_attributes][:is_unsupported] = true if message_is_unsupported?
+    params[:created_at] = Time.zone.at(@messaging[:timestamp].to_f / 1000) if @messaging[:timestamp].present?
     params
   end
 

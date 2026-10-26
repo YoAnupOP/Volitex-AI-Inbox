@@ -13,4 +13,9 @@ RSpec.describe Internal::TriggerHourlyScheduledItemsJob do
 
     perform_job
   end
+
+  it 'triggers scheduled Instagram renewal independently of inbox traffic' do
+    expect(Channels::Instagram::ConnectionHealthSchedulerJob).to receive(:perform_later).once
+    perform_job
+  end
 end

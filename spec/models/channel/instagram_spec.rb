@@ -32,4 +32,12 @@ RSpec.describe Channel::Instagram do
       end
     end
   end
+
+  it 'does not invalidate newer credentials after a stale request fails authorization' do
+    old_token = channel[:access_token]
+    channel.update!(access_token: 'new-reconnected-token')
+    channel.reject_invalid_token!(old_token)
+    expect(channel).not_to be_reauthorization_required
+    expect(channel.reload[:access_token]).to eq('new-reconnected-token')
+  end
 end

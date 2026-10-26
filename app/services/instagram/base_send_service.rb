@@ -13,6 +13,8 @@ class Instagram::BaseSendService < Base::SendOnChannelService
       return
     end
 
+    return fail_closed_window unless instagram_reply_allowed?
+
     send_attachments if message.attachments.present?
     send_content if message.content.present?
   rescue StandardError => e
@@ -50,6 +52,21 @@ class Instagram::BaseSendService < Base::SendOnChannelService
     end
   end
 
+  def instagram_reply_allowed?
+    return true unless channel.is_a?(Channel::Instagram)
+
+    Conversations::MessageWindowService.new(conversation, human_agent: human_reply?).can_reply?
+  end
+
+  def human_reply?
+    message.outgoing? && message.sender.is_a?(User) && message.content_attributes['automation_rule_id'].blank? &&
+      message.additional_attributes['campaign_id'].blank?
+  end
+
+  def fail_closed_window
+    Messages::StatusUpdateService.new(message, 'failed', 'Instagram messaging window is closed for this sender.').perform
+  end
+
   def send_content
     send_message(message_params)
   end
@@ -85,14 +102,14 @@ class Instagram::BaseSendService < Base::SendOnChannelService
     merge_human_agent_tag(params)
   end
 
-  def process_response(response, message_content)
+  def process_response(response, _message_content)
     parsed_response = response.parsed_response
     if response.success? && parsed_response['error'].blank?
       message.update!(source_id: parsed_response['message_id'])
       parsed_response
     else
       external_error = external_error(parsed_response)
-      Rails.logger.error("Instagram response: #{external_error} : #{message_content}")
+      Rails.logger.error("Instagram send failed message_id=#{message.id} code=#{parsed_response.dig('error', 'code')}")
       Messages::StatusUpdateService.new(message, 'failed', external_error).perform
       nil
     end
@@ -109,7 +126,11 @@ class Instagram::BaseSendService < Base::SendOnChannelService
     # https://developers.facebook.com/docs/messenger-platform/error-codes
     # Access token has expired or become invalid. This may be due to a password change,
     # removal of the connected app from Instagram account settings, or other reasons.
-    channel.authorization_error! if error_code == 190
+    if error_code == 190 && channel.is_a?(Channel::Instagram)
+      channel.reject_invalid_token!(@instagram_access_token)
+    elsif error_code == 190
+      channel.authorization_error!
+    end
 
     "#{error_code} - #{error_message}"
   end

@@ -10,6 +10,8 @@ RSpec.describe InstagramConcern do
   let(:access_token) { 'access_token' }
 
   before do
+    allow(GlobalConfigService).to receive(:load).and_call_original
+    allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_API_VERSION', 'v22.0').and_return('v22.0')
     allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_ID', nil).and_return(client_id)
     allow(GlobalConfigService).to receive(:load).with('INSTAGRAM_APP_SECRET', nil).and_return(client_secret)
     allow(Rails.logger).to receive(:error)
@@ -51,7 +53,7 @@ RSpec.describe InstagramConcern do
             access_token: short_lived_token,
             client_id: client_id
           },
-          headers: { 'Accept' => 'application/json' }
+          headers: { 'Accept' => 'application/json' }, open_timeout: 5, timeout: 15
         }
       )
 
@@ -64,7 +66,7 @@ RSpec.describe InstagramConcern do
       it 'raises an error' do
         expect do
           dummy_instance.send(:exchange_for_long_lived_token, short_lived_token)
-        end.to raise_error(RuntimeError, 'Failed to exchange token: Error')
+        end.to raise_error(Instagram::GraphClient::Error)
       end
     end
 
@@ -74,7 +76,7 @@ RSpec.describe InstagramConcern do
       it 'raises a JSON parse error' do
         allow(JSON).to receive(:parse).and_raise(JSON::ParserError.new('Invalid JSON'))
 
-        expect { dummy_instance.send(:exchange_for_long_lived_token, short_lived_token) }.to raise_error(JSON::ParserError)
+        expect { dummy_instance.send(:exchange_for_long_lived_token, short_lived_token) }.to raise_error(Instagram::GraphClient::Error)
       end
     end
   end
@@ -108,7 +110,7 @@ RSpec.describe InstagramConcern do
             fields: 'id,username,user_id,name,profile_picture_url,account_type',
             access_token: access_token
           },
-          headers: { 'Accept' => 'application/json' }
+          headers: { 'Accept' => 'application/json' }, open_timeout: 5, timeout: 15
         }
       )
 
@@ -121,7 +123,7 @@ RSpec.describe InstagramConcern do
       it 'raises an error' do
         expect do
           dummy_instance.send(:fetch_instagram_user_details, access_token)
-        end.to raise_error(RuntimeError, 'Failed to fetch Instagram user details: Error')
+        end.to raise_error(Instagram::GraphClient::Error)
       end
     end
 
@@ -131,7 +133,7 @@ RSpec.describe InstagramConcern do
       it 'raises a JSON parse error' do
         allow(JSON).to receive(:parse).and_raise(JSON::ParserError.new('Invalid JSON'))
 
-        expect { dummy_instance.send(:fetch_instagram_user_details, access_token) }.to raise_error(JSON::ParserError)
+        expect { dummy_instance.send(:fetch_instagram_user_details, access_token) }.to raise_error(Instagram::GraphClient::Error)
       end
     end
   end

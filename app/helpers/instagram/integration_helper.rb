@@ -1,56 +1,44 @@
 module Instagram::IntegrationHelper
   REQUIRED_SCOPES = %w[instagram_business_basic instagram_business_manage_messages instagram_business_manage_comments].freeze
+  STATE_LIFETIME = 10.minutes
 
-  # Generates a signed JWT token for Instagram integration
-  #
-  # @param account_id [Integer] The account ID to encode in the token
-  # @param return_to [String, nil] Optional onboarding return hint
-  # @return [String, nil] The encoded JWT token or nil if client secret is missing
-  def generate_instagram_token(account_id, return_to = nil)
-    return if client_secret.blank?
+  class InvalidState < StandardError; end
 
-    JWT.encode(token_payload(account_id, return_to), client_secret, 'HS256')
-  rescue StandardError => e
-    Rails.logger.error("Failed to generate Instagram token: #{e.message}")
-    nil
+  def generate_instagram_token(account_id, return_to = nil, user_id:, browser_nonce:, inbox_id: nil)
+    raise InvalidState, 'Instagram app configuration is missing' if client_secret.blank?
+
+    payload = { sub: account_id, user_id: user_id, inbox_id: inbox_id, iat: Time.current.to_i,
+                exp: STATE_LIFETIME.from_now.to_i, jti: SecureRandom.uuid, return_to: return_to }
+    Redis::Alfred.setex("instagram:oauth_state:#{payload[:jti]}", Digest::SHA256.hexdigest(browser_nonce), STATE_LIFETIME.to_i)
+    JWT.encode(payload, client_secret, 'HS256')
   end
 
-  def token_payload(account_id, return_to = nil)
-    payload = { sub: account_id, iat: Time.current.to_i }
-    payload[:return_to] = return_to if return_to.present?
+  def consume_instagram_state!(token, browser_nonce:)
+    raise InvalidState, 'Instagram authorization state is missing' if token.blank? || browser_nonce.blank? || client_secret.blank?
+
+    payload = JWT.decode(token, client_secret, true, algorithm: 'HS256', verify_expiration: true,
+                                                     required_claims: %w[sub user_id iat exp jti]).first
+    key = "instagram:oauth_state:#{payload.fetch('jti')}"
+    expected = Digest::SHA256.hexdigest(browser_nonce)
+    verify_state_binding!(payload, key, expected)
+    raise InvalidState, 'Instagram authorization state was already used' unless Redis::Alfred.delete_if_equals(key, expected) == [1]
+
     payload
-  end
-
-  # Verifies and decodes a Instagram JWT token
-  #
-  # @param token [String] The JWT token to verify
-  # @return [Integer, nil] The account ID from the token or nil if invalid
-  def verify_instagram_token(token)
-    return if token.blank? || client_secret.blank?
-
-    decode_token(token, client_secret)&.dig('sub')
-  end
-
-  # Reads the onboarding return hint from a Instagram JWT token, if present.
-  def instagram_token_return_to(token)
-    return if token.blank? || client_secret.blank?
-
-    decode_token(token, client_secret)&.dig('return_to')
+  rescue JWT::DecodeError
+    raise InvalidState, 'Instagram authorization state is invalid or expired'
   end
 
   private
 
-  def client_secret
-    @client_secret ||= GlobalConfigService.load('INSTAGRAM_APP_SECRET', nil)
+  def verify_state_binding!(payload, key, expected)
+    actual = Redis::Alfred.get(key)
+    raise InvalidState, 'Instagram authorization state is invalid' unless actual && ActiveSupport::SecurityUtils.secure_compare(actual, expected)
+
+    membership = AccountUser.find_by(account_id: payload['sub'], user_id: payload['user_id'])
+    raise InvalidState, 'Instagram administrator access is required' unless membership&.administrator?
   end
 
-  def decode_token(token, secret)
-    JWT.decode(token, secret, true, {
-                 algorithm: 'HS256',
-                 verify_expiration: true
-               }).first
-  rescue StandardError => e
-    Rails.logger.error("Unexpected error verifying Instagram token: #{e.message}")
-    nil
+  def client_secret
+    @client_secret ||= GlobalConfigService.load('INSTAGRAM_APP_SECRET', nil)
   end
 end

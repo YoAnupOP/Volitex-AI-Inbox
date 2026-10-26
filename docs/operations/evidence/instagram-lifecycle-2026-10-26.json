@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-26",
+  "base_source": "44b550c33cb08ac0eb2465a4f53e596ae41c786c",
+  "result": "PASS_LOCAL_REGRESSION",
+  "runtime": {
+    "ruby": "3.4.11",
+    "rails": "7.2.3.2",
+    "database": "isolated PostgreSQL 16 with pgvector",
+    "queue_store": "isolated Valkey"
+  },
+  "related_rspec": {
+    "duration": 176.494266317,
+    "example_count": 162,
+    "failure_count": 0,
+    "pending_count": 0,
+    "errors_outside_of_examples_count": 0
+  },
+  "hourly_scheduler_rspec": {
+    "duration": 0.407011376,
+    "example_count": 3,
+    "failure_count": 0,
+    "pending_count": 0,
+    "errors_outside_of_examples_count": 0
+  },
+  "migration": {
+    "result": "PASS",
+    "backfill": "PASS",
+    "credential_preservation": "PASS",
+    "expiry_index": "PASS",
+    "rollback": "PASS",
+    "scope": "transactional isolated schema; synthetic ciphertext"
+  },
+  "rubocop": {
+    "files": 41,
+    "offenses": 0
+  },
+  "frontend_eslint": "PASS",
+  "monitor_shell_syntax": "PASS",
+  "external_provider_calls": "STUBBED_HTTP_ONLY",
+  "live_meta_acceptance": "NOT_RUN",
+  "release_status": "EXACT_SOURCE_CI_REQUIRED",
+  "production_deployment": "NOT_DEPLOYED",
+  "credentials_changed": false,
+  "input_hashes": {
+    "rspec.json": "b2ee07bb4c351e341bc5aaa98f15220dec8e6db0b2a4962c2cba33769f66b6d2",
+    "scheduler-rspec.json": "200b38b908cd890436936efffc57185e888894c77af734a01371d98c4ba0e6d4",
+    "rubocop-final.log": "d7386ecedaf99a39f55435efb57126105e8d8dd018a2f75dced5df680ad71aac",
+    "migration-acceptance.log": "03ee114a1ae9649b1891a979928744ac7be96e422947b75cc0c95a7df0263d05"
+  },
+  "working_tree_sha256": {
+    "app/jobs/channels/instagram/connection_health_job.rb": "770c6c611b81152e8c864cc45f4efab23a1b1ed774d7cc0a6d0ad1664357e52c",
+    "app/jobs/channels/instagram/connection_health_scheduler_job.rb": "5c5bc7476e1622e82eadd9b27c82ee8969875329d381e075a62e3ede949e4d2f",
+    "app/services/instagram/graph_client.rb": "91f92baa2f9380f32e87cec2dd8100ad3a7d1139dc0a9dab59ed1f13c9fc0c8e",
+    "app/services/instagram/oauth_access_token.rb": "c85507f55ed7b4d29266f29664482890bdd57975940c99a8211dc4d0aff71509",
+    "app/views/mailers/administrator_notifications/channel_notifications_mailer/instagram_connection_failure.liquid": "8349868733ebe7c21ae6b5b1927770ef374c557151e30957e826739cbef529c0",
+    "db/migrate/20261026000000_track_instagram_connection_health.rb": "6168e61e10f22423f347afd5a072ce61193f478ef9745c245627d0475d4acf6b",
+    "app/builders/messages/instagram/base_message_builder.rb": "696b05324191f8487256e5442ccb888da38118d4c9ff29e08cdc2ca9d2f25bfb",
+    "app/builders/messages/instagram/message_builder.rb": "d858df0526c1869f031b2fcfa51d6f570f91b273f74e0cda35248c69c0d9cd7a",
+    "app/controllers/api/v1/accounts/instagram/authorizations_controller.rb": "02f65203996a6985336956652905c00dc4c88035723955692004121a72bd066a",
+    "app/controllers/concerns/instagram_concern.rb": "beb8db82aeefb237ece21b70f17b05f3ae1e2b6589161ae7a6b0a4c6c4929f4b",
+    "app/controllers/instagram/callbacks_controller.rb": "0877a4e537c78d87ef7494b6e1ee50d6d67ad1346df3f8b73c439a2d04bf4cd9",
+    "app/helpers/instagram/integration_helper.rb": "3be96061c1145aab80e697dc1e87ee76dd2114499a883a9b4a201b04ccaba7a3",
+    "app/javascript/dashboard/routes/dashboard/settings/inbox/channels/instagram/Reauthorize.vue": "1e7c4cf789673f194e69d738ffd47347fa4b3eefa64d4ea054c6045a841237c7",
+    "app/jobs/internal/trigger_hourly_scheduled_items_job.rb": "11ec35ff0cb84594b64f0768ff83afa896ea14af5d33b0289528bc6bc033f80c",
+    "app/jobs/webhooks/instagram_events_job.rb": "f428d9a1cfcc2564c95aea3d4263043c79d5db516061c2d0e8d889a68af152ab",
+    "app/mailers/administrator_notifications/channel_notifications_mailer.rb": "bbc099f3d198a28fb73c0311a6c99045fd276528d28b801dfb4b8424130190c5",
+    "app/models/channel/instagram.rb": "94743d33fdcd0132ec054531513c61b1218a7b754002387f384d8c10043c9380",
+    "app/services/conversations/message_window_service.rb": "80313ce0cbb1866d3f9afb478b89c4d5894ee1120e52fb4e866cd0526b54ad7c",
+    "app/services/instagram/base_message_text.rb": "cbe8452dd11adbda5ec1d2055c64566462fe38ec4e872d41d4704eec6e97cde0",
+    "app/services/instagram/base_send_service.rb": "0b491a3578b9530074bb8d5dd912cc2f4623de607b567e656b334c1937e94293",
+    "app/services/instagram/comments_client.rb": "e9cfeeb0448c367ec88977a1f66f3fe787797c7c8fbbb5ceea2765b153d7bbca",
+    "app/services/instagram/comments_service.rb": "3e51608b758d7c4b45a29c49a222131efe9ef6c8161f0d7a328a99354af63f9c",
+    "app/services/instagram/message_text.rb": "0e992d6508763a700074f0eb875a88e430eb6785ba83b32d3b37d514dfc374a2",
+    "app/services/instagram/refresh_oauth_token_service.rb": "6316fb06bc27a46aa192defc81de23baac877a07349fccd5db086bed4d55949a",
+    "app/services/instagram/send_on_instagram_service.rb": "0761bef93218424e9d7035c8b4aa08a9c7f0429f6243e3701d73042e4aa260f5",
+    "app/views/mailers/administrator_notifications/channel_notifications_mailer/instagram_disconnect.liquid": "e7ac98d6961bd64b2e88bd617d22daf7af29aeb93657e0c90c18fda4c183991a",
+    "config/initializers/filter_parameter_logging.rb": "2b003edebf77ccf0014e9d866aa3b8ad1c5149f11734abdff66ac22a9ba1dc1e",
+    "config/locales/en.yml": "3a4e5d0a174c259067d980d25b1ecc7f6a5629470174e8f3720bfb85b8de2126",
+    "db/schema.rb": "5325a68f11624a9680ce45751c4ca9b28887c9971c9f4124d3be4a82eadb7569",
+    "deployment/production/monitor.sh": "c9b15684730629ef736cedab9a01c20e59d374c611042b158408920614412d70"
+  }
+}

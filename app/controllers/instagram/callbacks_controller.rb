@@ -3,6 +3,7 @@ class Instagram::CallbacksController < ApplicationController
   include Instagram::IntegrationHelper
 
   def show
+    @oauth_state = consume_instagram_state!(params[:state], browser_nonce: cookies.encrypted[:instagram_oauth_session])
     # Check if Instagram redirected with an error (user canceled authorization)
     # See: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login#canceled-authorization
     if params[:error].present?
@@ -11,6 +12,8 @@ class Instagram::CallbacksController < ApplicationController
     end
 
     process_successful_authorization
+  rescue Instagram::IntegrationHelper::InvalidState
+    head :unauthorized
   rescue CustomExceptions::Inbox::LimitExceeded => e
     handle_limit_error(e)
   rescue StandardError => e
@@ -28,6 +31,7 @@ class Instagram::CallbacksController < ApplicationController
     )
 
     @long_lived_token_response = exchange_for_long_lived_token(@response.token)
+    verify_granted_permissions!
     inbox, already_exists = find_or_create_inbox
 
     return redirect_to app_onboarding_inbox_setup_url(account_id: account_id) if return_to == 'onboarding'
@@ -42,8 +46,7 @@ class Instagram::CallbacksController < ApplicationController
   # Handle all errors that might occur during authorization
   # https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login#sample-rejected-response
   def handle_error(error)
-    Rails.logger.error("Instagram Channel creation Error: #{error.message}")
-    ChatwootExceptionTracker.new(error).capture_exception
+    Rails.logger.error("Instagram authorization failed account_id=#{account_id} error=#{error.class.name}")
 
     error_info = extract_error_info(error)
     redirect_to_error_page(error_info)
@@ -59,18 +62,8 @@ class Instagram::CallbacksController < ApplicationController
 
   # Extract error details from the exception
   def extract_error_info(error)
-    if error.is_a?(OAuth2::Error)
-      begin
-        # Instagram returns JSON error response which we parse to extract error details
-        JSON.parse(error.message)
-      rescue JSON::ParseError
-        # Fall back to a generic OAuth error if JSON parsing fails
-        { 'error_type' => 'OAuthException', 'code' => 400, 'error_message' => error.message }
-      end
-    else
-      # For other unexpected errors
-      { 'error_type' => error.class.name, 'code' => 500, 'error_message' => error.message }
-    end
+    { 'error_type' => error.class.name, 'code' => 400,
+      'error_message' => 'Instagram connection could not be verified. Please retry connecting the original account.' }
   end
 
   # Handles the case when a user denies permissions or cancels the authorization flow
@@ -83,7 +76,7 @@ class Instagram::CallbacksController < ApplicationController
       'error_message' => params[:error_description] || 'Authorization was denied'
     }
 
-    Rails.logger.error("Instagram Authorization Error: #{error_info['error_message']}")
+    Rails.logger.info("Instagram authorization declined account_id=#{account_id}")
     redirect_to_error_page(error_info)
   end
 
@@ -101,7 +94,7 @@ class Instagram::CallbacksController < ApplicationController
 
   def find_or_create_inbox
     user_details = fetch_instagram_user_details(@long_lived_token_response['access_token'])
-    channel_instagram = find_channel_by_instagram_id(user_details['user_id'].to_s)
+    channel_instagram = channel_for_authorization(user_details)
     channel_exists = channel_instagram.present?
 
     if channel_instagram
@@ -112,9 +105,20 @@ class Instagram::CallbacksController < ApplicationController
 
     # reauthorize channel, this code path only triggers when instagram auth is successful
     # reauthorized will also update cache keys for the associated inbox
-    channel_instagram.reauthorized!
+    channel_instagram.subscribe(reauthorize: true)
 
     [channel_instagram.inbox, channel_exists]
+  rescue Instagram::GraphClient::Error
+    channel_instagram.prompt_reauthorization! if channel_instagram && !channel_instagram.reauthorization_required?
+    Channels::Instagram::ConnectionHealthJob.perform_later(channel_instagram) if channel_instagram
+    raise
+  end
+
+  def channel_for_authorization(user_details)
+    channel = reconnect_channel
+    raise ArgumentError, 'Reconnect must use the original Instagram account' if channel && channel.instagram_id != user_details['user_id'].to_s
+
+    channel || find_channel_by_instagram_id(user_details['user_id'].to_s)
   end
 
   def find_channel_by_instagram_id(instagram_id)
@@ -124,10 +128,9 @@ class Instagram::CallbacksController < ApplicationController
   def update_channel(channel_instagram, user_details)
     expires_at = Time.current + @long_lived_token_response['expires_in'].seconds
 
-    channel_instagram.update!(
-      access_token: @long_lived_token_response['access_token'],
-      expires_at: expires_at
-    )
+    channel_instagram.with_lock do
+      channel_instagram.update!(access_token: @long_lived_token_response['access_token'], expires_at: expires_at, token_refreshed_at: Time.current)
+    end
 
     # Update inbox name if username changed
     channel_instagram.inbox.update!(name: user_details['username'])
@@ -156,13 +159,29 @@ class Instagram::CallbacksController < ApplicationController
   end
 
   def account_id
-    return unless params[:state]
-
-    verify_instagram_token(params[:state])
+    @oauth_state&.fetch('sub')
   end
 
   def return_to
-    instagram_token_return_to(params[:state])
+    @oauth_state&.dig('return_to')
+  end
+
+  def reconnect_channel
+    return if @oauth_state['inbox_id'].blank?
+
+    @reconnect_channel ||= account.inboxes.find(@oauth_state['inbox_id']).channel
+    raise Instagram::IntegrationHelper::InvalidState unless @reconnect_channel.is_a?(Channel::Instagram)
+
+    @reconnect_channel
+  end
+
+  def verify_granted_permissions!
+    permissions = @response.params['permissions'] || @response.params.dig('data', 0, 'permissions')
+    granted = permissions.is_a?(String) ? permissions.split(',') : Array(permissions)
+    raise Instagram::GraphClient::Error.new(status: 403, provider_code: 200) unless (REQUIRED_SCOPES - granted).empty?
+    return unless @long_lived_token_response['access_token'].blank? || @long_lived_token_response['expires_in'].to_i <= 0
+
+    raise Instagram::GraphClient::Error.new(status: 502)
   end
 
   def oauth_code

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_10_17_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_26_000000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -612,6 +612,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_10_17_000000) do
     t.string "instagram_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "token_refreshed_at"
+    t.datetime "subscription_verified_at"
+    t.index ["expires_at"], name: "index_channel_instagram_on_expires_at"
     t.index ["instagram_id"], name: "index_channel_instagram_on_instagram_id", unique: true
   end
 

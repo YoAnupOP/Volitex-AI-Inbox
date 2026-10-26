@@ -71,7 +71,8 @@ class Instagram::CommentsClient
 
   def request(method, object_id, edge: nil, params: {})
     ensure_identifier!(object_id)
-    token = channel.access_token
+    token = channel.valid_access_token
+    @request_token = token
     raise RequestError.new('Instagram authorization has expired. Please reconnect this inbox.', status: :unauthorized) if token.blank?
 
     request_params = params.compact.merge(access_token: token)
@@ -84,8 +85,8 @@ class Instagram::CommentsClient
     return response.parsed_response if response.success?
 
     raise_error(response)
-  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError => e
-    raise RequestError.new("Instagram could not be reached: #{e.message}", status: :bad_gateway)
+  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError
+    raise RequestError.new('Instagram could not be reached. Please retry.', status: :bad_gateway), cause: nil
   end
 
   def endpoint(object_id, edge)
@@ -176,14 +177,20 @@ class Instagram::CommentsClient
   end
 
   def raise_error(response)
-    body = response.parsed_response
-    error = body.is_a?(Hash) ? body['error'] || body[:error] : nil
-    error = error&.with_indifferent_access
-    code = error&.dig(:code)
-    message = error&.dig(:message) || 'Instagram could not complete this request.'
+    error = provider_error(response)
+    code = error[:code]
+    channel.reject_invalid_token!(@request_token) if code.to_i == 190
+    message = error[:message] || 'Instagram could not complete this request.'
     rate_limited = response.code == 429 || RATE_LIMIT_ERROR_CODES.include?(code.to_i)
     status = rate_limited ? :too_many_requests : response.code
 
     raise RequestError.new(message, status: status, retry_after: response.headers['retry-after'])
+  end
+
+  def provider_error(response)
+    body = response.parsed_response
+    return {} unless body.is_a?(Hash)
+
+    (body['error'] || body[:error] || {}).with_indifferent_access
   end
 end

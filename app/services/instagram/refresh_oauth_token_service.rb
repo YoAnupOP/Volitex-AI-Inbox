@@ -1,89 +1,61 @@
-# Service to handle Instagram access token refresh logic
-# Instagram tokens are valid for 60 days and can be refreshed to extend validity
-# This service implements the refresh logic per official Instagram API guidelines
 class Instagram::RefreshOauthTokenService
-  HTTP_OPEN_TIMEOUT = 5
-  HTTP_READ_TIMEOUT = 15
   attr_reader :channel
 
   def initialize(channel:)
     @channel = channel
   end
 
-  # Returns a valid access token, refreshing it if necessary and eligible
   def access_token
-    return unless token_valid?
+    return channel[:access_token] if channel.new_record?
 
-    # If token is valid and eligible for refresh, attempt to refresh it
-    return channel[:access_token] unless token_eligible_for_refresh?
+    channel.reload
+    return refresh! if channel.expires_at <= Time.current
+    return if channel.reauthorization_required?
 
-    attempt_token_refresh
+    channel[:access_token]
+  end
+
+  # Reload and lock so parallel refreshes/reconnects cannot overwrite newer tokens.
+  # Renewal belongs to scheduled jobs, not customer request latency.
+  def refresh!
+    failure = nil
+    token = channel.with_lock do
+      current_or_refreshed_token
+    rescue Instagram::GraphClient::Error => e
+      channel.prompt_reauthorization! if e.authorization_error? && !channel.reauthorization_required?
+      failure = e
+      nil
+    end
+    raise failure if failure
+
+    token
   end
 
   private
 
-  # Checks if the current token is still valid (not expired)
-  def token_valid?
-    return false if channel.expires_at.blank?
-
-    # Check if token is still valid
-    Time.current < channel.expires_at
+  def current_or_refreshed_token
+    if channel.expires_at <= Time.current
+      channel.prompt_reauthorization! unless channel.reauthorization_required?
+      nil
+    elsif channel.reauthorization_required?
+      nil
+    elsif token_eligible_for_refresh?
+      refresh_locked_token
+    else
+      channel[:access_token]
+    end
   end
-
-  # Determines if a token is eligible for refresh based on Instagram's requirements
-  # https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login#refresh-a-long-lived-token
 
   def token_eligible_for_refresh?
-    # Three conditions must be met:
-    # 1. Token is still valid
-    token_is_valid = Time.current < channel.expires_at
-
-    # 2. Token is at least 24 hours old (based on updated_at)
-    token_is_old_enough = channel.updated_at.present? && Time.current - channel.updated_at >= 24.hours
-
-    # 3. Token is approaching expiry (within 10 days)
-    approaching_expiry = channel.expires_at < 10.days.from_now
-
-    token_is_valid && token_is_old_enough && approaching_expiry
+    channel.token_refreshed_at <= 24.hours.ago && channel.expires_at <= 10.days.from_now
   end
 
-  # Makes an API request to refresh the long-lived token
-  # @return [Hash] Response data containing new access_token and expires_in values
-  # @raise [RuntimeError] If API request fails
-  def refresh_long_lived_token
-    endpoint = 'https://graph.instagram.com/refresh_access_token'
-    params = {
-      grant_type: 'ig_refresh_token',
-      access_token: channel[:access_token]
-    }
+  def refresh_locked_token
+    data = Instagram::GraphClient.new(channel[:access_token]).request(:get, 'refresh_access_token',
+                                                                      params: { grant_type: 'ig_refresh_token' }, versioned: false)
+    raise Instagram::GraphClient::Error.new(status: 502) if data['access_token'].blank? || data['expires_in'].to_i <= 0
 
-    response = HTTParty.get(
-      endpoint,
-      query: params,
-      headers: { 'Accept' => 'application/json' },
-      open_timeout: HTTP_OPEN_TIMEOUT,
-      timeout: HTTP_READ_TIMEOUT
-    )
-
-    raise "Failed to refresh Instagram token: HTTP #{response.code}" unless response.success?
-
-    JSON.parse(response.body)
-  end
-
-  def update_channel_tokens(token_data)
-    channel.update!(
-      access_token: token_data['access_token'],
-      expires_at: Time.current + token_data['expires_in'].seconds
-    )
-  end
-
-  # Attempts to refresh the token, returning either the new or existing token
-  def attempt_token_refresh
-    refreshed_token_data = refresh_long_lived_token
-    update_channel_tokens(refreshed_token_data)
-    channel.reload[:access_token]
-  rescue StandardError => e
-    Rails.logger.error("Instagram token refresh failed: #{e.class.name}")
+    channel.update!(access_token: data['access_token'], expires_at: data['expires_in'].to_i.seconds.from_now, token_refreshed_at: Time.current)
     channel[:access_token]
   end
 end

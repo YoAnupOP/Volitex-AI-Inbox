@@ -93,7 +93,7 @@ check_sidekiq_queues() {
   local backlog
   local threshold="${SIDEKIQ_QUEUE_BACKLOG_ALERT:-100}"
 
-  for queue in ${SIDEKIQ_QUEUE_NAMES:-critical high medium default mailers}; do
+  for queue in ${SIDEKIQ_QUEUE_NAMES:-critical high medium default mailers campaigns low scheduled_jobs}; do
     if ! backlog="$(redis-cli --no-auth-warning -u "$redis_url" llen "queue:${queue}")"; then
       failures+=("Sidekiq queue ${queue} check failed")
       continue

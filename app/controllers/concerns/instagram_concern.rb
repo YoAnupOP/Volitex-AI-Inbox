@@ -9,6 +9,7 @@ module InstagramConcern
         site: 'https://api.instagram.com',
         authorize_url: 'https://www.instagram.com/oauth/authorize',
         token_url: 'https://api.instagram.com/oauth/access_token',
+        access_token_class: Instagram::OauthAccessToken,
         auth_scheme: :request_body,
         token_method: :post
       }
@@ -38,7 +39,7 @@ module InstagramConcern
   end
 
   def fetch_instagram_user_details(access_token)
-    endpoint = 'https://graph.instagram.com/v22.0/me'
+    endpoint = "https://graph.instagram.com/#{GlobalConfigService.load('INSTAGRAM_API_VERSION', 'v22.0')}/me"
     params = {
       fields: 'id,username,user_id,name,profile_picture_url,account_type',
       access_token: access_token
@@ -47,24 +48,19 @@ module InstagramConcern
     make_api_request(endpoint, params, 'Failed to fetch Instagram user details')
   end
 
-  def make_api_request(endpoint, params, error_prefix)
+  def make_api_request(endpoint, params, _error_prefix)
     response = HTTParty.get(
       endpoint,
       query: params,
-      headers: { 'Accept' => 'application/json' }
+      headers: { 'Accept' => 'application/json' }, open_timeout: 5, timeout: 15
     )
 
-    unless response.success?
-      Rails.logger.error "#{error_prefix}. Status: #{response.code}, Body: #{response.body}"
-      raise "#{error_prefix}: #{response.body}"
-    end
+    raise Instagram::GraphClient::Error.new(status: response.code) unless response.success?
 
     begin
       JSON.parse(response.body)
-    rescue JSON::ParserError => e
-      ChatwootExceptionTracker.new(e).capture_exception
-      Rails.logger.error "Invalid JSON response: #{response.body}"
-      raise e
+    rescue JSON::ParserError
+      raise Instagram::GraphClient::Error.new(status: 502), cause: nil
     end
   end
 

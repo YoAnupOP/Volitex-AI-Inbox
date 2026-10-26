@@ -9,6 +9,11 @@ class AdministratorNotifications::ChannelNotificationsMailer < AdministratorNoti
     send_notification(subject, action_url: inbox_url(inbox))
   end
 
+  def instagram_connection_failure(inbox)
+    subject = I18n.t('instagram_connection.health_alert_subject')
+    send_notification(subject, action_url: inbox_url(inbox))
+  end
+
   def tiktok_disconnect(inbox)
     subject = 'Your TikTok connection has expired'
     send_notification(subject, action_url: inbox_url(inbox))

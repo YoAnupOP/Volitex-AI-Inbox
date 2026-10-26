@@ -3,7 +3,8 @@ class Instagram::MessageText < Instagram::BaseMessageText
 
   def ensure_contact(ig_scope_id)
     result = fetch_instagram_user(ig_scope_id)
-    return if result.blank?
+    result = unknown_user(ig_scope_id) if result.blank?
+    result['id'] ||= ig_scope_id
 
     # Ensure name is never blank — fall back to username, then to a readable placeholder
     result['name'] = result['name'].presence || result['username'].presence || "IG User #{ig_scope_id}"
@@ -12,13 +13,19 @@ class Instagram::MessageText < Instagram::BaseMessageText
 
   def fetch_instagram_user(ig_scope_id)
     fields = 'name,username,profile_pic,follower_count,is_user_follow_business,is_business_follow_user,is_verified_user'
-    url = "#{base_uri}/#{ig_scope_id}?fields=#{fields}&access_token=#{@inbox.channel.access_token}"
+    token = @inbox.channel.valid_access_token
+    @profile_token = token
+    return unknown_user(ig_scope_id) if token.blank?
+
+    url = "#{base_uri}/#{ig_scope_id}?fields=#{fields}&access_token=#{token}"
 
     response = HTTParty.get(url, open_timeout: 5, timeout: 15)
 
     return process_successful_response(response) if response.success?
 
     handle_error_response(response, ig_scope_id) || {}
+  rescue HTTParty::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError
+    unknown_user(ig_scope_id)
   end
 
   private
@@ -45,7 +52,7 @@ class Instagram::MessageText < Instagram::BaseMessageText
 
     # https://developers.facebook.com/docs/messenger-platform/error-codes
     # Access token has expired or become invalid.
-    channel.authorization_error! if error_code == 190
+    channel.reject_invalid_token!(@profile_token) if error_code == 190
 
     # TODO: Remove this once we have a better way to handle this error.
     # https://developers.facebook.com/docs/messenger-platform/instagram/features/user-profile/#user-consent
