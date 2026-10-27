@@ -23,6 +23,25 @@ test('n8n audit gate resolves only the exact verified backport and fails closed'
     Severity: 'HIGH',
     PkgPath: directory.slice(1) + '/package.json',
   };
+  const zodDirectory =
+    '/usr/local/lib/node_modules/n8n/node_modules/.pnpm/zod@3.25.76/node_modules/zod';
+  const zodFinding = {
+    ...finding,
+    VulnerabilityID: 'CVE-2023-54404',
+    PkgName: 'zod',
+    InstalledVersion: '3.25.76',
+    PkgPath: zodDirectory.slice(1) + '/package.json',
+  };
+  const zodVerification = {
+    ...verification,
+    backports: [
+      {
+        advisory: 'CVE-2023-54404',
+        directory: zodDirectory,
+        scope: 'constrained-container-early-exit-v3-v4-cjs-esm',
+      },
+    ],
+  };
   const cases = [
     { label: 'verified patch', finding, expected: 0 },
     {
@@ -53,6 +72,35 @@ test('n8n audit gate resolves only the exact verified backport and fails closed'
     { label: 'wrong source', finding, source: 'b'.repeat(40), expected: 1 },
     { label: 'wrong image', finding, image: 'other-image', expected: 1 },
     { label: 'failed verifier', finding, status: 'FAIL', expected: 1 },
+    {
+      label: 'verified constrained Zod patch',
+      finding: zodFinding,
+      verification: zodVerification,
+      expected: 0,
+    },
+    {
+      label: 'Zod without the verified scope',
+      finding: zodFinding,
+      expected: 1,
+    },
+    {
+      label: 'unverified Zod duplicate',
+      finding: { ...zodFinding, PkgPath: 'other/zod/package.json' },
+      verification: zodVerification,
+      expected: 1,
+    },
+    {
+      label: 'Zod critical is never waived',
+      finding: { ...zodFinding, Severity: 'CRITICAL' },
+      verification: zodVerification,
+      expected: 1,
+    },
+    {
+      label: 'other Zod advisory remains blocked',
+      finding: { ...zodFinding, VulnerabilityID: 'CVE-UNKNOWN' },
+      verification: zodVerification,
+      expected: 1,
+    },
   ];
   try {
     for (const entry of cases) {
@@ -65,7 +113,10 @@ test('n8n audit gate resolves only the exact verified backport and fails closed'
       );
       fs.writeFileSync(
         path.join(scratch, 'verification.json'),
-        JSON.stringify({ ...verification, status: entry.status || 'PASS' })
+        JSON.stringify({
+          ...(entry.verification || verification),
+          status: entry.status || 'PASS',
+        })
       );
       const result = spawnSync(
         process.execPath,

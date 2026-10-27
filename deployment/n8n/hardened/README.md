@@ -1,6 +1,6 @@
 # Maintained Volitex AI Inbox automation runtime
 
-This image runs upstream n8n 2.44.4 with a pinned security dependency overlay and a source backport. It is maintained by this repository; it is not an unmodified vendor image or approval for arbitrary n8n nodes.
+This image runs upstream n8n 2.44.4 with a pinned security dependency overlay and verified source backports. It is maintained by this repository; it is not an unmodified vendor image or approval for arbitrary n8n nodes.
 
 The rejected older npm assessment recipe has been removed from deployment source. Its historical findings remain in the operations evidence and Git history; this directory is the maintained build path.
 
@@ -32,7 +32,7 @@ All four maintained companion/runtime images are saved in the checksummed accept
 
 ## Evidence and release gates
 
-`Verify non-production candidate` builds this image once with the exact source marker, verifies its source and dependency closure, runs the actual node registry policy and mailer/template/parser regressions, and scans every runtime package. Its raw Trivy JSON is retained. `audit_n8n_runtime.mjs` fails every unresolved critical/high finding. The only supported retained critical/high finding is **CVE-2026-93687 in the exact hash-verified braces backport**; it is reported separately as resolved by source patch, never deleted from the raw report. The stream-json prototype backport is recorded separately too; unresolved medium/low findings remain visible in the summary.
+`Verify non-production candidate` builds this image once with the exact source marker, verifies its source and dependency closure, runs the actual node registry policy and mailer/template/parser regressions, and scans every runtime package. Its raw Trivy JSON is retained. `audit_n8n_runtime.mjs` fails every unresolved critical/high finding. The supported retained High findings are **CVE-2026-93687 in braces** and **CVE-2023-54404 in Zod 3.25.76**, only at their exact independently hash-verified patched paths; it is reported separately as resolved by source patch, never deleted from the raw report. The stream-json prototype backport is recorded separately too; unresolved medium/low findings remain visible in the summary.
 
 The saved image archive is checksummed and passed unchanged to the full built-image Inbox/n8n acceptance: database upgrade, signed tenant-scoped replies, human takeover, interrupted-side-effect deduplication, queue recovery and old-image/database/key restoration. The application CE suite, migration and campaign gates are also required before publication.
 
@@ -41,6 +41,26 @@ Publication downloads that accepted archive, verifies its checksum/source and ba
 ## October 22 advisory follow-up (requires a newly gated release)
 
 The security overlay now targets MCP SDK 1.32.0, MCP server 2.3.0, follow-redirects 1.16.1, markdown-it 14.3.3, Hono 4.13.11 and sanitize-html 2.18.1. The existing backports remain verified. Upgrading the MCP packages alone does not enforce the new optional input limits (GHSA-46jr-4wx8-v453). The HTTP/JSON production policy therefore disables both `mcp` and `mcp-registry` backend modules, in addition to excluding their nodes. The registry probe must prove those modules are ineligible. Enabling MCP later requires an explicit caller review, `maxToolInputElements` and transport/parser request size limits with adversarial acceptance; it is outside this approved profile. Existing published digests do not acquire these changes.
+
+## October 27 advisory remediation (requires a newly gated release)
+
+| Dependency | Remediation |
+| --- | --- |
+| MSAL Node 5.1.5 and 5.6.0 | Replace each physical instance with 7.1.0 and its locked dependency closure; unaffected MSAL 3.8.4 is preserved. |
+| body-parser 2.3.0 | Replace both physical copies with 2.4.0. |
+| Multer | Update the existing overlay to 2.5.0. |
+| Undici 6.29.0 and 7.29.1 | Use separate npm aliases pinned to 6.29.1 and 7.30.1, preserving each caller's major version. |
+| Zod 3.25.76 | Preserve the Zod 3 root ABI and package version. Backport constrained-container size rejection into v3 and bundled v4, both CommonJS and ESM; v4-mini shares the patched core. |
+
+The Zod fix checks `.max()`/`.length()`/`.size()` bounds before element validation allocates results, errors or promises. V3 has no size-bound Map API; the bundled v4 Map size checks are covered. The v4 adaptation preserves leading-check/transform ordering and avoids running checks twice on raw input. It does **not** impose a universal array size or claim that deliberately unbounded schemas become bounded. This matches the scope of [upstream PR 6652](https://github.com/colinhacks/zod/pull/6652). A blanket Zod 4 root replacement would break n8n's Zod 3 callers; changing only the package version would conceal vulnerable code and is not permitted. Remove this compatibility backport only after a supported upstream n8n/Zod dependency update supplies equivalent fixes and passes the same acceptance.
+
+`patch-zod.mjs` asserts pristine source SHA-256 values before patching. The independent `verify-runtime.mjs` pins the resulting four source hashes. Trivy's original Zod finding remains in the raw report, separately resolved by verified source remediation. Unknown advisories, wrong paths, unverified copies, changed source or Critical severity remain blocked. No scanner ignore file or severity downgrade is used.
+
+The shared HTTP/JSON policy sets `N8N_PAYLOAD_SIZE_MAX=1` (MiB), checked against n8n's actual parsed configuration. Both Compose services load that policy. This limits incoming JSON metadata; it is defense in depth, not a substitute for schema bounds. Keep API responses, workflow inputs and schema collection sizes bounded too. Multipart file limits are separate. Workflows requiring larger JSON bodies need a reviewed resource/limit change.
+
+Regression tests cover sync/async Zod size rejection without element execution, normal parsing and transform ordering, both Undici majors, MSAL cache/client APIs, malformed compressed request/response survival and failed-upload cleanup. The adversarial network child only contacts synthetic loopback servers with `--network none`; it cannot contact client services. The normal n8n loader, real DTOs and full queue/upgrade/recovery acceptance remain mandatory. Azure/provider-node authorization is still outside the approved HTTP/JSON profile.
+
+Primary advisories: [MSAL](https://github.com/advisories/GHSA-xcx6-jx8p-x3h5), [body-parser](https://github.com/advisories/GHSA-27r3-jxmh-p828), [Multer](https://github.com/expressjs/multer/releases/tag/v2.5.0), [Undici](https://github.com/advisories/GHSA-xjj6-f33q-929c).
 
 ## Maintenance
 

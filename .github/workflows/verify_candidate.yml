@@ -79,6 +79,7 @@ jobs:
           for spec in n8n_core_boundaries.cjs n8n_hardened_runtime.test.cjs; do
             docker run --rm --network none \
               -v "$PWD/script/production/specs/$spec:/probe.cjs:ro" \
+              -v "$PWD/script/production/specs/n8n_dependency_network_probe.cjs:/network-probe.cjs:ro" \
               --entrypoint node "$image" --test /probe.cjs
           done
       - name: Audit every runtime package and retain backport evidence

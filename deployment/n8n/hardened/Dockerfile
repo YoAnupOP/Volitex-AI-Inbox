@@ -5,7 +5,7 @@ WORKDIR /opt/security-updates
 COPY hardened/package.json hardened/package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY --from=upstream /usr/local/lib/node_modules/n8n /usr/local/lib/node_modules/n8n
-COPY hardened/patch-runtime.mjs /opt/volitex/security/patch-runtime.mjs
+COPY hardened/patch-runtime.mjs hardened/patch-zod.mjs /opt/volitex/security/
 RUN node /opt/volitex/security/patch-runtime.mjs
 
 FROM node:26-alpine3.24@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5

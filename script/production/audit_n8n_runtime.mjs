@@ -28,7 +28,12 @@ for (const result of report.Results) {
       (finding.PkgName === 'stream-json' &&
         finding.InstalledVersion === '1.9.1' &&
         finding.VulnerabilityID === 'CVE-2026-104183' &&
-        finding.Severity === 'MEDIUM');
+        finding.Severity === 'MEDIUM') ||
+      (finding.PkgName === 'zod' &&
+        finding.InstalledVersion === '3.25.76' &&
+        finding.VulnerabilityID === 'CVE-2023-54404' &&
+        finding.Severity === 'HIGH' &&
+        backport?.scope === 'constrained-container-early-exit-v3-v4-cjs-esm');
     if (result.Type === 'node-pkg' && knownBackport && backport) {
       resolved.push({
         ...finding,

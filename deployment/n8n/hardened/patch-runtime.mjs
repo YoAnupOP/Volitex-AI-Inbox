@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { patchZod } from './patch-zod.mjs';
 
 const root = '/usr/local/lib/node_modules/n8n';
 const updates = '/opt/security-updates/node_modules';
@@ -17,10 +18,21 @@ const replacements = {
   hono: ['4.12.34', '4.13.11'],
   'ip-address': ['10.3.1', '10.7.1'],
   moment: ['2.30.1', '2.31.0'],
-  multer: ['2.3.0', '2.4.0'],
+  multer: ['2.3.0', '2.5.0'],
   qs: ['6.15.2', '6.16.0'],
   'simple-git': ['3.36.0', '4.0.1'],
   toml: ['3.0.0', '5.0.1'],
+};
+const versionedReplacements = {
+  '@azure/msal-node': [
+    ['5.1.5', '7.1.0', '@azure/msal-node'],
+    ['5.6.0', '7.1.0', '@azure/msal-node'],
+  ],
+  'body-parser': [['2.3.0', '2.4.0', 'body-parser']],
+  undici: [
+    ['6.29.0', '6.29.1', 'undici6'],
+    ['7.29.1', '7.30.1', 'undici7'],
+  ],
 };
 const pristine = {
   'lib/parse.js':
@@ -44,7 +56,8 @@ function collect(directory) {
       const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
       if (
         pkg.name in replacements ||
-        ['braces', 'stream-json'].includes(pkg.name)
+        pkg.name in versionedReplacements ||
+        ['braces', 'stream-json', 'zod'].includes(pkg.name)
       ) {
         packages.push({ directory, ...pkg });
       }
@@ -87,6 +100,47 @@ for (const [name, [previous, version]] of Object.entries(replacements)) {
       target,
     });
   }
+}
+
+for (const [name, rules] of Object.entries(versionedReplacements)) {
+  const installed = packages.filter(pkg => pkg.name === name);
+  for (const pkg of installed) {
+    // The unaffected MSAL 3 caller retains its original dependency and API.
+    if (name === '@azure/msal-node' && pkg.version === '3.8.4') continue;
+    assert.ok(
+      rules.some(([previous]) => pkg.version === previous),
+      `Review changed upstream dependency: ${name}@${pkg.version}`
+    );
+  }
+  for (const [previous, version, overlayName] of rules) {
+    const matches = installed.filter(pkg => pkg.version === previous);
+    assert.ok(
+      matches.length > 0,
+      `Missing upstream dependency: ${name}@${previous}`
+    );
+    const target = path.join(updates, overlayName);
+    const updated = JSON.parse(
+      fs.readFileSync(path.join(target, 'package.json'))
+    );
+    assert.equal(updated.name, name);
+    assert.equal(updated.version, version);
+    for (const pkg of matches) {
+      assert.ok(pkg.directory.startsWith(root + '/node_modules/'));
+      fs.rmSync(pkg.directory, { recursive: true });
+      fs.symlinkSync(target, pkg.directory, 'dir');
+      manifest.replacements.push({
+        name,
+        previous,
+        version,
+        directory: pkg.directory,
+        target,
+      });
+    }
+  }
+}
+for (const pkg of packages.filter(pkg => pkg.name === 'zod')) {
+  assert.equal(pkg.version, '3.25.76');
+  manifest.backports.push(patchZod(pkg.directory));
 }
 
 // Retain the upstream package version. The scanner finding remains visible;

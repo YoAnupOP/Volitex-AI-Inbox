@@ -3,12 +3,113 @@ const fs = require('node:fs');
 const { createRequire } = require('node:module');
 const { test } = require('node:test');
 const { spawnSync } = require('node:child_process');
+const { pathToFileURL } = require('node:url');
 
 const root = '/usr/local/lib/node_modules/n8n';
 const fromN8n = createRequire(root + '/package.json');
 const manifest = JSON.parse(
   fs.readFileSync('/opt/volitex/security/manifest.json')
 );
+
+for (const entry of manifest.backports.filter(item => item.name === 'zod')) {
+  for (const version of ['v3', 'v4']) {
+    for (const format of ['cjs', 'js']) {
+      test(`Zod ${version} ${format} rejects oversized containers before parsing elements`, async () => {
+        const file = entry.directory + '/' + version + '/index.' + format;
+        const z =
+          format === 'cjs'
+            ? require(file)
+            : await import(pathToFileURL(file).href);
+        let parsed = 0;
+        const element = z.number().superRefine(() => {
+          parsed += 1;
+        });
+        for (const schema of [
+          z.array(element).max(2),
+          z.array(element).length(2),
+        ]) {
+          const input = Array(30000).fill(1);
+          const result = schema.safeParse(input);
+          assert.equal(result.success, false);
+          assert.equal(result.error.issues.length, 1);
+          assert.equal(result.error.issues[0].code, 'too_big');
+          assert.equal(parsed, 0);
+          assert.equal((await schema.safeParseAsync(input)).success, false);
+          assert.equal(parsed, 0);
+          assert.deepEqual(schema.parse([1, 2]), [1, 2]);
+          parsed = 0;
+        }
+        const input = new Set(Array.from({ length: 30000 }, (_, i) => i));
+        const schema = z.set(element).max(2);
+        assert.equal(schema.safeParse(input).success, false);
+        assert.equal((await schema.safeParseAsync(input)).success, false);
+        assert.equal(parsed, 0);
+        assert.deepEqual(schema.parse(new Set([1, 2])), new Set([1, 2]));
+        if (version === 'v4') {
+          parsed = 0;
+          const map = z.map(element, element).check(z.maxSize(2));
+          const entries = new Map(
+            Array.from({ length: 30000 }, (_, i) => [i, i])
+          );
+          assert.equal(map.safeParse(entries).success, false);
+          assert.equal((await map.safeParseAsync(entries)).success, false);
+          assert.equal(parsed, 0);
+          assert.deepEqual(map.parse(new Map([[1, 2]])), new Map([[1, 2]]));
+          // A transform before the bound must retain its original ordering.
+          const rewritten = z
+            .array(z.number())
+            .overwrite(values => values.slice(0, 1))
+            .max(1);
+          assert.deepEqual(rewritten.parse([1, 2, 3]), [1]);
+        }
+        assert.deepEqual(z.array(z.number()).parse([1, 2, 3]), [1, 2, 3]);
+      });
+    }
+  }
+}
+
+test('security replacements preserve both Undici majors and MSAL caller APIs', async () => {
+  for (const entry of manifest.replacements.filter(item =>
+    ['undici', '@azure/msal-node', 'body-parser', 'multer'].includes(item.name)
+  )) {
+    const api = require(entry.directory);
+    if (entry.name === 'undici') {
+      assert.equal(entry.previous.split('.')[0], entry.version.split('.')[0]);
+      assert.equal(typeof api.fetch, 'function');
+      const response = await api.fetch(
+        'data:application/json,%7B%22ok%22%3Atrue%7D'
+      );
+      assert.deepEqual(await response.json(), { ok: true });
+    } else if (entry.name === '@azure/msal-node') {
+      const app = new api.ConfidentialClientApplication({
+        auth: {
+          clientId: '00000000-0000-0000-0000-000000000000',
+          clientSecret: 'synthetic-only',
+        },
+      });
+      assert.deepEqual(await app.getTokenCache().getAllAccounts(), []);
+      assert.equal(typeof app.acquireTokenByCode, 'function');
+      assert.equal(typeof app.acquireTokenByClientCredential, 'function');
+    } else if (entry.name === 'body-parser') {
+      assert.equal(typeof api.json({ limit: '1mb' }), 'function');
+      assert.equal(typeof api.urlencoded({ extended: false }), 'function');
+    } else {
+      assert.equal(
+        typeof api({ limits: { fileSize: 1024 } }).single('file'),
+        'function'
+      );
+    }
+  }
+});
+
+test('body-parser and both Undici majors survive adversarial compressed traffic', () => {
+  const result = spawnSync(process.execPath, ['/network-probe.cjs'], {
+    timeout: 15000,
+    encoding: 'utf8',
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
+});
 
 test('patched dependencies resolve from the actual n8n callers', () => {
   for (const [name, version] of Object.entries({

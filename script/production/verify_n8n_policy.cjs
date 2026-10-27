@@ -5,6 +5,7 @@ const { createRequire } = require('node:module');
 
 const fromN8n = createRequire('/usr/local/lib/node_modules/n8n/package.json');
 const { Container } = fromN8n('@n8n/di');
+const { GlobalConfig } = fromN8n('@n8n/config');
 const { ModuleRegistry } = fromN8n('@n8n/backend-common');
 const { LoadNodesAndCredentials } = fromN8n(
   './dist/load-nodes-and-credentials'
@@ -17,6 +18,7 @@ const {
 } = fromN8n('@n8n/api-types');
 
 async function verify() {
+  assert.equal(Container.get(GlobalConfig).endpoints.payloadSizeMax, 1);
   const email = 'operator@example.invalid';
   const owner = {
     email,
