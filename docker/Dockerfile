@@ -125,12 +125,14 @@ ARG RAILS_ENV=production
 ENV RAILS_ENV ${RAILS_ENV}
 ENV BUNDLE_PATH="/gems"
 
+# Pin the runtime pair so cached APK layers cannot retain CVE-2026-92392.
 RUN apk update && apk add --no-cache \
   build-base \
   openssl \
   tzdata \
   postgresql-client \
-  curl \
+  curl=8.23.0-r0 \
+  libcurl=8.23.0-r0 \
   imagemagick \
   git \
   vips \

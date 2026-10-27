@@ -45,7 +45,7 @@
       "libdatadog 45.0.0.1.0"
     ]
   },
-  "application_release_status": "FOLLOW_UP_DATADOG_EXACT_SOURCE_CI_REQUIRED",
+  "application_release_status": "FOLLOW_UP_CURL_EXACT_SOURCE_CI_REQUIRED",
   "publication": "NOT_PUBLISHED",
   "production_kit_pointer_changed": false,
   "live_credentials_changed": false,
@@ -72,5 +72,26 @@
     "datadog": "2.45.0"
   },
   "datadog_ruby_3_4_load_test": "PASS",
-  "follow_up_lock_sha256": "ee2c78f13f14a8f7829876bb992cf8542ad7df8cb10833d551a00cf3286e0a24"
+  "follow_up_lock_sha256": "ee2c78f13f14a8f7829876bb992cf8542ad7df8cb10833d551a00cf3286e0a24",
+  "additional_app_image_fix": {
+    "packages": [
+      "curl",
+      "libcurl"
+    ],
+    "previous": "8.22.0-r0",
+    "fixed": "8.23.0-r0",
+    "advisory": "CVE-2026-92392",
+    "advisory_url": "https://curl.se/docs/CVE-2026-92392.html",
+    "observed_high_rows": 2,
+    "cause": "Cached unversioned APK runtime layer retained old curl pair",
+    "resolution": "Explicitly pin both runtime packages; do not rely on cache expiry",
+    "alpine_package_install_and_binary_version_probe": "PASS"
+  },
+  "n8n_upgrade_recovery_acceptance": {
+    "source": "b73de16095a5b4731a5ac697f31bda2d096d47ca",
+    "run": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/40451435901",
+    "step": "Verify private n8n upgrade, ownership and interrupted reply recovery",
+    "conclusion": "success",
+    "overall_candidate": "FAILED_APP_CURL_AUDIT"
+  }
 }
