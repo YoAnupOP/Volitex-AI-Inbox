@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-27",
+  "n8n_verified_source": "621a28846ac9f0ff1689313399cd7ad9c73c3506",
+  "n8n_ci_run": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/40449528976",
+  "n8n_ci_job": "https://github.com/YoAnupOP/Volitex-AI-Inbox/actions/runs/40449528976/job/122008727165",
+  "status": "PASS_N8N_RUNTIME_SECURITY",
+  "unresolved_critical_high": 0,
+  "raw_severity_counts": {
+    "MEDIUM": 15,
+    "LOW": 3,
+    "HIGH": 1
+  },
+  "verified_source_remediations": [
+    {
+      "package": "stream-json",
+      "advisory": "CVE-2026-104183",
+      "severity": "MEDIUM",
+      "path": "usr/local/lib/node_modules/n8n/node_modules/.pnpm/stream-json@1.9.1/node_modules/stream-json/package.json"
+    },
+    {
+      "package": "zod",
+      "advisory": "CVE-2023-54404",
+      "severity": "HIGH",
+      "path": "usr/local/lib/node_modules/n8n/node_modules/.pnpm/zod@3.25.76/node_modules/zod/package.json"
+    }
+  ],
+  "local_checks": {
+    "hardened_runtime_tests": {
+      "passed": 16,
+      "failed": 0
+    },
+    "policy_allowed_nodes": 18,
+    "gate_and_reply_contract_tests": {
+      "passed": 15,
+      "failed": 0
+    },
+    "zod_source_tamper_rejected": true,
+    "local_scan_unresolved_critical_high": 0
+  },
+  "follow_up_ruby_update": {
+    "datadog": "2.45.0",
+    "reason": "GHSA-p7cx-x3jr-jj6w; minimum vendor-fixed release",
+    "closure": [
+      "datadog-ruby_core_source 3.5.6",
+      "libdatadog 45.0.0.1.0"
+    ]
+  },
+  "application_release_status": "FOLLOW_UP_DATADOG_EXACT_SOURCE_CI_REQUIRED",
+  "publication": "NOT_PUBLISHED",
+  "production_kit_pointer_changed": false,
+  "live_credentials_changed": false,
+  "input_hashes": {
+    "security-summary.json": "73cef6f0cf29b5c195988f824f64b76fd9dafc057e993fa53adb7f8f5f6b548f",
+    "source-verification.json": "f3d3ad5b8b7868985e20133e241881d020e084430e245d75fcd8cf5b577a23ca",
+    "n8n-vulnerabilities.json": "e64505f99bf349baf5021bedc9ab2ca5da4695af3789da6b1f1d296cde2bb4dc"
+  },
+  "existing_devise_dispositions": {
+    "new_exceptions_added": false,
+    "configuration": ".bundler-audit.yml",
+    "regression_spec": "spec/models/user_email_reconfirmation_security_spec.rb",
+    "status": "PASS_EXISTING_REGRESSION_RECHECK",
+    "advisories": [
+      "GHSA-57hq-95w6-v4fc",
+      "GHSA-jp94-3292-c3xv"
+    ],
+    "examples": 2,
+    "failures": 0
+  },
+  "ruby_audit": {
+    "result": "PASS_WITH_EXISTING_REPOSITORY_CONFIGURATION",
+    "advisory_db_commit": "3df20d31748fbafd1f6c75ade50e5d1d266257ee",
+    "datadog": "2.45.0"
+  },
+  "datadog_ruby_3_4_load_test": "PASS",
+  "follow_up_lock_sha256": "ee2c78f13f14a8f7829876bb992cf8542ad7df8cb10833d551a00cf3286e0a24"
+}
